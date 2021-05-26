@@ -12,7 +12,6 @@ herolink = "https://github.com/simonschoof/hugo-sugoi"
 herolinktext = "Check Now"
 herobackgroundimage = "images/hero_background_hafen.webp"
 headertext =  "simonschoof.com"
-contact = "Send me a message and I will get back as soon as possible."
 
 [hero]
 
@@ -27,8 +26,3 @@ contact = "Send me a message and I will get back as soon as possible."
         pre = "<i class='fas fa-list'></i>"
         url     = "post"
         weight  = -2
-    [[menu.nav]]
-        name    = "contact"
-        pre = "<i class='fas fa-envelope'></i>"
-        url     = "contact"
-        weight  = -3
