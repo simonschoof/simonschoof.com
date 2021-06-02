@@ -1,5 +1,5 @@
 theme = "hugo-sugoi"
-baseURL = "https://example.com"
+baseURL = "https://simonschoof.com"
 languageCode = "en-us"
 title = "Simon Schoof"
 summaryLength = 20
