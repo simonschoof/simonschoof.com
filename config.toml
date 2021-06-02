@@ -4,6 +4,8 @@ languageCode = "en-us"
 title = "Simon Schoof"
 summaryLength = 20
 paginate = 5
+enableEmoji = true
+math = true
 
 [params]
 favicon = "images/favicon.png"
