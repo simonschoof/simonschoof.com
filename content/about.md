@@ -1,10 +1,13 @@
----
-title: "About"
-date: 2020-04-23T19:57:09+05:30
-draft: false
----
++++
+title = "About"
+date = 2020-04-23T19:57:09+05:30
+draft = false
+type = "about" 
++++
 
 
+
+{{< figure src="/images/me.jpg" class="figure-about-me">}}
 ## Quidque corpore
 
 Lorem markdownum verbis. Ipso et felices curvos, interit fulmina avellere sed
