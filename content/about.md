@@ -5,9 +5,6 @@ draft = false
 type = "about" 
 +++
 
-
-
-{{< figure src="/images/me.jpg" class="figure-about-me">}}
 ## Quidque corpore
 
 Lorem markdownum verbis. Ipso et felices curvos, interit fulmina avellere sed
@@ -26,6 +23,8 @@ caelestia amaris sequitur eburnas et Pythia aditus magnum cadunt, ad. Sine
 faceres; vos ubi sic egregius ter [punica](http://per-tempora.io/laevo) corpora
 rima. Ergo vel Dryantaque eludere inter. Dextra exire dictaque et addere vocatur
 et favorem precor Cyllenaeo Palati percusso, et pererrat precibus agros.
+
+{{< figure src="/images/me.jpg" class="figure-about-me">}}
 
 ## Faces care
 
