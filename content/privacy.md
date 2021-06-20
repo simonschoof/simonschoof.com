@@ -1,11 +1,11 @@
 +++
-title = "About"
+title = "Privacy"
 date = 2020-04-23T19:57:09+05:30
 draft = false
 type = "top" 
 +++
 
-## Quidque corpore
+## Privacy
 
 Lorem markdownum verbis. Ipso et felices curvos, interit fulmina avellere sed
 utendum alte, illas; *sumusve huc* corpora. Formam cupit, imagine cur tulerunt
@@ -24,7 +24,6 @@ faceres; vos ubi sic egregius ter [punica](http://per-tempora.io/laevo) corpora
 rima. Ergo vel Dryantaque eludere inter. Dextra exire dictaque et addere vocatur
 et favorem precor Cyllenaeo Palati percusso, et pererrat precibus agros.
 
-{{< figure src="/images/me.jpg" class="figure-about-me">}}
 
 ## Faces care
 
