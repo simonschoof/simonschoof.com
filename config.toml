@@ -8,11 +8,11 @@ enableEmoji = "true"
 
 [params]
 favicon = "images/favicon.png"
-herotitle = "SIMONSCHOOF.COM"
+herotitle = "Moin Moin!"
 herolink = "https://github.com/simonschoof/hugo-sugoi"
 herolinktext = "Check Now"
 herobackgroundimage = "images/hero_background_hafen.webp"
-headertext =  "simonschoof.com"
+headertext =  "Home"
 
 
 [hero]
