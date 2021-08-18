@@ -5,6 +5,7 @@ title = "Simon Schoof"
 summaryLength = 20
 paginate = 5
 enableEmoji = "true"
+enableRobotsTXT = true
 
 [params]
 favicon = "images/favicon.png"
@@ -13,6 +14,7 @@ herolink = "https://github.com/simonschoof/hugo-sugoi"
 herolinktext = "Check Now"
 herobackgroundimage = "images/hero_background_hafen.webp"
 headertext =  "Home"
+
 
 
 [hero]
