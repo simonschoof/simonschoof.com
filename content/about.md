@@ -38,4 +38,4 @@ You can reach me here
 {{< awesome fab fa-xing >}} [Xing](https://www.xing.com/profile/Simon_Schoof/cv)
 
 
-{{< figure2 src="/images/me_mid_cloaked.png" class="figure-about-me" caption="Image \"cloaked\" with" attr="fawkes" attrlink="https://sandlab.cs.uchicago.edu/fawkes/" attrtarget="_blank" attrrel="noopener noreferrer" >}} 
+{{< figure2 src="images/me_mid_cloaked.png" class="figure-about-me" caption="Image \"cloaked\" with" attr="fawkes" attrlink="https://sandlab.cs.uchicago.edu/fawkes/" attrtarget="_blank" attrrel="noopener noreferrer" >}} 
