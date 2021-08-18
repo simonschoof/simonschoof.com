@@ -7,9 +7,11 @@ type = "top"
 
 ## Moin Moin
 
+and welcome! I am Simon and this is my website.
+
 I was born in Bremen and now live and work as a software developer in Hamburg.
 
-My focus and interests in software development are in the areas of
+My focus and interests in software development are in the areas of:
 
 - Object-oriented and functional programming
 - Application Architecture
@@ -28,7 +30,7 @@ To do this in a sustainable way, I found this [post](https://tatianamac.com/post
 
 [^1]: Mick Fanning. [Cheers Mick!](https://www.youtube.com/watch?v=2-_vlLOS-9o)
 
-You can reach me here
+You can reach me here:
 
 
 {{< awesome fab fa-github>}} [Github](https://github.com/simonschoof)
