@@ -28,7 +28,7 @@ For the future I want to improve my coding and interpersonal skills, do yoga and
 But the main goal is to be a better person and reliable friend, a loving son and brother who cares about the world and environment.<cite>[^1]<cite>  
 To do this in a sustainable way, I found this [post](https://tatianamac.com/posts/beware-of-burnout) very helpful.
 
-[^1]: Mick Fanning. [Cheers Mick!](https://www.youtube.com/watch?v=2-_vlLOS-9o)
+
 
 You can reach me here:
 
@@ -39,5 +39,9 @@ You can reach me here:
 
 {{< awesome fab fa-xing >}} [Xing](https://www.xing.com/profile/Simon_Schoof/cv)
 
+{{< awesome fab fa-linkedin >}} [LinkedIn](https://www.linkedin.com/in/simon-schoof-761373222)
+
 
 {{< figure2 src="images/me_mid_cloaked.png" class="figure-about-me" caption="Image \"cloaked\" with" attr="fawkes" attrlink="https://sandlab.cs.uchicago.edu/fawkes/" attrtarget="_blank" attrrel="noopener noreferrer" >}} 
+
+[^1]: Mick Fanning. [Cheers Mick!](https://www.youtube.com/watch?v=2-_vlLOS-9o)
