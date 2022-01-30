@@ -35,7 +35,7 @@ You can reach me here:
 
 {{< awesome fab fa-github>}} [Github](https://github.com/simonschoof)
 
-{{< awesome far fa-envelope >}} [Mail](mailto:moin@simonschoof.com) {{< awesome fas fa-key >}} [PGP](https://keys.openpgp.org/vks/v1/by-fingerprint/98E54342ACAF35E6F5C29693898AC44ECFEE0279)
+{{< awesome far fa-envelope >}} {{< cloakemail "moin@simonschoof.com" >}} {{< awesome fas fa-key >}} [PGP](https://keys.openpgp.org/vks/v1/by-fingerprint/98E54342ACAF35E6F5C29693898AC44ECFEE0279)
 
 {{< awesome fab fa-xing >}} [Xing](https://www.xing.com/profile/Simon_Schoof/cv)
 

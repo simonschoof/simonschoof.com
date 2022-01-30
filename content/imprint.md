@@ -21,9 +21,9 @@ Birkenallee 24
 
 **Contact Information**
 
-Telephone: +494034870373
+Telephone: {{< cloakemail address="+494034870373" protocol="tel" >}}
 
-E-Mail: moin@simonschoof.com
+E-Mail: {{< cloakemail "moin@simonschoof.com" >}}
 
 Internet address: https://simonschoof.com
 
