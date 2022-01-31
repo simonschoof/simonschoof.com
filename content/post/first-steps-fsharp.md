@@ -187,15 +187,22 @@ Last but not least, I used [plotly](https://plotly.com/fsharp/) to create the ch
 
 ### Summary
 
-- type provider
-- annoyances:
-  - type initialisation exception -> difficult to find out what happend
-- Easy to setup. Runs smooth under linux. Dos and donts were easy to follow especially after working with kotlin at work
-- Feels like if it compiles it works.
-- Files must be in order.
-- documentation for fsharp not as much as java or c# (not quantified --> just a feeling)
-- integration of c3 .net libs -->
+- Easy to setup. 
+- Runs smooth under linux. 
+- Dos and donts were easy to follow especially after working with kotlin at work
+-  Feels like some could write fewer test because of the type system.
+- Development workflow with repl and script
+- files must be in order
 
+
+- I had a bt of a different idea on how the F# json type provider works. 
+
+- documentation for fsharp not as extensive as for c#
+- Some struggle to integration of C# .net libs e.g. AWS -> lack of examples or some mysterious type initialisation exception which which also disappeared misteriously never found out what happened
+
+### TL;DR
+
+First successful attempt to write F# and also wrote my first blog article about it. Great Success!
 
 
 
