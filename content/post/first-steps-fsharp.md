@@ -16,7 +16,7 @@ I have wanted to dive into functional programming for a long time now. In my fir
 To learn F# I rely heavily on the [awesome blog of Scott Wlashin](https://fsharpforfunandprofit.com).
 I especially try to follow his recommended [dos and dont´s](https://fsharpforfunandprofit.com/learning-fsharp/#dos-and-donts). 
 
-To make it easier for me to code something in F#, I decided to set up a small project where I download some stats from my [yoga app](https://www.downdogapp.com/web) and plot them.  
+To make it easier for me to code something in F#, I decided to set up a small project where I download some stats from my yoga app [Downdowg](https://www.downdogapp.com/web) and plot them.  
 In this project, I didn't want to deal with handling dependencies or structuring a large project. Also, the plots didn't necessarily need to be meaningful. The code for the project can be found [here](https://github.com/simonschoof/downdogstats). 
 
 In the next few sections, I will go over the setup and structure of the project and will cover the highlights and annoyances of my first steps with F#.
@@ -183,7 +183,7 @@ For those who need to work with date and time, I recommend this [talk](https://w
 
 **Plotting**
 
-Last but not least, I used [plotly](https://plotly.com/fsharp/) to create the charts for my downdog statistics.
+Last but not least, I used [XPlot](https://fslab.org/XPlot/), which is powered by [Plotly](https://plot.ly/) and [Google Charts](https://developers.google.com/chart/), to create the charts for my Downdog statistics. In the future, I will upgrade to [Plotly.NET](https://plotly.net/) as recommended by XPlot.
 
 ### Summary
 
@@ -193,10 +193,7 @@ Last but not least, I used [plotly](https://plotly.com/fsharp/) to create the ch
 -  Feels like some could write fewer test because of the type system.
 - Development workflow with repl and script
 - files must be in order
-
-
 - I had a bt of a different idea on how the F# json type provider works. 
-
 - documentation for fsharp not as extensive as for c#
 - Some struggle to integration of C# .net libs e.g. AWS -> lack of examples or some mysterious type initialisation exception which which also disappeared misteriously never found out what happened
 
