@@ -28,7 +28,7 @@ First off all the [setup under linux with  Visual Studio Code and Ionide](https:
 One of the [dont´s](https://fsharpforfunandprofit.com/learning-fsharp/#dos-and-donts) Scott Wlashin recommends is to not use a debugger. Instead we should rely on the compiler to "debug" our F# code. For this any .NET SDK ships with [F# Interactive](https://docs.microsoft.com/en-us/dotnet/fsharp/tools/fsharp-interactive/) as a [REPL (Read, Evaluate, Print Loop)](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop) for the F# language. Within Visual Studio Code you then can add a F# script file and [send the content of the script via Alt+Enter to the F# Interactive](https://docs.microsoft.com/en-us/dotnet/fsharp/get-started/get-started-vscode).
 The common development workflow then is to develop your code with a script file and F# Interactive and afterwards integrate it in your existing project. To allow scripting from existing projects [Ionide](https://ionide.io/) comes with a feature to generate references for F# Interactive so that one can get access the code of your existing project. This is also how I developed my project. First start with a script. Write some F# code. Let the compiler check if everything is correct. Test it with F# Interactive. Eventually move the code parts of the script into my console application project. 
 
-Overall I can say that I like the used development workflow. It feels intuitive, but is completely from my workflow at work. It also helps to develop code incrementally in (very) small steps.
+Overall I can say that I like the used development workflow. It feels intuitive, but is completely different from my workflow at work. It also helps to develop code incrementally in (very) small steps.
 
 ### Project description
 
@@ -45,7 +45,7 @@ The basic idea of [the project](https://github.com/simonschoof/downdogstats) is 
 
 ### Dos and Dont's
 
-As I have said already in the beginning I wanted to take into account Scott Wlashins [dos and dont´s](https://fsharpforfunandprofit.com/learning-fsharp/#dos-and-donts) for learnig F#. In the next step we will have a closer look at all of them except for the don´t use the debugger advise, which we addressed above.
+As I have said already in the beginning I wanted to take into account Scott Wlashins [dos and dont´s](https://fsharpforfunandprofit.com/learning-fsharp/#dos-and-donts) for learning F#. In the next step we will have a closer look at all of them except for the don´t use the debugger advise, which we addressed above.
 
 **Don’t use the mutable keyword**
 
