@@ -185,17 +185,13 @@ For those who need to work with date and time, I recommend this [talk](https://w
 
 Last but not least, I used [XPlot](https://fslab.org/XPlot/), which is powered by [Plotly](https://plot.ly/) and [Google Charts](https://developers.google.com/chart/), to create the charts for my Downdog statistics. In the future, I will upgrade to [Plotly.NET](https://plotly.net/) as recommended by XPlot.
 
-### Summary
+### Conclusion
 
-- Easy to setup. 
-- Runs smooth under linux. 
-- Dos and donts were easy to follow especially after working with kotlin at work
--  Feels like some could write fewer test because of the type system.
-- Development workflow with repl and script
-- files must be in order
-- I had a bt of a different idea on how the F# json type provider works. 
-- documentation for fsharp not as extensive as for c#
-- Some struggle to integration of C# .net libs e.g. AWS -> lack of examples or some mysterious type initialisation exception which which also disappeared misteriously never found out what happened
+I finally took my first steps in functional programming with F#. Overall, it was a very enjoyable experience, even though there were some obstacles to overcome. 
+
+First of all, the documentation for F# doesn't seem to be as extensive as for C#, especially when it comes to using .NET libraries that are not explicitly written for F#. As a result, I had a bit more trouble integrating these libraries with, for example, the AWS SDK. I also ran into a mysterious type initialization exception that disappeared as mysteriously as it appeared. I never did figure out what happened. In addition, I had a very naive idea of how the F# json type provider worked. I don't want to go into details here. :flushed_face:
+
+But let's stop complaining at a high level. The overall experience was very nice. Starting with the ease of setup on Linux and the smooth integration with VS Code. Big kudos to [Ionide](https://ionide.io/). Also, the [dos and donts](https://fsharpforfunandprofit.com/learning-fsharp/#dos-and-donts) were easy to follow, especially after working with [kotlin](https://kotlinlang.org/) at work. I was also really convinced by the alternative development workflow with script files and the REPL. Especially when the type system and compiler provide an extra layer of [confidence and feedback](https://blog.ploeh.dk/2011/04/29/Feedbackmechanismsandtradeoffs/), so you can get by with a little less testing. Finally, I would like to mention another small detail that I really like about F#: [files and code must be in dependency order](https://fsharpforfunandprofit.com/posts/recipe-part3/).  
 
 ### TL;DR
 
