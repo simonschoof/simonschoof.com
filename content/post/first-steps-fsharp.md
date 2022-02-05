@@ -8,7 +8,7 @@ tags = [
     "fsharp",
     "dotnet"
 ]
-draft = true
+draft = false
 +++
 
 I have wanted to dive into functional programming for a long time now. In my first job as a professional developer, I developed with C# and .NET, and I'm still a fan of C# and .NET. Especially after [.NET officially set its sights on the Linux ecosystem in 2016](https://devblogs.microsoft.com/dotnet/announcing-net-core-1-0/). I also have a bias towards [statically typed languages](https://en.wikipedia.org/wiki/Type_system#Static_type_checking) with [type inference](https://en.wikipedia.org/wiki/Type_inference). With this in mind, it was natural for me to choose F# as the language for my first steps into functional programming.
