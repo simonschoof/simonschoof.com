@@ -49,7 +49,7 @@ Home</span></a></li>
 <div class="section hero">
 <div class=container>
 <h1 class=section-heading>First Steps in F#</h1>
-<i class="far fa-calendar"></i> 2021-10-06,
+<i class="far fa-calendar"></i> 2022-02-06,
 <i class="far fa-clock"></i> Reading Time: 8 minutes
 </h6>
 </div>
@@ -86,7 +86,7 @@ The common development workflow then is to develop your code with a script file 
 <h3 id=dos-and-donts>Dos and Dont&rsquo;s</h3>
 <p>As I have said already in the beginning I wanted to take into account Scott Wlashins <a href=https://fsharpforfunandprofit.com/learning-fsharp/#dos-and-donts rel="noopener noreferrer">dos and dont´s</a> for learning F#. In the next step we will have a closer look at all of them except for the don´t use the debugger advise, which we addressed above.</p>
 <p><strong>Don’t use the mutable keyword</strong></p>
-<p>This one was easy to achieve as I use Kotlin at work and Kotlin also <a href=https://www.kotlintutorialblog.com/kotlin-var-vs-val/ rel="noopener noreferrer">dinstiguishes between mutable and immutable values</a>. I had to use mutable when I was working with the AWS SDK for .NET where I needed to set a value after the creation of class.</p>
+<p>This one was easy to achieve as I use <a href=https://kotlinlang.org/ rel="noopener noreferrer">Kotlin</a> at work and Kotlin also <a href=https://www.kotlintutorialblog.com/kotlin-var-vs-val/ rel="noopener noreferrer">dinstiguishes between mutable and immutable values</a>. I had to use mutable when I was working with the AWS SDK for .NET where I needed to set a value after the creation of an immutable object.</p>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-fsharp data-lang=fsharp><span class=k>let</span> <span class=nv>secretName</span> <span class=o>=</span> <span class=s>&#34;secret&#34;</span><span class=o>;</span>
 <span class=k>let</span> <span class=nv>mutable</span> <span class=n>secretValueRequest</span> <span class=o>=</span> <span class=n>GetSecretValueRequest</span><span class=bp>()</span>
 <span class=n>secretValueRequest</span><span class=o>.</span><span class=n>SecretId</span> <span class=o>&lt;-</span> <span class=n>secretName</span>
@@ -172,7 +172,7 @@ For those who need to work with date and time, I recommend this <a href="https:/
 <h3 id=conclusion>Conclusion</h3>
 <p>I finally took my first steps in functional programming with F#. Overall, it was a very enjoyable experience, even though there were some obstacles to overcome.</p>
 <p>First of all, the documentation for F# doesn&rsquo;t seem to be as extensive as for C#, especially when it comes to using .NET libraries that are not explicitly written for F#. As a result, I had a bit more trouble integrating these libraries with, for example, the AWS SDK. I also ran into a mysterious type initialization exception that disappeared as mysteriously as it appeared. I never did figure out what happened. In addition, I had a very naive idea of how the F# json type provider worked. I don&rsquo;t want to go into details here. 😳</p>
-<p>But let&rsquo;s stop complaining at a high level. The overall experience was very nice. Starting with the ease of setup on Linux and the smooth integration with VS Code. Big kudos to <a href=https://ionide.io/ rel="noopener noreferrer">Ionide</a>. Also, the <a href=https://fsharpforfunandprofit.com/learning-fsharp/#dos-and-donts rel="noopener noreferrer">dos and donts</a> were easy to follow, especially after working with <a href=https://kotlinlang.org/ rel="noopener noreferrer">kotlin</a> at work. I was also really convinced by the alternative development workflow with script files and the REPL. Especially when the type system and compiler provide an extra layer of <a href=https://blog.ploeh.dk/2011/04/29/Feedbackmechanismsandtradeoffs/ rel="noopener noreferrer">confidence and feedback</a>, so you can get by with a little less testing. Finally, I would like to mention another small detail that I really like about F#: <a href=https://fsharpforfunandprofit.com/posts/recipe-part3/ rel="noopener noreferrer">files and code must be in dependency order</a>.</p>
+<p>But let&rsquo;s stop complaining at a high level. The overall experience was very nice. Starting with the ease of setup on Linux and the smooth integration with VS Code. Big kudos to <a href=https://ionide.io/ rel="noopener noreferrer">Ionide</a>. Also, the <a href=https://fsharpforfunandprofit.com/learning-fsharp/#dos-and-donts rel="noopener noreferrer">dos and donts</a> were easy to follow, especially after working with <a href=https://kotlinlang.org/ rel="noopener noreferrer">Kotlin</a> at work. I was also really convinced by the alternative development workflow with script files and the REPL. Especially when the type system and compiler provide an extra layer of <a href=https://blog.ploeh.dk/2011/04/29/Feedbackmechanismsandtradeoffs/ rel="noopener noreferrer">confidence and feedback</a>, so you can get by with a little less testing. Finally, I would like to mention another small detail that I really like about F#: <a href=https://fsharpforfunandprofit.com/posts/recipe-part3/ rel="noopener noreferrer">files and code must be in dependency order</a>.</p>
 <h3 id=tldr>TL;DR</h3>
 <p>First successful attempt to write F# and also wrote my first blog article about it. Great Success!</p>
 </article>
