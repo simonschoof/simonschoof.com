@@ -49,7 +49,7 @@ As I have said already in the beginning I wanted to take into account Scott Wlas
 
 **Don’t use the mutable keyword**
 
-This one was easy to achieve as I use [Kotlin](https://kotlinlang.org/) at work and Kotlin also [dinstiguishes between mutable and immutable values](https://www.kotlintutorialblog.com/kotlin-var-vs-val/). I had to use mutable when I was working with the AWS SDK for .NET  where I needed to set a value after the creation of an immutable object.
+This one was easy to achieve as I use [Kotlin](https://kotlinlang.org/) at work and Kotlin also [dinstiguishes between mutable and immutable values](https://www.kotlintutorialblog.com/kotlin-var-vs-val/). I had to use mutable when I was working with the AWS SDK for .NET  where I needed to set a value after the creation of an mutable object.
 
 ```fsharp
 let secretName = "secret";
