@@ -1,7 +1,7 @@
 +++
 author = "Simon Schoof"
 title = "First Steps in F#"
-date = "2022-02-06"
+date = "2021-10-06"
 description = "My first steps with F#"
 tags = [
     "functional programming", 
@@ -49,7 +49,7 @@ As I have said already in the beginning I wanted to take into account Scott Wlas
 
 **Don’t use the mutable keyword**
 
-This one was easy to achieve as I use [Kotlin](https://kotlinlang.org/) at work and Kotlin also [dinstiguishes between mutable and immutable values](https://www.kotlintutorialblog.com/kotlin-var-vs-val/). I had to use mutable when I was working with the AWS SDK for .NET  where I needed to set a value after the creation of an immutable object.
+This one was easy to achieve as I use Kotlin at work and Kotlin also [dinstiguishes between mutable and immutable values](https://www.kotlintutorialblog.com/kotlin-var-vs-val/). I had to use mutable when I was working with the AWS SDK for .NET  where I needed to set a value after the creation of class.
 
 ```fsharp
 let secretName = "secret";
@@ -191,7 +191,7 @@ I finally took my first steps in functional programming with F#. Overall, it was
 
 First of all, the documentation for F# doesn't seem to be as extensive as for C#, especially when it comes to using .NET libraries that are not explicitly written for F#. As a result, I had a bit more trouble integrating these libraries with, for example, the AWS SDK. I also ran into a mysterious type initialization exception that disappeared as mysteriously as it appeared. I never did figure out what happened. In addition, I had a very naive idea of how the F# json type provider worked. I don't want to go into details here. :flushed_face:
 
-But let's stop complaining at a high level. The overall experience was very nice. Starting with the ease of setup on Linux and the smooth integration with VS Code. Big kudos to [Ionide](https://ionide.io/). Also, the [dos and donts](https://fsharpforfunandprofit.com/learning-fsharp/#dos-and-donts) were easy to follow, especially after working with [Kotlin](https://kotlinlang.org/) at work. I was also really convinced by the alternative development workflow with script files and the REPL. Especially when the type system and compiler provide an extra layer of [confidence and feedback](https://blog.ploeh.dk/2011/04/29/Feedbackmechanismsandtradeoffs/), so you can get by with a little less testing. Finally, I would like to mention another small detail that I really like about F#: [files and code must be in dependency order](https://fsharpforfunandprofit.com/posts/recipe-part3/).  
+But let's stop complaining at a high level. The overall experience was very nice. Starting with the ease of setup on Linux and the smooth integration with VS Code. Big kudos to [Ionide](https://ionide.io/). Also, the [dos and donts](https://fsharpforfunandprofit.com/learning-fsharp/#dos-and-donts) were easy to follow, especially after working with [kotlin](https://kotlinlang.org/) at work. I was also really convinced by the alternative development workflow with script files and the REPL. Especially when the type system and compiler provide an extra layer of [confidence and feedback](https://blog.ploeh.dk/2011/04/29/Feedbackmechanismsandtradeoffs/), so you can get by with a little less testing. Finally, I would like to mention another small detail that I really like about F#: [files and code must be in dependency order](https://fsharpforfunandprofit.com/posts/recipe-part3/).  
 
 ### TL;DR
 
