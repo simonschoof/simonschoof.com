@@ -16,7 +16,7 @@ I have wanted to dive into functional programming for a long time now. In my fir
 To learn F# I rely heavily on the [awesome blog of Scott Wlashin](https://fsharpforfunandprofit.com).
 I especially try to follow his recommended [dos and dont´s](https://fsharpforfunandprofit.com/learning-fsharp/#dos-and-donts). 
 
-To make it easier for me to code something in F#, I decided to set up a small project where I download some stats from my yoga app [Downdowg](https://www.downdogapp.com/web) and plot them.  
+To make it easier for me to code something in F#, I decided to set up a small project where I download some stats from my yoga app [Downdog](https://www.downdogapp.com/web) and plot them.  
 In this project, I didn't want to deal with handling dependencies or structuring a large project. Also, the plots didn't necessarily need to be meaningful. The code for the project can be found [here](https://github.com/simonschoof/downdogstats). 
 
 In the next few sections, I will go over the setup and structure of the project and will cover the highlights and annoyances of my first steps with F#.
