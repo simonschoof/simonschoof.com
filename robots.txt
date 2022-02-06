@@ -1,5 +1,19 @@
 User-agent: *
 
+Disallow: /tags/dotnet/
+
+Disallow: /post/first-steps-fsharp/
+
+Disallow: /tags/fsharp/
+
+Disallow: /tags/functional-programming/
+
+Disallow: /post/
+
+Disallow: /
+
+Disallow: /tags/
+
 Disallow: /about/
 
 Disallow: /imprint/
@@ -9,9 +23,3 @@ Disallow: /privacy/
 Disallow: /categories/
 
 Disallow: /tags/index/
-
-Disallow: /post/
-
-Disallow: /
-
-Disallow: /tags/
