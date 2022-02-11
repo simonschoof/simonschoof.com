@@ -1,4 +1,4 @@
-theme = ["hugo-cloak-email", "hugo-sugoi"]
+theme = ["hugo-sugoi"]
 baseURL = "https://simonschoof.com"
 languageCode = "en-us"
 title = "Simon Schoof"
