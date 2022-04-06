@@ -19,6 +19,8 @@ https://aws.amazon.com/blogs/networking-and-content-delivery/resizing-images-wit
 
 * Use OIA to restrict access to the S3 bucket
 
+* Create Provider for us-east-1 region for lambda -> lambda@edge needs to be there
+
 * Further S3 Security considerations
   * Only SSL Connections
   * Disable Public Object access
