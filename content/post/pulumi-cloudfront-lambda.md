@@ -16,6 +16,7 @@ Spin up Cloudfront and lambda@edge with pulumi in F#.
 https://github.com/pulumi/pulumi/issues/3644
 https://aws.amazon.com/blogs/networking-and-content-delivery/resizing-images-with-amazon-cloudfront-lambdaedge-aws-cdn-blog/
 
+https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html
 
 * Use OIA to restrict access to the S3 bucket
 
