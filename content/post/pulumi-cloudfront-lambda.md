@@ -18,6 +18,8 @@ https://aws.amazon.com/blogs/networking-and-content-delivery/resizing-images-wit
 
 https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html
 
+https://aws.amazon.com/blogs/aws/introducing-cloudfront-functions-run-your-code-at-the-edge-with-low-latency-at-any-scale/
+
 * Use OIA to restrict access to the S3 bucket
 
 * Create Provider for us-east-1 region for lambda -> lambda@edge needs to be there
