@@ -32,4 +32,10 @@ https://aws.amazon.com/blogs/aws/introducing-cloudfront-functions-run-your-code-
   * WAF
   * Denial of Wallet Attack
 
-* Provide S3 Region Domain URL otherwise CF seems to redirect to S3 URl
+* Provide S3 egion Domain URL otherwise CF seems to redirect to S3 URl
+
+* versioning
+* lambda@edge restrictions
+* pulumi state in own backend 
+* missing tests unit/acceptance/smoke
+* build for aws lambda environment with amazon linux 2 docker image
