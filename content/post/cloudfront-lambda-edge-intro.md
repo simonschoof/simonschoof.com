@@ -5,13 +5,16 @@ date = "2022-02-10"
 description = "Setup AWS CloudFront and AWS lambda@edge with Pulumi"
 tags = [
     "infrastructure as code", 
-    "fsharp",
     "pulumi",
-    "aws"
+    "aws",
+    "fsharp"
 ]
+series = "CloudFront and lambda@edge with Pulumi"
 draft = true
 +++
-Spin up Cloudfront and lambda@edge with pulumi in F#.  
+Intro: Spin up Cloudfront and lambda@edge with pulumi in F#.  
+
+{{< series "CloudFront and lambda@edge with Pulumi" >}}
 
 https://github.com/pulumi/pulumi/issues/3644
 https://aws.amazon.com/blogs/networking-and-content-delivery/resizing-images-with-amazon-cloudfront-lambdaedge-aws-cdn-blog/
@@ -39,3 +42,5 @@ https://aws.amazon.com/blogs/aws/introducing-cloudfront-functions-run-your-code-
 * pulumi state in own backend 
 * missing tests unit/acceptance/smoke
 * build for aws lambda environment with amazon linux 2 docker image
+
+{{< series "CloudFront and lambda@edge with Pulumi" >}}

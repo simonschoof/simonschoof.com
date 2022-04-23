@@ -21,6 +21,10 @@ enableRobotsTXT = true
     style = 'monokai'
     tabWidth = 4
 
+[taxonomies]
+  tag = "tags"
+  series = "series"
+
 [params]
 favicon = "images/favicon.png"
 herotitle = "Moin Moin!"
@@ -28,8 +32,6 @@ herolink = "https://github.com/simonschoof/hugo-sugoi"
 herolinktext = "Check Now"
 herobackgroundimage = "images/hero_background_hafen.webp"
 headertext =  "Home"
-
-
 
 [hero]
 
