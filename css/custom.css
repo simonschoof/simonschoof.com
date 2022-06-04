@@ -407,7 +407,7 @@ nav ul li>a:only-child::after {
 }
 
 /* Larger than desktop */
-@media (min-width: 1024px) {
+@media (min-width: 1150px) {
   .hero {
     background-image: url("../images/hero_background_hafen_large.webp");
     min-height: 250px;
@@ -418,6 +418,18 @@ nav ul li>a:only-child::after {
 @media (min-width: 550px) {
   h1 {
     font-size: 4.0rem;
+  }
+}
+
+@media (max-width: 550px) {
+  .section-sized-heading {
+    font-size: 2.2rem;
+  }
+}
+
+@media (max-width: 425px) {
+  .section-sized-heading {
+    font-size: 1.6rem;
   }
 }
 

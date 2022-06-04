@@ -20,6 +20,6 @@ Disallow: /imprint/
 
 Disallow: /privacy/
 
-Disallow: /categories/
-
 Disallow: /tags/index/
+
+Disallow: /series/
