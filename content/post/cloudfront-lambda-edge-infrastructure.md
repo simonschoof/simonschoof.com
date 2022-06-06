@@ -1,6 +1,6 @@
 +++
 author = "Simon Schoof"
-title = "Pulumi, Cloudfront & lambda@edge: Infrastructure"
+title = "II Pulumi, CloudFront & lambda@edge: Infrastructure"
 date = "2022-06-02"
 description = "Setup AWS CloudFront and AWS lambda@edge with Pulumi"
 tags = [

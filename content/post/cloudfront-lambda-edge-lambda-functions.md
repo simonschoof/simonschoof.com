@@ -1,6 +1,6 @@
 +++
 author = "Simon Schoof"
-title = "Pulumi, Cloudfront & lambda@edge: Lambda"
+title = "III Pulumi, CloudFront & lambda@edge: Lambda"
 date = "2022-06-03"
 description = "Implement AWS lambda@edge functions with typescript"
 tags = [
