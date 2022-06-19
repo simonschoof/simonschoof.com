@@ -2,7 +2,7 @@
 author = "Simon Schoof"
 title = "Pulumi, CloudFront & Lambda@Edge: Infrastructure"
 date = "2022-06-02"
-description = "Setup AWS CloudFront and AWS lambda@edge with Pulumi"
+description = "Setup AWS CloudFront and AWS Lambda@Edge with Pulumi"
 tags = [
     "infrastructure as code", 
     "pulumi",
@@ -12,8 +12,17 @@ tags = [
 series = "CloudFront and Lambda@Edge with Pulumi"
 draft = true
 +++
-Definig the Infrastructure: Spin up Cloudfront and lambda@edge with pulumi in F#.
-{{< series "CloudFront and lambda@edge with Pulumi" >}}  
+This post is part of a small article series about facilitating CloudFront and Lambda@Edge with Pulumi for on-the-fly image resizing.  
+{{< series "CloudFront and Lambda@Edge with Pulumi" >}}  
+
+In this part we will define the necessary AWS infrastructure using [Pulumi with F#](https://www.pulumi.com/docs/intro/languages/dotnet/). How to [setup Pulumi](https://www.pulumi.com/docs/get-started/) ist not part of this article. Nor is the explanation of [Pulumis architecture and concepts](https://www.pulumi.com/docs/intro/concepts/). One important concept of Pulumi are [inputs and outputs of resources](https://www.pulumi.com/docs/intro/concepts/inputs-outputs/). It is crucial to get an understanding of this concept to be able to define infrastructure with Pulumi. Unfortuanetly F#s type system is more rigid than the one of C# and needs explicit type conversions for the input and output types of Pulumi. To achieve this in a more F# idiomatic manner and ease there exists [helper functions](https://github.com/pulumi/pulumi/blob/master/sdk/dotnet/Pulumi.FSharp/Library.fs), [libraries](https://github.com/UnoSD/Pulumi.FSharp.Extensions) and [discussions](https://github.com/pulumi/pulumi/issues/3644) how to get to a more user friendly experience with Pulumi and F#.                
+Basically we will use the default Pulumi configuration for a single developer and also use the [Pulumi Service as a backend](https://www.pulumi.com/docs/intro/concepts/state/) to store the state of the infrastructure. 
+
+
+
+### Infrastructure 
+
+##### S3
 
 First we define the origin bucket. We will set the bucket private and restrict access to the S3 bucket.
 This is just a simple restriction on the bucket. In a production environment you probably want to add additional layers of security like: 
@@ -24,7 +33,7 @@ This is just a simple restriction on the bucket. In a production environment you
   * Geo restrictions
   * A *Web Application Firewall*  to prevent [*Denial of Wallet* attacks](https://medium.com/geekculture/denial-of-wallet-attack-3d8ecadfbd4e)
 
-We also set a constant bucket name as we want to reference the bucket in our lambda@edge functions.
+We also set a constant bucket name as we want to reference the bucket in our Lambda@Edge functions.
 
 ```fsharp
  let bucket =
@@ -56,6 +65,8 @@ We also set a constant bucket name as we want to reference the bucket in our lam
 
         Bucket(bucketName, bucketArgs)
 ```
+
+##### IAM
 
 In the next step we define our IAM policies so that CloudFront and the lambda functions can access the bucket
 Therefore we create an [*Origin Access Identity*](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html), a Lambda role, Lambda and CloudFront principals and eventually a bucket policy. 
@@ -145,9 +156,11 @@ Therefore we create an [*Origin Access Identity*](https://docs.aws.amazon.com/Am
         BucketPolicy("imageBucketpolicy", bucketPolicyArgs)
 ```
 
+##### Lambda
+
 Lambda functions for viewer request and origin response
 Lambda functions with inlined code which just forwards and returns the viewer request and the origin response defined as a StringAsset.
-Also a custom resource option because for lambda@edge the origin function has to be located in us-east-1.
+Also a custom resource option because for Lambda@Edge the origin function has to be located in us-east-1.
 
 ```fsharp
  let lambdaOptions =
@@ -218,6 +231,7 @@ Also a custom resource option because for lambda@edge the origin function has to
         Lambda.Function("originResponseLambda", lambdaFunctionArgs, lambdaOptions)
 ```
 
+##### CloudFront
 Finally the distribution
 
 ```fsharp
@@ -307,7 +321,7 @@ let cloudFrontDistribution =
 
         Distribution("imageResizerDistribution", cloudFrontDistributionArgs)
 ```
-and some outputs
+##### Outputs
 
 ```fsharp
     dict [ ("BucketName", bucket.Id :> obj)
