@@ -1,8 +1,8 @@
 +++
 author = "Simon Schoof"
-title = "III Pulumi, CloudFront & lambda@edge: Lambda"
+title = "Pulumi, CloudFront & Lambda@Edge: Lambda"
 date = "2022-06-03"
-description = "Implement AWS lambda@edge functions with typescript"
+description = "Implement AWS Lambda@Edge functions with typescript"
 tags = [
     "infrastructure as code", 
     "pulumi",
@@ -10,7 +10,7 @@ tags = [
     "aws lambda",
     "fsharp"
 ]
-series = "CloudFront and lambda@edge with Pulumi"
+series = "CloudFront and Lambda@Edge with Pulumi"
 draft = true
 +++
 Implement lambd@edge functions with typescript 

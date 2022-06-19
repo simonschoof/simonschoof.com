@@ -1,6 +1,6 @@
 +++
 author = "Simon Schoof"
-title = "II Pulumi, CloudFront & lambda@edge: Infrastructure"
+title = "Pulumi, CloudFront & Lambda@Edge: Infrastructure"
 date = "2022-06-02"
 description = "Setup AWS CloudFront and AWS lambda@edge with Pulumi"
 tags = [
@@ -9,7 +9,7 @@ tags = [
     "aws",
     "fsharp"
 ]
-series = "CloudFront and lambda@edge with Pulumi"
+series = "CloudFront and Lambda@Edge with Pulumi"
 draft = true
 +++
 Definig the Infrastructure: Spin up Cloudfront and lambda@edge with pulumi in F#.

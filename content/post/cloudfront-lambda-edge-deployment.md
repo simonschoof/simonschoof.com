@@ -1,15 +1,15 @@
 +++
 author = "Simon Schoof"
-title = "IV Pulumi, CloudFront & lambda@edge: Deployment"
+title = "Pulumi, CloudFront & Lambda@Edge: Deployment"
 date = "2022-06-04"
-description = "Setup AWS CloudFront and AWS lambda@edge with Pulumi"
+description = "Setup AWS CloudFront and AWS Lambda@Edge with Pulumi"
 tags = [
     "infrastructure as code", 
     "pulumi",
     "aws",
     "fsharp"
 ]
-series = "CloudFront and lambda@edge with Pulumi"
+series = "CloudFront and Lambda@Edge with Pulumi"
 draft = true
 +++
 Deploy to AWS via GitHub Actions using OICD
