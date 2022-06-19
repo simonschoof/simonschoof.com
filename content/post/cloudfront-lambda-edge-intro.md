@@ -42,5 +42,7 @@ For our example we will extend the CloudFront behaviour by associating Lambda fu
 
 {{< figure2 src="images/cloudfront_lambda_workflow.svg" class="cloudfront-lambda-workflow" caption="CloudFront lambda workflow. Modified [original image](https://d2908q01vomqb2.cloudfront.net/5b384ce32d8cdef02bc3a139d4cac0a22bb029e8/2018/02/20/Social-Media-Image-Resize-Images.png)" attrrel="noopener noreferrer" >}} 
 
+In the {{< next-in-section "next part" >}} we will set up the necessary AWS infrastructure with [Pulumi](https://www.pulumi.com/).  
+
 
 [^1]: In May 2021 Amazon [introduced CloudFront Functions](https://aws.amazon.com/blogs/aws/introducing-cloudfront-functions-run-your-code-at-the-edge-with-low-latency-at-any-scale/) that allows for running lightweight functions directly in the edge location instead of the regional edge cache. CloudFront Functions are cheaper and more performant then Lambda@Edge functions but are limited to the use case of lightweight processing of web requests and have even stricter restrictions and quotas.
