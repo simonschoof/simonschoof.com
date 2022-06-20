@@ -14,7 +14,7 @@ draft = false
 I have wanted to dive into functional programming for a long time now. In my first job as a professional developer, I developed with C# and .NET, and I'm still a fan of C# and .NET. Especially after [.NET officially set its sights on the Linux ecosystem in 2016](https://devblogs.microsoft.com/dotnet/announcing-net-core-1-0/). I also have a bias towards [statically typed languages](https://en.wikipedia.org/wiki/Type_system#Static_type_checking) with [type inference](https://en.wikipedia.org/wiki/Type_inference). With this in mind, it was natural for me to choose F# as the language for my first steps into functional programming.
 
 To learn F# I rely heavily on the [awesome blog of Scott Wlashin](https://fsharpforfunandprofit.com).
-I especially try to follow his recommended [dos and dont´s](https://fsharpforfunandprofit.com/learning-fsharp/#dos-and-donts). 
+I especially try to follow his recommended [dos and don´ts](https://fsharpforfunandprofit.com/learning-fsharp/#dos-and-donts). 
 
 To make it easier for me to code something in F#, I decided to set up a small project where I download some stats from my yoga app [Downdog](https://www.downdogapp.com/web) and plot them.  
 In this project, I didn't want to deal with handling dependencies or structuring a large project. Also, the plots didn't necessarily need to be meaningful. The code for the project can be found [here](https://github.com/simonschoof/downdogstats). 
@@ -25,7 +25,7 @@ In the next few sections, I will go over the setup and structure of the project 
 
 First off all the [setup under linux with  Visual Studio Code and Ionide](https://docs.microsoft.com/en-us/dotnet/fsharp/get-started/get-started-vscode) is a breeze. Nevertheless the [smoothness of the installation of .NET](https://docs.microsoft.com/en-us/dotnet/core/install/linux) depends on your linux distribution.
 
-One of the [dont´s](https://fsharpforfunandprofit.com/learning-fsharp/#dos-and-donts) Scott Wlashin recommends is to not use a debugger. Instead we should rely on the compiler to "debug" our F# code. For this any .NET SDK ships with [F# Interactive](https://docs.microsoft.com/en-us/dotnet/fsharp/tools/fsharp-interactive/) as a [REPL (Read, Evaluate, Print Loop)](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop) for the F# language. Within Visual Studio Code you then can add a F# script file and [send the content of the script via Alt+Enter to the F# Interactive](https://docs.microsoft.com/en-us/dotnet/fsharp/get-started/get-started-vscode).
+One of the [don´ts](https://fsharpforfunandprofit.com/learning-fsharp/#dos-and-donts) Scott Wlashin recommends is to not use a debugger. Instead we should rely on the compiler to "debug" our F# code. For this any .NET SDK ships with [F# Interactive](https://docs.microsoft.com/en-us/dotnet/fsharp/tools/fsharp-interactive/) as a [REPL (Read, Evaluate, Print Loop)](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop) for the F# language. Within Visual Studio Code you then can add a F# script file and [send the content of the script via Alt+Enter to the F# Interactive](https://docs.microsoft.com/en-us/dotnet/fsharp/get-started/get-started-vscode).
 The common development workflow then is to develop your code with a script file and F# Interactive and afterwards integrate it in your existing project. To allow scripting from existing projects [Ionide](https://ionide.io/) comes with a feature to generate references for F# Interactive so that one can get access the code of your existing project. This is also how I developed my project. First start with a script. Write some F# code. Let the compiler check if everything is correct. Test it with F# Interactive. Eventually move the code parts of the script into my console application project. 
 
 Overall I can say that I like the used development workflow. It feels intuitive, but is completely different from my workflow at work. It also helps to develop code incrementally in (very) small steps.
@@ -43,9 +43,9 @@ The basic idea of [the project](https://github.com/simonschoof/downdogstats) is 
 
 {{< figure2 src="images/downdog_music_charts_top_10.png" class="downdog-charts" caption="Plot 2: Downdog top ten music charts" attrrel="noopener noreferrer" >}} 
 
-### Dos and Dont's
+### Dos and Don'ts
 
-As I have said already in the beginning I wanted to take into account Scott Wlashins [dos and dont´s](https://fsharpforfunandprofit.com/learning-fsharp/#dos-and-donts) for learning F#. In the next step we will have a closer look at all of them except for the don´t use the debugger advise, which we addressed above.
+As I have said already in the beginning I wanted to take into account Scott Wlashins [dos and don´ts](https://fsharpforfunandprofit.com/learning-fsharp/#dos-and-donts) for learning F#. In the next step we will have a closer look at all of them except for the don´t use the debugger advise, which we addressed above.
 
 **Don’t use the mutable keyword**
 
@@ -191,7 +191,7 @@ I finally took my first steps in functional programming with F#. Overall, it was
 
 First of all, the documentation for F# doesn't seem to be as extensive as for C#, especially when it comes to using .NET libraries that are not explicitly written for F#. As a result, I had a bit more trouble integrating these libraries with, for example, the AWS SDK. I also ran into a mysterious type initialization exception that disappeared as mysteriously as it appeared. I never did figure out what happened. In addition, I had a very naive idea of how the F# json type provider worked. I don't want to go into details here. :flushed_face:
 
-But let's stop complaining at a high level. The overall experience was very nice. Starting with the ease of setup on Linux and the smooth integration with VS Code. Big kudos to [Ionide](https://ionide.io/). Also, the [dos and donts](https://fsharpforfunandprofit.com/learning-fsharp/#dos-and-donts) were easy to follow, especially after working with [Kotlin](https://kotlinlang.org/) at work. I was also really convinced by the alternative development workflow with script files and the REPL. Especially when the type system and compiler provide an extra layer of [confidence and feedback](https://blog.ploeh.dk/2011/04/29/Feedbackmechanismsandtradeoffs/), so you can get by with a little less testing. Finally, I would like to mention another small detail that I really like about F#: [files and code must be in dependency order](https://fsharpforfunandprofit.com/posts/recipe-part3/).  
+But let's stop complaining at a high level. The overall experience was very nice. Starting with the ease of setup on Linux and the smooth integration with VS Code. Big kudos to [Ionide](https://ionide.io/). Also, the [dos and don´ts](https://fsharpforfunandprofit.com/learning-fsharp/#dos-and-donts) were easy to follow, especially after working with [Kotlin](https://kotlinlang.org/) at work. I was also really convinced by the alternative development workflow with script files and the REPL. Especially when the type system and compiler provide an extra layer of [confidence and feedback](https://blog.ploeh.dk/2011/04/29/Feedbackmechanismsandtradeoffs/), so you can get by with a little less testing. Finally, I would like to mention another small detail that I really like about F#: [files and code must be in dependency order](https://fsharpforfunandprofit.com/posts/recipe-part3/).  
 
 ### TL;DR
 
