@@ -143,180 +143,182 @@ In the third step we define two Lambda functions for the origin response and vie
 3. [Code](https://www.pulumi.com/docs/intro/concepts/assets-archives/) -> We use an inlined Pulumi `StringAsset` for the `Code` parameter of the Lambda function definition. The inlined code fragments do nothing more than forwarding and returning the CloudFront viewer request and origin response. We will replace the code fragments with the implementation for the image resizing in the {{< next-in-section "next article" >}}.  
 
 ```fsharp
- let lambdaOptions =
-        let customResourceOptions = CustomResourceOptions()
-        customResourceOptions.Provider <- Provider("useast1", ProviderArgs(Region = "us-east-1"))
-        customResourceOptions
+let lambdaOptions =
+    let customResourceOptions = CustomResourceOptions()
+    customResourceOptions.Provider <- Provider("useast1", ProviderArgs(Region = "us-east-1"))
+    customResourceOptions
 
-    let viewerRequestLambda =
+let viewerRequestLambda =
 
-        let lambdaFunctionArgs =
-            Lambda.FunctionArgs(
-                Handler = "index.handler",
-                Runtime = "nodejs14.x",
-                MemorySize = 128,
-                Timeout = 1,
-                Role = lambdaRole.Arn,
-                Publish = true,
-                Code =
-                    input (
-                        AssetArchive(
-                            Map<string, AssetOrArchive>
-                                [ ("index.js",
-                                   StringAsset(
-                                       """
-                                       "use strict"; Object.defineProperty(exports, "__esModule", { value: true });
-                                       exports.handler = void 0;
-                                       async function handler(event) {
-                                            return event.Records[0].cf.request;
-                                       } 
-                                       exports.handler = handler;
-                                       """
-                                   )) ]
-                        )
+    let lambdaFunctionArgs =
+        Lambda.FunctionArgs(
+            Handler = "index.handler",
+            Runtime = "nodejs14.x",
+            MemorySize = 128,
+            Timeout = 1,
+            Role = lambdaRole.Arn,
+            Publish = true,
+            Code =
+                input (
+                    AssetArchive(
+                        Map<string, AssetOrArchive>
+                            [ ("index.js",
+                                StringAsset(
+                                    """
+                                    "use strict"; Object.defineProperty(exports, "__esModule", { value: true });
+                                    exports.handler = void 0;
+                                    async function handler(event) {
+                                        return event.Records[0].cf.request;
+                                    } 
+                                    exports.handler = handler;
+                                    """
+                                )) ]
                     )
-            )
+                )
+        )
 
-        Lambda.Function("viewerRequestLambda", lambdaFunctionArgs, lambdaOptions)
+    Lambda.Function("viewerRequestLambda", lambdaFunctionArgs, lambdaOptions)
 
-    let originResponseLambda =
+let originResponseLambda =
 
-        let lambdaFunctionArgs =
-            Lambda.FunctionArgs(
-                Handler = "index.handler",
-                Runtime = "nodejs14.x",
-                MemorySize = 512,
-                Timeout = 5,
-                Role = lambdaRole.Arn,
-                Publish = true,
-                Code =
-                    input (
-                        AssetArchive(
-                            Map<string, AssetOrArchive>
-                                [ ("index.js",
-                                   StringAsset(
-                                       """
-                                       "use strict"; Object.defineProperty(exports, "__esModule", { value: true });
-                                       exports.handler = void 0;
-                                       async function handler(event) {
-                                            return event.Records[0].cf.response;
-                                       } 
-                                       exports.handler = handler;
-                                       """
-                                   )) ]
-                        )
+    let lambdaFunctionArgs =
+        Lambda.FunctionArgs(
+            Handler = "index.handler",
+            Runtime = "nodejs14.x",
+            MemorySize = 512,
+            Timeout = 5,
+            Role = lambdaRole.Arn,
+            Publish = true,
+            Code =
+                input (
+                    AssetArchive(
+                        Map<string, AssetOrArchive>
+                            [ ("index.js",
+                                StringAsset(
+                                    """
+                                    "use strict"; Object.defineProperty(exports, "__esModule", { value: true });
+                                    exports.handler = void 0;
+                                    async function handler(event) {
+                                        return event.Records[0].cf.response;
+                                    } 
+                                    exports.handler = handler;
+                                    """
+                                )) ]
                     )
-            )
+                )
+        )
 
-        Lambda.Function("originResponseLambda", lambdaFunctionArgs, lambdaOptions)
+    Lambda.Function("originResponseLambda", lambdaFunctionArgs, lambdaOptions)
 ```
 
 ##### CloudFront
-Finally we are able to define the CloudFront distribution.
-Plenty of configuration options for different uses cases. 
-We will not explain all of the here, but recommend to thoroughly read the documentation. List the important point that we do to build up the distribution. 
 
-1. Origin -> The S3 Bucket we defined in the beginning.
-2. Forwarded values -> Define that we want to forward the width and height query parameters and also use them as cache keys so that a resizing call with the same parameters is put into the CloudFront cache.
-3. Default Cache Behavior -> Defining the default cache behavior of CloudFront -> This is where we associate both Lambda functions to their respective trigger points.
-4. Defining the distribution itself using all values defined in points 1. - 3.  
+Eventually we are able to define the CloudFront distribution.
+As mentioned before CloudFront comes with [a multitude of configuration options](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/ConfiguringCaching.html) for different uses cases. 
+We will not explain them here, but recommend to thoroughly read the [documentation](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html). As to the many options available for the distribution, we will give a short overview of the of steps we will take to create the distribution:
+
+1. [Origin](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/DownloadDistS3AndCustomOrigins.html#using-s3-as-origin) -> We will use the S3 bucket we created earlier as the origin.
+2. [Cache keys](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/controlling-the-cache-key.html) -> Within CloudFront you can control the cache key for objects that are cached at CloudFront edge locations. We will use the `CacheKey` parametet to specify wich query string parameters should be included in the cache key. In our case we will use the `width` and `height` parameters.
+3. [Default cache behavior](https://docs.aws.amazon.com/cloudfront/latest/APIReference/API_DefaultCacheBehavior.html) -> We ware using the Default Cache Behavior to define how CloudFront processes requests and serves content from the origin. This is also the point in which we will associate the Lambda functions with the distribution.
+
+In the end we will using the above parts in the definition of the CloudFront distribution. 
+
 ```fsharp
 let cloudFrontDistribution =
 
+    let s3OriginConfigArgs =
+        DistributionOriginS3OriginConfigArgs(
+            OriginAccessIdentity = originAccessIdentity.CloudfrontAccessIdentityPath
+        )
 
 
-        let s3OriginConfigArgs =
-            DistributionOriginS3OriginConfigArgs(
-                OriginAccessIdentity = originAccessIdentity.CloudfrontAccessIdentityPath
-            )
+    let originArgs =
+        DistributionOriginArgs(
+            DomainName = bucket.BucketRegionalDomainName,
+            OriginId = "myS3Origin",
+            S3OriginConfig = s3OriginConfigArgs
+        )
 
+    let viewerCertificate =
+        DistributionViewerCertificateArgs(CloudfrontDefaultCertificate = true)
 
-        let originArgs =
-            DistributionOriginArgs(
-                DomainName = bucket.BucketRegionalDomainName,
-                OriginId = "myS3Origin",
-                S3OriginConfig = s3OriginConfigArgs
-            )
+    let forwardeValueCookies =
+        DistributionDefaultCacheBehaviorForwardedValuesCookiesArgs(Forward = "none")
 
-        let viewerCertificate =
-            DistributionViewerCertificateArgs(CloudfrontDefaultCertificate = true)
+    let forwardedValuesArgs =
+        DistributionDefaultCacheBehaviorForwardedValuesArgs(
+            QueryString = true,
+            QueryStringCacheKeys =
+                inputList [ input "width"
+                            input "height" ],
+            Cookies = forwardeValueCookies
+        )
 
-        let forwardeValueCookies =
-            DistributionDefaultCacheBehaviorForwardedValuesCookiesArgs(Forward = "none")
+    let lambdaViewerRequestAssociation =
+        DistributionDefaultCacheBehaviorLambdaFunctionAssociationArgs(
+            EventType = "viewer-request",
+            LambdaArn = Output.Format($"{viewerRequestLambda.Arn}:{viewerRequestLambda.Version}"),
+            IncludeBody = false
+        )
 
-        let forwardedValuesArgs =
-            DistributionDefaultCacheBehaviorForwardedValuesArgs(
-                QueryString = true,
-                QueryStringCacheKeys =
-                    inputList [ input "width"
-                                input "height" ],
-                Cookies = forwardeValueCookies
-            )
+    let lambdaOriginResponseAssociation =
+        DistributionDefaultCacheBehaviorLambdaFunctionAssociationArgs(
+            EventType = "origin-response",
+            LambdaArn = Output.Format($"{originResponseLambda.Arn}:{originResponseLambda.Version}"),
+            IncludeBody = false
+        )
 
-        let lambdaViewerRequestAssociation =
-            DistributionDefaultCacheBehaviorLambdaFunctionAssociationArgs(
-                EventType = "viewer-request",
-                LambdaArn = Output.Format($"{viewerRequestLambda.Arn}:{viewerRequestLambda.Version}"),
-                IncludeBody = false
-            )
+    let defaultCacheBehaviorArgs =
+        DistributionDefaultCacheBehaviorArgs(
+            AllowedMethods =
+                inputList [ input "GET"
+                            input "HEAD"
+                            input "OPTIONS" ],
+            CachedMethods = inputList [ input "GET"; input "HEAD" ],
+            TargetOriginId = "myS3Origin",
+            ForwardedValues = forwardedValuesArgs,
+            ViewerProtocolPolicy = "redirect-to-https",
+            MinTtl = 100,
+            DefaultTtl = 3600,
+            MaxTtl = 86400,
+            SmoothStreaming = false,
+            Compress = true,
+            LambdaFunctionAssociations =
+                inputList [ input lambdaViewerRequestAssociation
+                            input lambdaOriginResponseAssociation ]
+        )
 
-        let lambdaOriginResponseAssociation =
-            DistributionDefaultCacheBehaviorLambdaFunctionAssociationArgs(
-                EventType = "origin-response",
-                LambdaArn = Output.Format($"{originResponseLambda.Arn}:{originResponseLambda.Version}"),
-                IncludeBody = false
-            )
+    let geoRestrictions =
+        DistributionRestrictionsGeoRestrictionArgs(RestrictionType = "none")
 
-        let defaultCacheBehaviorArgs =
-            DistributionDefaultCacheBehaviorArgs(
-                AllowedMethods =
-                    inputList [ input "GET"
-                                input "HEAD"
-                                input "OPTIONS" ],
-                CachedMethods = inputList [ input "GET"; input "HEAD" ],
-                TargetOriginId = "myS3Origin",
-                ForwardedValues = forwardedValuesArgs,
-                ViewerProtocolPolicy = "redirect-to-https",
-                MinTtl = 100,
-                DefaultTtl = 3600,
-                MaxTtl = 86400,
-                SmoothStreaming = false,
-                Compress = true,
-                LambdaFunctionAssociations =
-                    inputList [ input lambdaViewerRequestAssociation
-                                input lambdaOriginResponseAssociation ]
-            )
+    let restrictionArgs =
+        DistributionRestrictionsArgs(GeoRestriction = geoRestrictions)
 
-        let geoRestrictions =
-            DistributionRestrictionsGeoRestrictionArgs(RestrictionType = "none")
+    let cloudFrontDistributionArgs =
+        DistributionArgs(
+            Origins = originArgs,
+            Enabled = true,
+            Comment = "Distribution for content delivery",
+            DefaultRootObject = "index.html",
+            PriceClass = "PriceClass_100",
+            ViewerCertificate = viewerCertificate,
+            DefaultCacheBehavior = defaultCacheBehaviorArgs,
+            Restrictions = restrictionArgs
+        )
 
-        let restrictionArgs =
-            DistributionRestrictionsArgs(GeoRestriction = geoRestrictions)
-
-        let cloudFrontDistributionArgs =
-            DistributionArgs(
-                Origins = originArgs,
-                Enabled = true,
-                Comment = "Distribution for content delivery",
-                DefaultRootObject = "index.html",
-                PriceClass = "PriceClass_100",
-                ViewerCertificate = viewerCertificate,
-                DefaultCacheBehavior = defaultCacheBehaviorArgs,
-                Restrictions = restrictionArgs
-            )
-
-        Distribution("imageResizerDistribution", cloudFrontDistributionArgs)
+    Distribution("imageResizerDistribution", cloudFrontDistributionArgs)
 ```
 ##### Outputs
 
-At the end of our infrastructure code we define some outputs. These are not necessary in our case, but Pulumi will log the values in the deployment.  
+At the end of our infrastructure code we define some outputs. These are not necessary in our case, but Pulumi will log the values after the deployment and we will have an overview of the resources we have created.
+ 
 
 ```fsharp
-    dict [ ("BucketName", bucket.Id :> obj)
-           ("Distribution", cloudFrontDistribution.Id :> obj)
-           ("LambdaRole", lambdaRole.Arn :> obj)
-           ("OriginAccessIdentity", originAccessIdentity.IamArn :> obj)
-           ("ViewerRequestLambda", viewerRequestLambda.Arn :> obj)
-           ("OriginResponseLambda", originResponseLambda.Arn :> obj)
-           ("ImageBucketPolicy", imageBucketPolicy.Id :> obj) ]
+dict [ ("BucketName", bucket.Id :> obj)
+        ("Distribution", cloudFrontDistribution.Id :> obj)
+        ("LambdaRole", lambdaRole.Arn :> obj)
+        ("OriginAccessIdentity", originAccessIdentity.IamArn :> obj)
+        ("ViewerRequestLambda", viewerRequestLambda.Arn :> obj)
+        ("OriginResponseLambda", originResponseLambda.Arn :> obj)
+        ("ImageBucketPolicy", imageBucketPolicy.Id :> obj) ]
 ``` 
