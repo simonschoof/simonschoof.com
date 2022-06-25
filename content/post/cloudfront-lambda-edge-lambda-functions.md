@@ -18,6 +18,8 @@ This post is part of a small article series about facilitating CloudFront and La
 
 In this part we will show how to implement and build the Lambda@Edge functions for the viewer request and origin response functions.
 
+{{< figure2 src="images/cloudfront_lambda_workflow.svg" class="cloudfront-lambda-workflow" caption="CloudFront lambda workflow. Modified [original image](https://d2908q01vomqb2.cloudfront.net/5b384ce32d8cdef02bc3a139d4cac0a22bb029e8/2018/02/20/Social-Media-Image-Resize-Images.png)" attrrel="noopener noreferrer" >}} 
+
 ```
 .
 |
