@@ -22,6 +22,7 @@ As the original blog post from Amazon is quite long I want to break up the artic
 
 
 So in this article we give a brief introduction to CloudFront and Lambda@Edge. In the second part we will show ho to setup the infrastructure with Pulumi. In the third part we will implement the resizing functions using TypeScript. Last but not least we will show how to deploy the resizing service to AWS using Pulumi and GitHub Actions.
+All of the code can be found in [this Git repository on Github](https://github.com/simonschoof/lambda-at-edge-example).  
 
 ### CloudFront and Lambda@Edge
 
@@ -35,7 +36,7 @@ In this request flow, there exist four trigger points in which the request or re
 
 {{< figure2 src="images/cloudfront_trigger_points.svg" class="cloudfront-trigger-points" caption="CloudFront trigger points. Modified [original image](https://d2908q01vomqb2.cloudfront.net/5b384ce32d8cdef02bc3a139d4cac0a22bb029e8/2018/02/01/1.png) " attrrel="noopener noreferrer" >}} 
 
-Further information about the trigger points can be found in the original post by [Amazon](https://aws.amazon.com/blogs/networking-and-content-delivery/resizing-images-with-amazon-cloudfront-lambdaedge-aws-cdn-blog/).
+Further information about the trigger points can be found in the original post by [Amazon](https://aws.amazon.com/blogs/networking-and-content-delivery/resizing-images-with-amazon-cloudfront-lambdaedge-aws-cdn-blog/)and the [developer guide](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-cloudfront-trigger-events.html).
 
 
 For our example we will extend the CloudFront behaviour by associating Lambda functions with the viewer request and the origin response trigger points. In the viewer request we will check if the resizing parameters are set in the query string and if they are in a given limit. If correct resizing parameters are provided we will check if the image is already cached in the CloudFront edge location. If the image is cached we will return the cached image. If the image is not cached we will send the request to the origin and resize the image and cache it in the CloudFront edge location. As mentioned before, the example here is a bit more simple then the one provided by Amazon. For instance we will not store the resized images in the S3 Bucket. Finally should also have a look at the [restrictions](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/edge-functions-restrictions.html) and [quotas](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cloudfront-limits.html#limits-lambda-at-edge) on lambda@Edge functions, so that we can make sure that Lambda@Edge is sufficient for our use case. 

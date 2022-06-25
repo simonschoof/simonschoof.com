@@ -12,7 +12,7 @@ tags = [
 series = "CloudFront and Lambda@Edge with Pulumi"
 draft = true
 +++
-This post is part of a small article series about facilitating CloudFront and Lambda@Edge with Pulumi for on-the-fly image resizing.  
+This post is part of a small article series about facilitating CloudFront and Lambda@Edge with Pulumi for on-the-fly image resizing. The code for this part can be found [here](https://github.com/simonschoof/lambda-at-edge-example/tree/main/pulumi). 
 {{< series "CloudFront and Lambda@Edge with Pulumi" >}}  
 
 In this part we will define the necessary AWS infrastructure using [Pulumi with F#](https://www.pulumi.com/docs/intro/languages/dotnet/). How to [setup Pulumi](https://www.pulumi.com/docs/get-started/) ist not part of this article. Nor is the explanation of [Pulumis architecture and concepts](https://www.pulumi.com/docs/intro/concepts/). One important concept of Pulumi to mention is [inputs and outputs of resources](https://www.pulumi.com/docs/intro/concepts/inputs-outputs/). It is crucial to get an understanding of this concept to be able to define infrastructure with Pulumi. Unfortuanetly F#s type system is more rigid than the one of C# and needs explicit type conversions for the input and output types of Pulumi. To achieve this in a more F# idiomatic manner and ease there are existing [helper functions](https://github.com/pulumi/pulumi/blob/master/sdk/dotnet/Pulumi.FSharp/Library.fs), [libraries](https://github.com/UnoSD/Pulumi.FSharp.Extensions) and [discussions](https://github.com/pulumi/pulumi/issues/3644) how to get to a more idiomatic experience with Pulumi and F#.                
@@ -49,14 +49,19 @@ let bucket =
 
 ##### IAM
 
-In the next step we define our IAM policies so that CloudFront and the lambda functions can access the bucket
-Therefore we create an [*Origin Access Identity*](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html), a Lambda role, Lambda and CloudFront principals and eventually a bucket policy. 
+In the second step we define our IAM policies so that CloudFront and the AWS Lambda functions can access the origin AWS S3 Bucket.
+
+Therefore we create the following resources:
+1. [An Origin Access Identity](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html) -> This is a special CloudFront user we can use to access the private origin S3 Bucket.
+2. [A AWS Lambda execution role](https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html) with permission to call the AWS Security Token Service AssumeRole action.
+3. [Two Principals](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html) -> One for Lambda and one for CloudFront. 
+4. [A AWS S3 Bucket policy](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-policy-language-overview.html) -> In the policy we grant the permissions for Lambda and CloudFront to access the origin AWS S3 Bucket. 
+
 
 ```fsharp
 let originAccessIdentity =
     let originAccessIdentityArgs =
         OriginAccessIdentityArgs(Comment = "Access identy to access the origin bucket")
-    
     OriginAccessIdentity("Cloudfront Origin Access Identity", originAccessIdentityArgs)
 
 let lambdaRole =
@@ -103,39 +108,39 @@ let imageBucketPolicy =
                 inputList [ io bucket.Arn
                             io (Output.Format($"{bucket.Arn}/*")) ]
         )
-    
-    let putObjectAndListBucketStatement =
+
+    let listBucketStatement =
         GetPolicyDocumentStatementInputArgs(
             Principals = inputList [ input lambdaPrincipal ],
             Actions =
-                inputList [ input "s3:PutObject"
-                            input "s3:ListBucket" ],
+                inputList [ input "s3:ListBucket" ],
             Resources =
                 inputList [ io bucket.Arn
                             io (Output.Format($"{bucket.Arn}/*")) ]
         )
-    
+
     let policyDocumentInvokeArgs =
         GetPolicyDocumentInvokeArgs(
             Statements =
                 inputList [ input getObjectStatement
-                            input putObjectAndListBucketStatement ]
+                            input listBucketStatement ]
         )
-    
+
     let policyDocument =
         GetPolicyDocument.Invoke(policyDocumentInvokeArgs)
-    
+
     let bucketPolicyArgs =
         BucketPolicyArgs(Bucket = bucket.Id, Policy = io (policyDocument.Apply(fun (pd) -> pd.Json)))
-
     BucketPolicy("imageBucketpolicy", bucketPolicyArgs)
 ```
 
 ##### Lambda
 
-Lambda functions for viewer request and origin response
-Lambda functions with inlined code which just forwards and returns the viewer request and the origin response defined as a StringAsset.
-Also a custom resource option because for Lambda@Edge the origin function has to be located in us-east-1.
+In the third step we define two Lambda functions for the origin response and viewer request trigger points. There are some points we want to emphasize for the definition of the Lambda functions: 
+
+1. [US East](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/edge-functions-restrictions.html) -> The Lambda function has to be in the `us-east-1`region.
+2. [Publish = true](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-edge-how-it-works.html) ->  The `Publish` flag has to be set to true, so that a new version of the Lambda function will be published during the creation or an update of the Lambda  function. A lambda function can only be associated to CloudFront with a given version number.
+3. [Code](https://www.pulumi.com/docs/intro/concepts/assets-archives/) -> We use an inlined Pulumi `StringAsset` for the `Code` parameter of the Lambda function definition. The inlined code fragments do nothing more than forwarding and returning the CloudFront viewer request and origin response. We will replace the code fragments with the implementation for the image resizing in the {{< next-in-section "next article" >}}.  
 
 ```fsharp
  let lambdaOptions =
@@ -207,8 +212,14 @@ Also a custom resource option because for Lambda@Edge the origin function has to
 ```
 
 ##### CloudFront
-Finally the distribution
+Finally we are able to define the CloudFront distribution.
+Plenty of configuration options for different uses cases. 
+We will not explain all of the here, but recommend to thoroughly read the documentation. List the important point that we do to build up the distribution. 
 
+1. Origin -> The S3 Bucket we defined in the beginning.
+2. Forwarded values -> Define that we want to forward the width and height query parameters and also use them as cache keys so that a resizing call with the same parameters is put into the CloudFront cache.
+3. Default Cache Behavior -> Defining the default cache behavior of CloudFront -> This is where we associate both Lambda functions to their respective trigger points.
+4. Defining the distribution itself using all values defined in points 1. - 3.  
 ```fsharp
 let cloudFrontDistribution =
 
@@ -297,6 +308,8 @@ let cloudFrontDistribution =
         Distribution("imageResizerDistribution", cloudFrontDistributionArgs)
 ```
 ##### Outputs
+
+At the end of our infrastructure code we define some outputs. These are not necessary in our case, but Pulumi will log the values in the deployment.  
 
 ```fsharp
     dict [ ("BucketName", bucket.Id :> obj)
