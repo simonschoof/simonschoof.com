@@ -14,9 +14,9 @@ draft = true
 +++
 
 After writing my [first article about my first steps in F#]({{< relref "/post/first-steps-fsharp.md" >}}
-), I was thinking about which project I would like to do next. I decided to continue with F# but in a different setting. I would like to use F# with Pulumi to setup CloudFront and Lambda@Edge to resize images on the fly. Therefore I followed the blog post from [Amazon](https://aws.amazon.com/blogs/networking-and-content-delivery/resizing-images-with-amazon-cloudfront-lambdaedge-aws-cdn-blog/) where they setup a simple image resizing service with CloudFront and Lambda@Edge but using CloudFormation instead of Pulumi. I also simplified the Lambda@Edge functions by reducing the functionality of the resizing. Finally I am also using TypeScript to write the Lambda@Edge functions instead of JavaScript.
+), I was thinking about which project I would like to do next. I decided to continue with [F#](https://fsharp.org/)# but in a different setting. I would like to use F# with [Pulumi](https://www.pulumi.com/) to setup [CloudFront and Lambda@Edge to resize images on the fly](https://aws.amazon.com/blogs/networking-and-content-delivery/resizing-images-with-amazon-cloudfront-lambdaedge-aws-cdn-blog/). Therefore I followed the blog post from [Amazon](https://aws.amazon.com/blogs/networking-and-content-delivery/resizing-images-with-amazon-cloudfront-lambdaedge-aws-cdn-blog/) where they setup a simple image resizing service with CloudFront and Lambda@Edge but using CloudFormation instead of Pulumi. I also simplified the Lambda@Edge functions by reducing the functionality of the resizing. Finally I am also using TypeScript to write the Lambda@Edge functions instead of JavaScript.
 
-As the original blog post from Amazon is quite long I want to break up the article into multiple parts:
+As the original blog post from Amazon is quite long I decided to write a small series of articles about the setup of CloudFront and Lambda@Edge with Pulumi.
 
 {{< series "CloudFront and Lambda@Edge with Pulumi" >}} 
 

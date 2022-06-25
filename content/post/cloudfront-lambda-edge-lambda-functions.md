@@ -13,9 +13,28 @@ tags = [
 series = "CloudFront and Lambda@Edge with Pulumi"
 draft = true
 +++
-Implement lambd@edge functions with typescript 
+This post is part of a small article series about facilitating CloudFront and Lambda@Edge with Pulumi for on-the-fly image resizing. The code for this part can be found [here](https://github.com/simonschoof/lambda-at-edge-example/tree/main/lambda). 
+{{< series "CloudFront and Lambda@Edge with Pulumi" >}}
 
-{{< series "CloudFront and lambda@edge with Pulumi" >}}
+In this part we will show how to implement and build the Lambda@Edge functions for the viewer request and origin response functions.
+
+```
+.
+|
+└───lambda
+│   │
+│   └───origin-response-function
+│   |   └───dist
+│   |   │   index.js
+│   |   │   
+│   |   └───node_modules   
+|   |   
+│   └───viewer-request-function
+│       └───dist
+│           index.js  
+│   
+└───pulumi
+```
 
 ```fsharp
 Code =

@@ -32,7 +32,7 @@ This is just the obvious security restriction. In a production environment you p
   * Disableb public object access
   * Using signed URLs or cookies
   * Geo restrictions
-  * A *Web Application Firewall*  to prevent [*Denial of Wallet* attacks](https://medium.com/geekculture/denial-of-wallet-attack-3d8ecadfbd4e)
+  * A Web Application Firewall to prevent [Denial of Wallet attacks](https://medium.com/geekculture/denial-of-wallet-attack-3d8ecadfbd4e)
 
 We also set a constant bucket name as we want to reference the bucket in our Lambda@Edge functions.
 
@@ -56,7 +56,6 @@ Therefore we create the following resources:
 2. [A AWS Lambda execution role](https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html) with permission to call the AWS Security Token Service AssumeRole action.
 3. [Two Principals](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html) -> One for Lambda and one for CloudFront. 
 4. [A AWS S3 Bucket policy](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-policy-language-overview.html) -> In the policy we grant the permissions for Lambda and CloudFront to access the origin AWS S3 Bucket. 
-
 
 ```fsharp
 let originAccessIdentity =
