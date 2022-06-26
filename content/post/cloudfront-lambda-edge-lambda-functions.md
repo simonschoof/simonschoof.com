@@ -16,9 +16,19 @@ draft = true
 This post is part of a small article series about facilitating CloudFront and Lambda@Edge with Pulumi for on-the-fly image resizing. The code for this part can be found [here](https://github.com/simonschoof/lambda-at-edge-example/tree/main/lambda). 
 {{< series "CloudFront and Lambda@Edge with Pulumi" >}}
 
-In this part we will show how to implement and build the Lambda@Edge functions for the viewer request and origin response functions.
+In this part we will show how to implement and build the Lambda@Edge functions for the viewer request and origin response functions. As shown in the image below, the viewer request function is responsible for parsing and validating the query parameters `width` and `height`. In addition it checks if the image is in the CloudFront cache and returns the image from the cache if available. The origin response function is responsible for resizing the image if rezising parameters were added to the query.
 
 {{< figure2 src="images/cloudfront_lambda_workflow.svg" class="cloudfront-lambda-workflow" caption="CloudFront lambda workflow. Modified [original image](https://d2908q01vomqb2.cloudfront.net/5b384ce32d8cdef02bc3a139d4cac0a22bb029e8/2018/02/20/Social-Media-Image-Resize-Images.png)" attrrel="noopener noreferrer" >}} 
+
+In the following sections of this post we will: 
+* Explain the folder structure of the project, which is important for the integration of the Lambda@Edge functions into the CloudFront distribution. 
+* Show how to the implementation of the viewer request and origin response functions looks like. 
+* Show how to build the viewer request and origin response functions. 
+
+### Project Structure
+
+For the sake of clarity we put the code for the Lambda@Edge function in separate folders and we will use the folder structure shown below to integrate the functions into the CloudFront distribution. Therefore we will reference the `dist` folders of the functions in a relative path in the function definitions in our Pulumi code. 
+ 
 
 ```
 .
@@ -37,6 +47,8 @@ In this part we will show how to implement and build the Lambda@Edge functions f
 │   
 └───pulumi
 ```
+
+As we can see in the snippet below and also have seen in the {{< next-in-section "previous article" >}} we inlined the viewer request function code that does nothing more than returning the original viewer request.  
 
 ```fsharp
 Code =
@@ -58,6 +70,9 @@ Code =
     )
 ```
 
+We will replace the inlined function code in the Lambda function definition with an [`AssetArchive`](https://www.pulumi.com/docs/intro/concepts/assets-archives/) that contains the function code and directs to the `dist` folder of the viewer request function. 
+
+
 ```fsharp
 Code =
     input (
@@ -66,6 +81,8 @@ Code =
         )
     )
 ```
+
+We have done the same for the origin response function, but returning the CloudFront response this time.  
 
 ```fsharp
 Code =
@@ -87,6 +104,9 @@ Code =
     )
 ```
 
+For the origin response function we will also replace the inlined function code with an [`AssetArchive`](https://www.pulumi.com/docs/intro/concepts/assets-archives/) that contains the function code and directs to the `dist` folder of the origin response function. Note that we added the `node_modules` folder to the archive because the origin response function depends on the [Sharp library](https://sharp.pixelplumbing.com/), which we will use to resize the images.
+
+
 ```fsharp
 Code =
     input (
@@ -97,17 +117,31 @@ Code =
     )
 ```
 
+### Viewer Request Function
+
+##### Implementation
+
+The viewer request function is associated with the corresponding CloudFront trigger point. The function gets triggered when an viewer requests an image from CloudFront. Within the viewer request function we want to parse  and validate the resizing parameters `width` and `height` from the viewer request. If the query parameters are not provided, we will return the original image. Therefore the steps for the implementation of the viewer request function are:
+
+1. Intercept the viewer request.
+2. Parse the query parameters `width` and `height`.
+3. Validate the query parameters.
+    * `width` and `height` must be numbers.
+    * `width` and `height` must be positive integers.
+    * `width` and `height` must be less than or equal to the maximum allowed image width and height.
+4. Return the request with valid resizing parameters or the original image if the resizing paramters where faulty.
+
 ```typescript
 import { CloudFrontRequest } from "aws-lambda";
 
 interface ResizeParameters {
-    width?: number;
-    height?: number;
+    width: number;
+    height: number;
 }
 
 const AllowedDimensions = {
-    maxWidth: 1000,
-    maxHeight: 1000,
+    maxWidth: 10000,
+    maxHeight: 10000,
 }
 
 export async function handler(event: { Records: { cf: { request: any; } }[]; }): Promise<CloudFrontRequest> {
@@ -119,13 +153,9 @@ export async function handler(event: { Records: { cf: { request: any; } }[]; }):
 
     const params = parseParams(urlsSearchParams);
 
-    if (!validateParams(params)) {
+    if (paramsValid(params)) {
         console.log("Provided dimensions: width: " + params.width + " height: " + params.height);
         console.log("Request querystring: ", request.querystring);
-
-        request.querystring = `width=${params.width}&height=${params.height}`;
-        console.log("New request querystring: ", request.querystring);
-
     } else {
         console.log("No dimension or invalid dimension params found, returning original image");
         request.querystring = "";
@@ -139,18 +169,8 @@ function parseParams(params: URLSearchParams): ResizeParameters {
     const widthString = params.get('width');
     const heightString = params.get('height');
 
-    if (widthString === null || heightString === null) {
-        const resizerParams: ResizeParameters = {
-            width: undefined,
-            height: undefined,
-        }
-        return resizerParams
-    }
-
-    const width: number = (parseInt(widthString, 10) || AllowedDimensions.maxWidth) > AllowedDimensions.maxWidth ?
-        AllowedDimensions.maxWidth : parseInt(widthString, 10);
-    const height: number = (parseInt(heightString, 10) || AllowedDimensions.maxHeight) > AllowedDimensions.maxHeight ?
-        AllowedDimensions.maxHeight : parseInt(heightString, 10);
+    const width: number = widthString ? parseInt(widthString, 10) : NaN;
+    const height: number = heightString ? parseInt(heightString, 10): NaN; 
 
     const resizerParams: ResizeParameters = {
         width: width,
@@ -160,24 +180,34 @@ function parseParams(params: URLSearchParams): ResizeParameters {
 
 }
 
-function validateParams(params: ResizeParameters) {
-    return !params.width || !params.height || params.width <= 0 || params.height <= 0;
+function paramsValid(params: ResizeParameters) {
+    return !isNaN(params.width) 
+    && !isNaN(params.height)
+    && params.width > 0 
+    && params.height > 0
+    && params.width <= AllowedDimensions.maxWidth
+    && params.height <= AllowedDimensions.maxHeight;
 }
 ```
 
+##### Build
+
+To build the viewer request function we can simply run the following command locally:
+ 
 ```bash
-docker build --tag amazonlinux:nodejs .  
+npm install && tsc --build 
 ```
 
-```bash
-docker run --rm --volume ${PWD}:/build amazonlinux:nodejs /bin/bash -c "source ~/.bashrc; npm init -f -y; rm -rf node_modules; npm install; npm run build"
-```
+### Origin Response Function
 
-```bash
-export SHARP_IGNORE_GLOBAL_LIBVIPS=true
-rm -rf node_modules/sharp 
-npm install  --unsafe-perm --arch=x64 --platform=linux --target=14.19.0 sharp
-```
+##### Implementation
+
+The origin response function is associated with the corresponding CloudFront trigger point. The function gets triggered when an response is returned from the CloudFront origin. Within the origin response function we want to resize the image and return the resized image. Therefore the steps for the implementation of the origin response function are:
+
+1. Intercept the origin response and check if resizing parameters are provided. Otherwise return the original response.
+2. Get the image from the S3 Bucket.
+3. Resize the image with Sharp and the provided resizing parameters.
+4. Return the resized image.
 
 ```typescript
 import { CloudFrontResultResponse } from "aws-lambda";
@@ -240,4 +270,16 @@ export async function handler(event: { Records: { cf: { response: any; request: 
         bodyEncoding : 'base64'
     }
 }
+```
+
+##### Build
+
+ Since the origin response function uses the [Sharp library](https://sharp.pixelplumbing.com/) which needs the [`libvips` native extension](https://sharp.pixelplumbing.com/install) we cannot simply build the function locally. We have to build and package the function for the Lambda execution environment. We can do this by using the [Amazon Linux Docker image](https://hub.docker.com/_/amazonlinux/), defining a [Dockerfile](https://github.com/simonschoof/lambda-at-edge-example/blob/main/lambda/origin-response-function/Dockerfile) and build the function with the following commands: 
+
+```bash
+docker build --tag amazonlinux:nodejs .  
+```
+
+```bash
+docker run --rm --volume ${PWD}:/build amazonlinux:nodejs /bin/bash -c "source ~/.bashrc; npm init -f -y; rm -rf node_modules; npm install; npm run build"
 ```

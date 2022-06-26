@@ -24,7 +24,7 @@ Regarding the setup of Pulumi for this small project we will use the default Pul
 
 ##### S3
 
-As we have seen in the previous article CloudFront needs an origin from where it can fetch the content before it can be stored in the regional cache. This can be a custom origin or a S3 bucket. We will just go with an S3 bucket as we want to define the infrastructure within AWS.
+As we have seen in the {{< next-in-section "previous article" >}} CloudFront needs an origin from where it can fetch the content before it can be stored in the regional cache. This can be a custom origin or a S3 bucket. We will just go with an S3 bucket as we want to define the infrastructure within AWS.
 Therefore we define the origin bucket first. We will set the bucket private to restrict public access on the bucket.
 This is just the obvious security restriction. In a production environment you probably want to add additional layers of security like: 
   
@@ -216,7 +216,7 @@ Eventually we are able to define the CloudFront distribution.
 As mentioned before CloudFront comes with [a multitude of configuration options](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/ConfiguringCaching.html) for different uses cases. 
 We will not explain them here, but recommend to thoroughly read the [documentation](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html). As to the many options available for the distribution, we will give a short overview of the of steps we will take to create the distribution:
 
-1. [Origin](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/DownloadDistS3AndCustomOrigins.html#using-s3-as-origin) -> We will use the S3 bucket we created earlier as the origin.
+1. [Origin](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/DownloadDistS3AndCustomOrigins.html#using-s3-as-origin) -> We will use the S3 bucket we created earlier as the origin<cite>[^1]<cite>.
 2. [Cache keys](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/controlling-the-cache-key.html) -> Within CloudFront you can control the cache key for objects that are cached at CloudFront edge locations. We will use the `CacheKey` parametet to specify wich query string parameters should be included in the cache key. In our case we will use the `width` and `height` parameters.
 3. [Default cache behavior](https://docs.aws.amazon.com/cloudfront/latest/APIReference/API_DefaultCacheBehavior.html) -> We ware using the Default Cache Behavior to define how CloudFront processes requests and serves content from the origin. This is also the point in which we will associate the Lambda functions with the distribution.
 
@@ -320,4 +320,8 @@ dict [ ("BucketName", bucket.Id :> obj)
         ("ViewerRequestLambda", viewerRequestLambda.Arn :> obj)
         ("OriginResponseLambda", originResponseLambda.Arn :> obj)
         ("ImageBucketPolicy", imageBucketPolicy.Id :> obj) ]
-``` 
+```
+
+In the {{< next-in-section "next part" >}} we will show how to implement and build the Lambda@Edge functions with TypeScript.  
+
+[^1]: Make sure to use the `BucketRegionalDomainName` property instead of the `BucketDomainName` property when defining the origin. Otherwise CloudFront will reroute requests to the bucket domain leaving the origin unaccessible if you are working with a private bucket.
