@@ -53,7 +53,7 @@ In the second step we define our IAM policies so that CloudFront and the AWS Lam
 
 Therefore we create the following resources:
 1. [An Origin Access Identity](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html) -> This is a special CloudFront user we can use to access the private origin S3 Bucket.
-2. [A AWS Lambda execution role](https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html) with permission to call the AWS Security Token Service AssumeRole action.
+2. [A AWS Lambda execution role](https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html) -> With permission to call the AWS Security Token Service AssumeRole action.
 3. [Two Principals](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html) -> One for Lambda and one for CloudFront. 
 4. [A AWS S3 Bucket policy](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-policy-language-overview.html) -> In the policy we grant the permissions for Lambda and CloudFront to access the origin AWS S3 Bucket. 
 
