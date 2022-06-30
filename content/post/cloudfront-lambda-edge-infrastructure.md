@@ -24,7 +24,7 @@ As for setting up Pulumi for this small project, we will use the default Pulumi 
 
 ##### S3
 
-AAs we saw in the {{< prev-in-section "previous article" >}}  CloudFront requires an origin from which it can retrieve the content before it can be stored in the regional cache. This can be a custom origin or an S3 bucket. We will choose an S3 bucket because we want to define the infrastructure within AWS.
+As we saw in the {{< prev-in-section "previous article" >}}  CloudFront requires an origin from which it can retrieve the content before it can be stored in the regional cache. This can be a custom origin or an S3 bucket. We will choose an S3 bucket because we want to define the infrastructure within AWS.
 Therefore, we first define the origin bucket. We set the bucket to private to restrict public access to the bucket.
 This is just an obvious security restriction. In a production environment, you will probably want to add additional layers of security: 
 
