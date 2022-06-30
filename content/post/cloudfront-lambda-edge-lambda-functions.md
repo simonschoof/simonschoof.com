@@ -12,7 +12,7 @@ tags = [
 series = "CloudFront and Lambda@Edge with Pulumi"
 draft = false
 +++
-This post is part of a small series of articles on using Pulumi to leverage CloudFront and Lambda@Edge for on-the-fly image resizing. The code for this part can be found [here](https://github.com/simonschoof/lambda-at-edge-example/tree/main/lambda). 
+This post is part of a small series of articles on using Pulumi to leverage CloudFront and Lambda@Edge for on the fly image resizing. The code for this part can be found [here](https://github.com/simonschoof/lambda-at-edge-example/tree/main/lambda). 
 {{< series "CloudFront and Lambda@Edge with Pulumi" >}}
 
 This part shows how to implement and build the Lambda@Edge functions for the `viewer request` and `origin response` functions. As shown in the figure below, the viewer request function is responsible for parsing and validating the query parameters `width` and `height`. It also checks if the image is in the CloudFront cache and returns the image from the cache if it is available. The origin response function is responsible for resizing the image if resizing parameters have been added to the query.
