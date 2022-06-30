@@ -1,7 +1,7 @@
 +++
 author = "Simon Schoof"
 title = "Pulumi, CloudFront & Lambda@Edge: Infrastructure"
-date = "2022-06-02"
+date = "2022-06-29"
 description = "Setup AWS CloudFront and AWS Lambda@Edge with Pulumi"
 tags = [
     "infrastructure as code", 
@@ -10,12 +10,12 @@ tags = [
     "fsharp"
 ]
 series = "CloudFront and Lambda@Edge with Pulumi"
-draft = true
+draft = false
 +++
-This post is part of a small series of articles about CloudFront and Lambda@Edge using Pulumi for on the fly image resizing. The code for this part can be found [here](https://github.com/simonschoof/lambda-at-edge-example/tree/main/pulumi). 
+This post is part of a small series of articles on using Pulumi to leverage CloudFront and Lambda@Edge for on-the-fly image resizing. The code for this part can be found [here](https://github.com/simonschoof/lambda-at-edge-example/tree/main/pulumi). 
 {{< series "CloudFront and Lambda@Edge with Pulumi" >}}  
 
-In this part, we will define the necessary AWS infrastructure using [Pulumi with F#](https://www.pulumi.com/docs/intro/languages/dotnet/). How to set up [Pulumi](https://www.pulumi.com/docs/get-started/) is not part of this article. Neither is explaining [Pulumi`s architecture and concepts](https://www.pulumi.com/docs/intro/concepts/). One important concept of Pulumi that should be mentioned is [inputs and outputs of resources](https://www.pulumi.com/docs/intro/concepts/inputs-outputs/). It is important to understand this concept in order to define an infrastructure with Pulumi. Unfortunately, F#'s type system is more rigid than C#'s and requires explicit type conversions for Pulumi's input and output types. To accomplish this in a more idiomatic way in F#, there are [helper functions](https://github.com/pulumi/pulumi/blob/master/sdk/dotnet/Pulumi.FSharp/Library.fs), [libraries](https://github.com/UnoSD/Pulumi.FSharp.Extensions), and [discussions](https://github.com/pulumi/pulumi/issues/3644) on how to get to a more idiomatic experience with Pulumi and F#.                
+In this part, we will define the necessary AWS infrastructure using [Pulumi with F#](https://www.pulumi.com/docs/intro/languages/dotnet/). How to set up [Pulumi](https://www.pulumi.com/docs/get-started/) is not part of this article. Neither is explaining [Pulumi`s architecture and concepts](https://www.pulumi.com/docs/intro/concepts/). One important concept of Pulumi that should be mentioned is [inputs and outputs of resources](https://www.pulumi.com/docs/intro/concepts/inputs-outputs/). It is important to understand this concept in order to define an infrastructure with Pulumi. Unfortunately, F#'s type system is more rigid than C#'s and requires explicit type conversions for Pulumi's input and output types. To accomplish this in a more idiomatic way in F#, there are [helper functions](https://github.com/pulumi/pulumi/blob/master/sdk/dotnet/Pulumi.FSharp/Library.fs), [libraries](https://github.com/UnoSD/Pulumi.FSharp.Extensions), and [discussions](https://github.com/pulumi/pulumi/issues/3644) on how to get to a more idiomatic experience with Pulumi and F#. In this article we will use only the helper functions.
 As for setting up Pulumi for this small project, we will use the default Pulumi configuration for a single developer and also use the [Pulumi Service as a backend](https://www.pulumi.com/docs/intro/concepts/state/) to store the state of the infrastructure. 
 
 
@@ -24,17 +24,17 @@ As for setting up Pulumi for this small project, we will use the default Pulumi 
 
 ##### S3
 
-As we have seen in the {{< next-in-section "previous article" >}} CloudFront needs an origin from where it can fetch the content before it can be stored in the regional cache. This can be a custom origin or a S3 bucket. We will just go with an S3 bucket as we want to define the infrastructure within AWS.
-Therefore we define the origin bucket first. We will set the bucket private to restrict public access on the bucket.
-This is just the obvious security restriction. In a production environment you probably want to add additional layers of security like: 
-  
-  * SSL only connections
-  * Disableb public object access
-  * Using signed URLs or cookies
-  * Geo restrictions
-  * A Web Application Firewall to prevent [Denial of Wallet attacks](https://medium.com/geekculture/denial-of-wallet-attack-3d8ecadfbd4e)
+AAs we saw in the {{< prev-in-section "previous article" >}}  CloudFront requires an origin from which it can retrieve the content before it can be stored in the regional cache. This can be a custom origin or an S3 bucket. We will choose an S3 bucket because we want to define the infrastructure within AWS.
+Therefore, we first define the origin bucket. We set the bucket to private to restrict public access to the bucket.
+This is just an obvious security restriction. In a production environment, you will probably want to add additional layers of security: 
 
-We also set a constant bucket name as we want to reference the bucket in our Lambda@Edge functions.
+  * SSL only connections
+  * Disabled public object access
+  * Using signed URLs or cookies
+  * Geographic restrictions
+  * A Web Application Firewall to prevent [Denial of Wallet](https://medium.com/geekculture/denial-of-wallet-attack-3d8ecadfbd4e) attacks
+
+We also specify a constant bucket name, since we want to reference the bucket in our Lambda@Edge functions.
 
 ```fsharp
 let bucket =
@@ -49,13 +49,13 @@ let bucket =
 
 ##### IAM
 
-In the second step we define our IAM policies so that CloudFront and the AWS Lambda functions can access the origin AWS S3 Bucket.
+In the second step, we define our IAM policies to allow CloudFront and the AWS Lambda functions to access the AWS S3 bucket.
 
-Therefore we create the following resources:
-1. [An Origin Access Identity](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html) -> This is a special CloudFront user we can use to access the private origin S3 Bucket.
-2. [A AWS Lambda execution role](https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html) -> With permission to call the AWS Security Token Service AssumeRole action.
+To do this, we create the following resources:
+1. [An Origin Access Identity](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html) -> This is a special CloudFront user that we can use to access the private S3 bucket.
+2. [A AWS Lambda execution role](https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html) -> With permission to invoke the AWS Security Token Service AssumeRole action.
 3. [Two Principals](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html) -> One for Lambda and one for CloudFront. 
-4. [A AWS S3 Bucket policy](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-policy-language-overview.html) -> In the policy we grant the permissions for Lambda and CloudFront to access the origin AWS S3 Bucket. 
+4. [A AWS S3 Bucket policy](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-policy-language-overview.html) -> In the policy, we grant Lambda and CloudFront permissions to access the AWS S3 bucket. 
 
 ```fsharp
 let originAccessIdentity =
@@ -135,11 +135,11 @@ let imageBucketPolicy =
 
 ##### Lambda
 
-In the third step we define two Lambda functions for the origin response and viewer request trigger points. There are some points we want to emphasize for the definition of the Lambda functions: 
+In the third step, we define two lambda functions for the trigger points of the origin response and the viewer request. There are some points we want to emphasize when defining the lambda functions:
 
-1. [US East](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/edge-functions-restrictions.html) -> The Lambda function has to be in the `us-east-1`region.
-2. [Publish = true](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-edge-how-it-works.html) ->  The `Publish` flag has to be set to true, so that a new version of the Lambda function will be published during the creation or an update of the Lambda  function. A lambda function can only be associated to CloudFront with a given version number.
-3. [Code](https://www.pulumi.com/docs/intro/concepts/assets-archives/) -> We use an inlined Pulumi `StringAsset` for the `Code` parameter of the Lambda function definition. The inlined code fragments do nothing more than forwarding and returning the CloudFront viewer request and origin response. We will replace the code fragments with the implementation for the image resizing in the {{< next-in-section "next article" >}}.  
+1. [US East](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/edge-functions-restrictions.html) -> The lambda function must be located in the region "us-east-1".
+2. [Publish = true](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-edge-how-it-works.html) ->  The `Publish` flag must be set to true so that a new version of the Lambda function is published when the Lambda function is created or updated. A Lambda function can only be associated with CloudFront with a specific version number.
+3. [Code](https://www.pulumi.com/docs/intro/concepts/assets-archives/) -> We use an inlined Pulumi `StringAsset` for the `Code` parameter of the Lambda function definition. The inlined code fragments do nothing more than forward and return the CloudFront viewer request and origin response. We will replace the code fragments with the implementation for resizing the image in the {{< next-in-section "next article" >}}.  
 
 ```fsharp
 let lambdaOptions =
@@ -212,15 +212,15 @@ let originResponseLambda =
 
 ##### CloudFront
 
-Eventually we are able to define the CloudFront distribution.
-As mentioned before CloudFront comes with [a multitude of configuration options](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/ConfiguringCaching.html) for different uses cases. 
-We will not explain them here, but recommend to thoroughly read the [documentation](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html). As to the many options available for the distribution, we will give a short overview of the of steps we will take to create the distribution:
+Finally, we are able to define the CloudFront distribution.
+As mentioned earlier, CloudFront has [a variety of configuration options](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/ConfiguringCaching.html) for different use cases. 
+We will not explain them here, but recommend reading the [documentation](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html) thoroughly. Among the many options available for the distribution, we provide a brief overview of the steps we will take to build the distribution:
 
-1. [Origin](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/DownloadDistS3AndCustomOrigins.html#using-s3-as-origin) -> We will use the S3 bucket we created earlier as the origin<cite>[^1]<cite>.
-2. [Cache keys](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/controlling-the-cache-key.html) -> Within CloudFront you can control the cache key for objects that are cached at CloudFront edge locations. We will use the `CacheKey` parametet to specify wich query string parameters should be included in the cache key. In our case we will use the `width` and `height` parameters.
-3. [Default cache behavior](https://docs.aws.amazon.com/cloudfront/latest/APIReference/API_DefaultCacheBehavior.html) -> We ware using the Default Cache Behavior to define how CloudFront processes requests and serves content from the origin. This is also the point in which we will associate the Lambda functions with the distribution.
+1. [Origin](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/DownloadDistS3AndCustomOrigins.html#using-s3-as-origin) -> We use the S3 bucket we created earlier as the source<cite>[^1]<cite>.
+2. [Cache keys](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/controlling-the-cache-key.html) -> Within CloudFront, you can control the cache key for objects that are cached at CloudFront edge locations. We use the `CacheKey` parameter to specify which query string parameters to include in the cache key. In our case, we will use the `width` and `height` parameters.
+3. [Default cache behavior](https://docs.aws.amazon.com/cloudfront/latest/APIReference/API_DefaultCacheBehavior.html) -> We are using the Default Cache Behavior to define how CloudFront processes requests and serves content from the origin. This is also the point in which we will associate the Lambda functions with the distribution.
 
-In the end we will using the above parts in the definition of the CloudFront distribution. 
+In the end, we will use the above parts in the CloudFront distribution definition. 
 
 ```fsharp
 let cloudFrontDistribution =
@@ -309,9 +309,8 @@ let cloudFrontDistribution =
 ```
 ##### Outputs
 
-At the end of our infrastructure code we define some outputs. These are not necessary in our case, but Pulumi will log the values after the deployment and we will have an overview of the resources we have created.
+At the end of our infrastructure code we define some outputs. These are not necessary in our case, but Pulumi will log the values after deployment and we will have an overview of the resources we have created.
  
-
 ```fsharp
 dict [ ("BucketName", bucket.Id :> obj)
         ("Distribution", cloudFrontDistribution.Id :> obj)
@@ -321,7 +320,7 @@ dict [ ("BucketName", bucket.Id :> obj)
         ("OriginResponseLambda", originResponseLambda.Arn :> obj)
         ("ImageBucketPolicy", imageBucketPolicy.Id :> obj) ]
 ```
+  
+In the {{< next-in-section "next part" >}}, we show how to implement and build the Lambda@Edge functions using TypeScript. 
 
-In the {{< next-in-section "next part" >}} we will show how to implement and build the Lambda@Edge functions with TypeScript.  
-
-[^1]: Make sure to use the `BucketRegionalDomainName` property instead of the `BucketDomainName` property when defining the origin. Otherwise CloudFront will reroute requests to the bucket domain leaving the origin unaccessible if you are working with a private bucket.
+[^1]: Ensure that you use the `BucketRegionalDomainName` property instead of the `BucketDomainName` property when defining the origin. Otherwise, CloudFront redirects requests to the bucket domain and makes the origin unreachable when you work with a private bucket.
