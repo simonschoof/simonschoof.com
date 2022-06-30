@@ -1,18 +1,36 @@
 User-agent: *
 
-Disallow: /tags/dotnet/
+Disallow: /tags/aws/
 
-Disallow: /post/first-steps-fsharp/
+Disallow: /series/cloudfront-and-lambdaedge-with-pulumi/
 
-Disallow: /tags/fsharp/
-
-Disallow: /tags/functional-programming/
+Disallow: /tags/infrastructure-as-code/
 
 Disallow: /post/
+
+Disallow: /tags/pulumi/
+
+Disallow: /post/cloudfront-lambda-edge-lambda-functions/
+
+Disallow: /series/
 
 Disallow: /
 
 Disallow: /tags/
+
+Disallow: /tags/typescript/
+
+Disallow: /tags/fsharp/
+
+Disallow: /post/cloudfront-lambda-edge-infrastructure/
+
+Disallow: /post/cloudfront-lambda-edge-intro/
+
+Disallow: /tags/dotnet/
+
+Disallow: /post/first-steps-fsharp/
+
+Disallow: /tags/functional-programming/
 
 Disallow: /about/
 
@@ -21,5 +39,3 @@ Disallow: /imprint/
 Disallow: /privacy/
 
 Disallow: /tags/index/
-
-Disallow: /series/

@@ -1,0 +1,259 @@
+<!doctype html><html lang=en-us><head><meta charset=utf-8><title>Pulumi, CloudFront & Lambda@Edge: Infrastructure - Simon Schoof</title><meta name=description content="Setup AWS CloudFront and AWS Lambda@Edge with Pulumi"><meta name=viewport content="width=device-width,initial-scale=1"><link rel=stylesheet href=https://simonschoof.com/css/normalize.css><link rel=stylesheet href=https://simonschoof.com/css/barebones.css><link rel=stylesheet href=https://simonschoof.com/css/custom.css><link rel=stylesheet href=https://simonschoof.com/css/prettify.css><link rel=stylesheet href=https://simonschoof.com/css/syntax.css><link rel=stylesheet href=https://simonschoof.com/css/github-prettify-theme.css><link id=prettify-dark rel=stylesheet href=https://simonschoof.com/css/github-prettify-theme-dark.css disabled><link rel=stylesheet href=https://simonschoof.com/css/fontawesome.css><link rel=stylesheet href=https://simonschoof.com/css/googlefonts-raleway.css type=text/css><script src=https://simonschoof.com/js/site.js></script>
+<script src=https://simonschoof.com/js/fontawesome.js></script>
+<link rel="shortcut icon" href=https://simonschoof.com/images/favicon.png type=image/png></head><body><nav><label for=drop class=toggle><i class="fas fa-bars u-pull-right" aria-hidden=true></i> <span><i class="fas fa-anchor" aria-hidden=true></i>
+Home</span></label>
+<input type=checkbox id=drop><ul class=menu><li><a href=https://simonschoof.com><span><i class="fas fa-anchor" aria-hidden=true></i>
+Home</span></a></li><li class=u-pull-right><a href=https://simonschoof.com/post class=Members><span><i class='fas fa-list'></i> blog</span></a></li><li class=u-pull-right><a href=https://simonschoof.com/about class=Members><span><i class='fas fa-user'></i> about</span></a></li><li class=u-pull-right><span class=toggle-theme-button-span><button id=toggle-theme-btn-id class=toggle-theme-btn title="Toggle theme" aria-hidden=true onclick=toggleTheme()><div class=toggle-theme-btn-overlay-wrap><span id=dark-theme-span class=dark-theme-span><svg class="toggle-theme-svg" fill="none" viewBox="0 3 48 48" style="overflow:visible"><path fill="#fff" d="M12 11.807c-1.2582-1.2587-2.11512-2.86216-2.46238-4.6077C9.19037 5.45375 9.36832 3.64444 10.049 2c-1.94074.38205-3.7234 1.33431-5.12001 2.735-3.905 3.905-3.905 10.237.0 14.142 3.906 3.906 10.23701 3.905 14.14301.0 1.4003-1.3965 2.3525-3.1787 2.735-5.119C20.1625 14.4385 18.3533 14.6164 16.6077 14.2692 14.8622 13.9219 13.2588 13.0651 12 11.807v0z"/></svg></span><span id=light-theme-span class=light-theme-span><svg class="toggle-theme-svg" fill="none" viewBox="0 3 48 48" style="overflow:visible"><path d="M6.995 12c0 2.761 2.246 5.007 5.007 5.007 2.761.0 5.007-2.246 5.007-5.007s-2.246-5.007-5.007-5.007C9.241 6.993 6.995 9.239 6.995 12zM11 19h2v3H11V19zM11 2h2V5H11V2zM2 11H5v2H2V11zm17 0h3v2H19V11z" fill="#fff"/><path d="M5.63702 19.778l-1.414-1.414 2.121-2.121 1.414 1.414-2.121 2.121z" fill="#fff"/><path d="M16.242 6.34405l2.122-2.122 1.414 1.414-2.122 2.122-1.414-1.414z" fill="#fff"/><path d="M6.34402 7.75902l-2.121-2.122 1.415-1.414 2.12 2.122-1.414 1.414z" fill="#fff"/><path d="M19.778 18.3639l-1.414 1.414-2.122-2.122 1.414-1.414 2.122 2.122z" fill="#fff"/></svg></span></div></button></span></li></ul></nav><div class="section hero"><div class=container><h1 class="section-heading section-sized-heading">Pulumi, CloudFront & Lambda@Edge: Infrastructure</h1><i class="far fa-calendar"></i> 2022-06-29,
+<i class="far fa-clock"></i> Reading Time: 7 minutes</h6></div></div><div class="section main"><div class="row content"><article><p>This post is part of a small series of articles on using Pulumi to leverage CloudFront and Lambda@Edge for on-the-fly image resizing. The code for this part can be found <a href=https://github.com/simonschoof/lambda-at-edge-example/tree/main/pulumi rel="noopener noreferrer">here</a>.<ul><li hugo-nav=/post/cloudfront-lambda-edge-intro/><a href=https://simonschoof.com/post/cloudfront-lambda-edge-intro/>Pulumi, CloudFront & Lambda@Edge: Introduction</a></li><li hugo-nav=/post/cloudfront-lambda-edge-infrastructure/><a href=https://simonschoof.com/post/cloudfront-lambda-edge-infrastructure/>Pulumi, CloudFront & Lambda@Edge: Infrastructure</a></li><li hugo-nav=/post/cloudfront-lambda-edge-lambda-functions/><a href=https://simonschoof.com/post/cloudfront-lambda-edge-lambda-functions/>Pulumi, CloudFront & Lambda@Edge: Lambda</a></li></ul></p><p>In this part, we will define the necessary AWS infrastructure using <a href=https://www.pulumi.com/docs/intro/languages/dotnet/ rel="noopener noreferrer">Pulumi with F#</a>. How to set up <a href=https://www.pulumi.com/docs/get-started/ rel="noopener noreferrer">Pulumi</a> is not part of this article. Neither is explaining <a href=https://www.pulumi.com/docs/intro/concepts/ rel="noopener noreferrer">Pulumi`s architecture and concepts</a>. One important concept of Pulumi that should be mentioned is <a href=https://www.pulumi.com/docs/intro/concepts/inputs-outputs/ rel="noopener noreferrer">inputs and outputs of resources</a>. It is important to understand this concept in order to define an infrastructure with Pulumi. Unfortunately, F#&rsquo;s type system is more rigid than C#&rsquo;s and requires explicit type conversions for Pulumi&rsquo;s input and output types. To accomplish this in a more idiomatic way in F#, there are <a href=https://github.com/pulumi/pulumi/blob/master/sdk/dotnet/Pulumi.FSharp/Library.fs rel="noopener noreferrer">helper functions</a>, <a href=https://github.com/UnoSD/Pulumi.FSharp.Extensions rel="noopener noreferrer">libraries</a>, and <a href=https://github.com/pulumi/pulumi/issues/3644 rel="noopener noreferrer">discussions</a> on how to get to a more idiomatic experience with Pulumi and F#. In this article we will use only the helper functions.
+As for setting up Pulumi for this small project, we will use the default Pulumi configuration for a single developer and also use the <a href=https://www.pulumi.com/docs/intro/concepts/state/ rel="noopener noreferrer">Pulumi Service as a backend</a> to store the state of the infrastructure.</p><h3 id=infrastructure>Infrastructure</h3><h5 id=s3>S3</h5><p>AAs we saw in the
+<a href=https://simonschoof.com/post/cloudfront-lambda-edge-intro/>previous article</a>
+CloudFront requires an origin from which it can retrieve the content before it can be stored in the regional cache. This can be a custom origin or an S3 bucket. We will choose an S3 bucket because we want to define the infrastructure within AWS.
+Therefore, we first define the origin bucket. We set the bucket to private to restrict public access to the bucket.
+This is just an obvious security restriction. In a production environment, you will probably want to add additional layers of security:</p><ul><li>SSL only connections</li><li>Disabled public object access</li><li>Using signed URLs or cookies</li><li>Geographic restrictions</li><li>A Web Application Firewall to prevent <a href=https://medium.com/geekculture/denial-of-wallet-attack-3d8ecadfbd4e rel="noopener noreferrer">Denial of Wallet</a> attacks</li></ul><p>We also specify a constant bucket name, since we want to reference the bucket in our Lambda@Edge functions.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-fsharp data-lang=fsharp><span class=line><span class=cl><span class=k>let</span> <span class=nv>bucket</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>    <span class=k>let</span> <span class=nv>bucketName</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>        <span class=s>&#34;images-76b39297-2c72-426d-8c2e-98dc34bfcbe9-eu-central-1&#34;</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=k>let</span> <span class=nv>bucketArgs</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>        <span class=n>BucketArgs</span><span class=o>(</span><span class=n>Acl</span> <span class=o>=</span> <span class=s>&#34;private&#34;</span><span class=o>,</span> <span class=n>BucketName</span> <span class=o>=</span> <span class=n>bucketName</span><span class=o>)</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=n>Bucket</span><span class=o>(</span><span class=n>bucketName</span><span class=o>,</span> <span class=n>bucketArgs</span><span class=o>)</span>
+</span></span></code></pre></div><h5 id=iam>IAM</h5><p>In the second step, we define our IAM policies to allow CloudFront and the AWS Lambda functions to access the AWS S3 bucket.</p><p>To do this, we create the following resources:</p><ol><li><a href=https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html rel="noopener noreferrer">An Origin Access Identity</a> -> This is a special CloudFront user that we can use to access the private S3 bucket.</li><li><a href=https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html rel="noopener noreferrer">A AWS Lambda execution role</a> -> With permission to invoke the AWS Security Token Service AssumeRole action.</li><li><a href=https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html rel="noopener noreferrer">Two Principals</a> -> One for Lambda and one for CloudFront.</li><li><a href=https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-policy-language-overview.html rel="noopener noreferrer">A AWS S3 Bucket policy</a> -> In the policy, we grant Lambda and CloudFront permissions to access the AWS S3 bucket.</li></ol><div class=highlight><pre tabindex=0 class=chroma><code class=language-fsharp data-lang=fsharp><span class=line><span class=cl><span class=k>let</span> <span class=nv>originAccessIdentity</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>    <span class=k>let</span> <span class=nv>originAccessIdentityArgs</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>        <span class=n>OriginAccessIdentityArgs</span><span class=o>(</span><span class=n>Comment</span> <span class=o>=</span> <span class=s>&#34;Access identy to access the origin bucket&#34;</span><span class=o>)</span>
+</span></span><span class=line><span class=cl>    <span class=n>OriginAccessIdentity</span><span class=o>(</span><span class=s>&#34;Cloudfront Origin Access Identity&#34;</span><span class=o>,</span> <span class=n>originAccessIdentityArgs</span><span class=o>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>let</span> <span class=nv>lambdaRole</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>    <span class=k>let</span> <span class=nv>assumeRolePolicyJson</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>        <span class=nn>JsonSerializer</span><span class=p>.</span><span class=n>Serialize</span><span class=o>(</span>
+</span></span><span class=line><span class=cl>            <span class=n>Map</span><span class=o>&lt;</span><span class=kt>string</span><span class=o>,</span> <span class=kt>obj</span><span class=o>&gt;</span>
+</span></span><span class=line><span class=cl>                <span class=o>[</span> <span class=o>(</span><span class=s>&#34;Version&#34;</span><span class=o>,</span> <span class=s>&#34;2012-10-17&#34;</span><span class=o>)</span>
+</span></span><span class=line><span class=cl>                  <span class=o>(</span><span class=s>&#34;Statement&#34;</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>                   <span class=n>Map</span><span class=o>&lt;</span><span class=kt>string</span><span class=o>,</span> <span class=kt>obj</span><span class=o>&gt;</span>
+</span></span><span class=line><span class=cl>                       <span class=o>[</span> <span class=o>(</span><span class=s>&#34;Action&#34;</span><span class=o>,</span> <span class=s>&#34;sts:AssumeRole&#34;</span><span class=o>)</span>
+</span></span><span class=line><span class=cl>                         <span class=o>(</span><span class=s>&#34;Effect&#34;</span><span class=o>,</span> <span class=s>&#34;Allow&#34;</span><span class=o>)</span>
+</span></span><span class=line><span class=cl>                         <span class=o>(</span><span class=s>&#34;Sid&#34;</span><span class=o>,</span> <span class=s>&#34;&#34;</span><span class=o>)</span>
+</span></span><span class=line><span class=cl>                         <span class=o>(</span><span class=s>&#34;Principal&#34;</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>                          <span class=n>Map</span> <span class=o>[</span> <span class=o>(</span><span class=s>&#34;Service&#34;</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>                                 <span class=o>[</span> <span class=s>&#34;lambda.amazonaws.com&#34;</span>
+</span></span><span class=line><span class=cl>                                   <span class=s>&#34;edgelambda.amazonaws.com&#34;</span> <span class=o>])</span> <span class=o>])</span> <span class=o>])</span> <span class=o>]</span>
+</span></span><span class=line><span class=cl>        <span class=o>)</span>
+</span></span><span class=line><span class=cl>    <span class=n>Role</span><span class=o>(</span>
+</span></span><span class=line><span class=cl>        <span class=s>&#34;lambdaRole&#34;</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>        <span class=n>RoleArgs</span><span class=o>(</span>
+</span></span><span class=line><span class=cl>            <span class=n>AssumeRolePolicy</span> <span class=o>=</span> <span class=n>assumeRolePolicyJson</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>Path</span> <span class=o>=</span> <span class=s>&#34;/service-role/&#34;</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>ManagedPolicyArns</span> <span class=o>=</span> <span class=s>&#34;arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole&#34;</span>
+</span></span><span class=line><span class=cl>        <span class=o>)</span>
+</span></span><span class=line><span class=cl>    <span class=o>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>let</span> <span class=nv>lambdaPrincipal</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>    <span class=n>GetPolicyDocumentStatementPrincipalInputArgs</span><span class=o>(</span><span class=n>Type</span> <span class=o>=</span> <span class=s>&#34;AWS&#34;</span><span class=o>,</span> <span class=n>Identifiers</span> <span class=o>=</span> <span class=n>inputList</span> <span class=o>[</span> <span class=n>io</span> <span class=n>lambdaRole</span><span class=o>.</span><span class=n>Arn</span> <span class=o>])</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>let</span> <span class=nv>cloudFrontPrincipal</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>    <span class=n>GetPolicyDocumentStatementPrincipalInputArgs</span><span class=o>(</span>
+</span></span><span class=line><span class=cl>        <span class=n>Type</span> <span class=o>=</span> <span class=s>&#34;AWS&#34;</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>        <span class=n>Identifiers</span> <span class=o>=</span> <span class=n>inputList</span> <span class=o>[</span> <span class=n>io</span> <span class=n>originAccessIdentity</span><span class=o>.</span><span class=n>IamArn</span> <span class=o>]</span>
+</span></span><span class=line><span class=cl>    <span class=o>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>let</span> <span class=nv>imageBucketPolicy</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>    <span class=k>let</span> <span class=nv>getObjectStatement</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>        <span class=n>GetPolicyDocumentStatementInputArgs</span><span class=o>(</span>
+</span></span><span class=line><span class=cl>            <span class=n>Principals</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>                <span class=n>inputList</span> <span class=o>[</span> <span class=n>input</span> <span class=n>lambdaPrincipal</span>
+</span></span><span class=line><span class=cl>                            <span class=n>input</span> <span class=n>cloudFrontPrincipal</span> <span class=o>],</span>
+</span></span><span class=line><span class=cl>            <span class=n>Actions</span> <span class=o>=</span> <span class=n>inputList</span> <span class=o>[</span> <span class=n>input</span> <span class=s>&#34;s3:GetObject&#34;</span> <span class=o>],</span>
+</span></span><span class=line><span class=cl>            <span class=n>Resources</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>                <span class=n>inputList</span> <span class=o>[</span> <span class=n>io</span> <span class=n>bucket</span><span class=o>.</span><span class=n>Arn</span>
+</span></span><span class=line><span class=cl>                            <span class=n>io</span> <span class=o>(</span><span class=nn>Output</span><span class=p>.</span><span class=n>Format</span><span class=o>($</span><span class=s>&#34;{bucket.Arn}/*&#34;</span><span class=o>))</span> <span class=o>]</span>
+</span></span><span class=line><span class=cl>        <span class=o>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>let</span> <span class=nv>listBucketStatement</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>        <span class=n>GetPolicyDocumentStatementInputArgs</span><span class=o>(</span>
+</span></span><span class=line><span class=cl>            <span class=n>Principals</span> <span class=o>=</span> <span class=n>inputList</span> <span class=o>[</span> <span class=n>input</span> <span class=n>lambdaPrincipal</span> <span class=o>],</span>
+</span></span><span class=line><span class=cl>            <span class=n>Actions</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>                <span class=n>inputList</span> <span class=o>[</span> <span class=n>input</span> <span class=s>&#34;s3:ListBucket&#34;</span> <span class=o>],</span>
+</span></span><span class=line><span class=cl>            <span class=n>Resources</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>                <span class=n>inputList</span> <span class=o>[</span> <span class=n>io</span> <span class=n>bucket</span><span class=o>.</span><span class=n>Arn</span>
+</span></span><span class=line><span class=cl>                            <span class=n>io</span> <span class=o>(</span><span class=nn>Output</span><span class=p>.</span><span class=n>Format</span><span class=o>($</span><span class=s>&#34;{bucket.Arn}/*&#34;</span><span class=o>))</span> <span class=o>]</span>
+</span></span><span class=line><span class=cl>        <span class=o>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>let</span> <span class=nv>policyDocumentInvokeArgs</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>        <span class=n>GetPolicyDocumentInvokeArgs</span><span class=o>(</span>
+</span></span><span class=line><span class=cl>            <span class=n>Statements</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>                <span class=n>inputList</span> <span class=o>[</span> <span class=n>input</span> <span class=n>getObjectStatement</span>
+</span></span><span class=line><span class=cl>                            <span class=n>input</span> <span class=n>listBucketStatement</span> <span class=o>]</span>
+</span></span><span class=line><span class=cl>        <span class=o>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>let</span> <span class=nv>policyDocument</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>        <span class=nn>GetPolicyDocument</span><span class=p>.</span><span class=n>Invoke</span><span class=o>(</span><span class=n>policyDocumentInvokeArgs</span><span class=o>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>let</span> <span class=nv>bucketPolicyArgs</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>        <span class=n>BucketPolicyArgs</span><span class=o>(</span><span class=n>Bucket</span> <span class=o>=</span> <span class=n>bucket</span><span class=o>.</span><span class=n>Id</span><span class=o>,</span> <span class=n>Policy</span> <span class=o>=</span> <span class=n>io</span> <span class=o>(</span><span class=n>policyDocument</span><span class=o>.</span><span class=n>Apply</span><span class=o>(</span><span class=k>fun</span> <span class=o>(</span><span class=n>pd</span><span class=o>)</span> <span class=o>-&gt;</span> <span class=n>pd</span><span class=o>.</span><span class=n>Json</span><span class=o>)))</span>
+</span></span><span class=line><span class=cl>    <span class=n>BucketPolicy</span><span class=o>(</span><span class=s>&#34;imageBucketpolicy&#34;</span><span class=o>,</span> <span class=n>bucketPolicyArgs</span><span class=o>)</span>
+</span></span></code></pre></div><h5 id=lambda>Lambda</h5><p>In the third step, we define two lambda functions for the trigger points of the origin response and the viewer request. There are some points we want to emphasize when defining the lambda functions:</p><ol><li><a href=https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/edge-functions-restrictions.html rel="noopener noreferrer">US East</a> -> The lambda function must be located in the region &ldquo;us-east-1&rdquo;.</li><li><a href=https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-edge-how-it-works.html rel="noopener noreferrer">Publish = true</a> -> The <code>Publish</code> flag must be set to true so that a new version of the Lambda function is published when the Lambda function is created or updated. A Lambda function can only be associated with CloudFront with a specific version number.</li><li><a href=https://www.pulumi.com/docs/intro/concepts/assets-archives/ rel="noopener noreferrer">Code</a> -> We use an inlined Pulumi <code>StringAsset</code> for the <code>Code</code> parameter of the Lambda function definition. The inlined code fragments do nothing more than forward and return the CloudFront viewer request and origin response. We will replace the code fragments with the implementation for resizing the image in the
+<a href=https://simonschoof.com/post/cloudfront-lambda-edge-lambda-functions/>next article</a>
+.</li></ol><div class=highlight><pre tabindex=0 class=chroma><code class=language-fsharp data-lang=fsharp><span class=line><span class=cl><span class=k>let</span> <span class=nv>lambdaOptions</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>    <span class=k>let</span> <span class=nv>customResourceOptions</span> <span class=o>=</span> <span class=n>CustomResourceOptions</span><span class=bp>()</span>
+</span></span><span class=line><span class=cl>    <span class=n>customResourceOptions</span><span class=o>.</span><span class=n>Provider</span> <span class=o>&lt;-</span> <span class=n>Provider</span><span class=o>(</span><span class=s>&#34;useast1&#34;</span><span class=o>,</span> <span class=n>ProviderArgs</span><span class=o>(</span><span class=n>Region</span> <span class=o>=</span> <span class=s>&#34;us-east-1&#34;</span><span class=o>))</span>
+</span></span><span class=line><span class=cl>    <span class=n>customResourceOptions</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>let</span> <span class=nv>viewerRequestLambda</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>let</span> <span class=nv>lambdaFunctionArgs</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>        <span class=nn>Lambda</span><span class=p>.</span><span class=n>FunctionArgs</span><span class=o>(</span>
+</span></span><span class=line><span class=cl>            <span class=n>Handler</span> <span class=o>=</span> <span class=s>&#34;index.handler&#34;</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>Runtime</span> <span class=o>=</span> <span class=s>&#34;nodejs14.x&#34;</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>MemorySize</span> <span class=o>=</span> <span class=n>128</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>Timeout</span> <span class=o>=</span> <span class=n>1</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>Role</span> <span class=o>=</span> <span class=n>lambdaRole</span><span class=o>.</span><span class=n>Arn</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>Publish</span> <span class=o>=</span> <span class=k>true</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>Code</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>                <span class=n>input</span> <span class=o>(</span>
+</span></span><span class=line><span class=cl>                    <span class=n>AssetArchive</span><span class=o>(</span>
+</span></span><span class=line><span class=cl>                        <span class=n>Map</span><span class=o>&lt;</span><span class=kt>string</span><span class=o>,</span> <span class=n>AssetOrArchive</span><span class=o>&gt;</span>
+</span></span><span class=line><span class=cl>                            <span class=o>[</span> <span class=o>(</span><span class=s>&#34;index.js&#34;</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>                                <span class=n>StringAsset</span><span class=o>(</span>
+</span></span><span class=line><span class=cl>                                    <span class=s>&#34;&#34;&#34;
+</span></span></span><span class=line><span class=cl><span class=s>                                    &#34;use strict&#34;; Object.defineProperty(exports, &#34;__esModule&#34;, { value: true });
+</span></span></span><span class=line><span class=cl><span class=s>                                    exports.handler = void 0;
+</span></span></span><span class=line><span class=cl><span class=s>                                    async function handler(event) {
+</span></span></span><span class=line><span class=cl><span class=s>                                        return event.Records[0].cf.request;
+</span></span></span><span class=line><span class=cl><span class=s>                                    } 
+</span></span></span><span class=line><span class=cl><span class=s>                                    exports.handler = handler;
+</span></span></span><span class=line><span class=cl><span class=s>                                    &#34;&#34;&#34;</span>
+</span></span><span class=line><span class=cl>                                <span class=o>))</span> <span class=o>]</span>
+</span></span><span class=line><span class=cl>                    <span class=o>)</span>
+</span></span><span class=line><span class=cl>                <span class=o>)</span>
+</span></span><span class=line><span class=cl>        <span class=o>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=nn>Lambda</span><span class=p>.</span><span class=n>Function</span><span class=o>(</span><span class=s>&#34;viewerRequestLambda&#34;</span><span class=o>,</span> <span class=n>lambdaFunctionArgs</span><span class=o>,</span> <span class=n>lambdaOptions</span><span class=o>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>let</span> <span class=nv>originResponseLambda</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>let</span> <span class=nv>lambdaFunctionArgs</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>        <span class=nn>Lambda</span><span class=p>.</span><span class=n>FunctionArgs</span><span class=o>(</span>
+</span></span><span class=line><span class=cl>            <span class=n>Handler</span> <span class=o>=</span> <span class=s>&#34;index.handler&#34;</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>Runtime</span> <span class=o>=</span> <span class=s>&#34;nodejs14.x&#34;</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>MemorySize</span> <span class=o>=</span> <span class=n>512</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>Timeout</span> <span class=o>=</span> <span class=n>5</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>Role</span> <span class=o>=</span> <span class=n>lambdaRole</span><span class=o>.</span><span class=n>Arn</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>Publish</span> <span class=o>=</span> <span class=k>true</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>Code</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>                <span class=n>input</span> <span class=o>(</span>
+</span></span><span class=line><span class=cl>                    <span class=n>AssetArchive</span><span class=o>(</span>
+</span></span><span class=line><span class=cl>                        <span class=n>Map</span><span class=o>&lt;</span><span class=kt>string</span><span class=o>,</span> <span class=n>AssetOrArchive</span><span class=o>&gt;</span>
+</span></span><span class=line><span class=cl>                            <span class=o>[</span> <span class=o>(</span><span class=s>&#34;index.js&#34;</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>                                <span class=n>StringAsset</span><span class=o>(</span>
+</span></span><span class=line><span class=cl>                                    <span class=s>&#34;&#34;&#34;
+</span></span></span><span class=line><span class=cl><span class=s>                                    &#34;use strict&#34;; Object.defineProperty(exports, &#34;__esModule&#34;, { value: true });
+</span></span></span><span class=line><span class=cl><span class=s>                                    exports.handler = void 0;
+</span></span></span><span class=line><span class=cl><span class=s>                                    async function handler(event) {
+</span></span></span><span class=line><span class=cl><span class=s>                                        return event.Records[0].cf.response;
+</span></span></span><span class=line><span class=cl><span class=s>                                    } 
+</span></span></span><span class=line><span class=cl><span class=s>                                    exports.handler = handler;
+</span></span></span><span class=line><span class=cl><span class=s>                                    &#34;&#34;&#34;</span>
+</span></span><span class=line><span class=cl>                                <span class=o>))</span> <span class=o>]</span>
+</span></span><span class=line><span class=cl>                    <span class=o>)</span>
+</span></span><span class=line><span class=cl>                <span class=o>)</span>
+</span></span><span class=line><span class=cl>        <span class=o>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=nn>Lambda</span><span class=p>.</span><span class=n>Function</span><span class=o>(</span><span class=s>&#34;originResponseLambda&#34;</span><span class=o>,</span> <span class=n>lambdaFunctionArgs</span><span class=o>,</span> <span class=n>lambdaOptions</span><span class=o>)</span>
+</span></span></code></pre></div><h5 id=cloudfront>CloudFront</h5><p>Finally, we are able to define the CloudFront distribution.
+As mentioned earlier, CloudFront has <a href=https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/ConfiguringCaching.html rel="noopener noreferrer">a variety of configuration options</a> for different use cases.
+We will not explain them here, but recommend reading the <a href=https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html rel="noopener noreferrer">documentation</a> thoroughly. Among the many options available for the distribution, we provide a brief overview of the steps we will take to build the distribution:</p><ol><li><a href=https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/DownloadDistS3AndCustomOrigins.html#using-s3-as-origin rel="noopener noreferrer">Origin</a> -> We use the S3 bucket we created earlier as the source<sup id=fnref:1><a href=#fn:1 class=footnote-ref role=doc-noteref>1</a></sup>.</li><li><a href=https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/controlling-the-cache-key.html rel="noopener noreferrer">Cache keys</a> -> Within CloudFront, you can control the cache key for objects that are cached at CloudFront edge locations. We use the <code>CacheKey</code> parameter to specify which query string parameters to include in the cache key. In our case, we will use the <code>width</code> and <code>height</code> parameters.</li><li><a href=https://docs.aws.amazon.com/cloudfront/latest/APIReference/API_DefaultCacheBehavior.html rel="noopener noreferrer">Default cache behavior</a> -> We are using the Default Cache Behavior to define how CloudFront processes requests and serves content from the origin. This is also the point in which we will associate the Lambda functions with the distribution.</li></ol><p>In the end, we will use the above parts in the CloudFront distribution definition.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-fsharp data-lang=fsharp><span class=line><span class=cl><span class=k>let</span> <span class=nv>cloudFrontDistribution</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>let</span> <span class=nv>s3OriginConfigArgs</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>        <span class=n>DistributionOriginS3OriginConfigArgs</span><span class=o>(</span>
+</span></span><span class=line><span class=cl>            <span class=n>OriginAccessIdentity</span> <span class=o>=</span> <span class=n>originAccessIdentity</span><span class=o>.</span><span class=n>CloudfrontAccessIdentityPath</span>
+</span></span><span class=line><span class=cl>        <span class=o>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>let</span> <span class=nv>originArgs</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>        <span class=n>DistributionOriginArgs</span><span class=o>(</span>
+</span></span><span class=line><span class=cl>            <span class=n>DomainName</span> <span class=o>=</span> <span class=n>bucket</span><span class=o>.</span><span class=n>BucketRegionalDomainName</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>OriginId</span> <span class=o>=</span> <span class=s>&#34;myS3Origin&#34;</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>S3OriginConfig</span> <span class=o>=</span> <span class=n>s3OriginConfigArgs</span>
+</span></span><span class=line><span class=cl>        <span class=o>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>let</span> <span class=nv>viewerCertificate</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>        <span class=n>DistributionViewerCertificateArgs</span><span class=o>(</span><span class=n>CloudfrontDefaultCertificate</span> <span class=o>=</span> <span class=k>true</span><span class=o>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>let</span> <span class=nv>forwardeValueCookies</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>        <span class=n>DistributionDefaultCacheBehaviorForwardedValuesCookiesArgs</span><span class=o>(</span><span class=n>Forward</span> <span class=o>=</span> <span class=s>&#34;none&#34;</span><span class=o>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>let</span> <span class=nv>forwardedValuesArgs</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>        <span class=n>DistributionDefaultCacheBehaviorForwardedValuesArgs</span><span class=o>(</span>
+</span></span><span class=line><span class=cl>            <span class=n>QueryString</span> <span class=o>=</span> <span class=k>true</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>QueryStringCacheKeys</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>                <span class=n>inputList</span> <span class=o>[</span> <span class=n>input</span> <span class=s>&#34;width&#34;</span>
+</span></span><span class=line><span class=cl>                            <span class=n>input</span> <span class=s>&#34;height&#34;</span> <span class=o>],</span>
+</span></span><span class=line><span class=cl>            <span class=n>Cookies</span> <span class=o>=</span> <span class=n>forwardeValueCookies</span>
+</span></span><span class=line><span class=cl>        <span class=o>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>let</span> <span class=nv>lambdaViewerRequestAssociation</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>        <span class=n>DistributionDefaultCacheBehaviorLambdaFunctionAssociationArgs</span><span class=o>(</span>
+</span></span><span class=line><span class=cl>            <span class=n>EventType</span> <span class=o>=</span> <span class=s>&#34;viewer-request&#34;</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>LambdaArn</span> <span class=o>=</span> <span class=nn>Output</span><span class=p>.</span><span class=n>Format</span><span class=o>($</span><span class=s>&#34;{viewerRequestLambda.Arn}:{viewerRequestLambda.Version}&#34;</span><span class=o>),</span>
+</span></span><span class=line><span class=cl>            <span class=n>IncludeBody</span> <span class=o>=</span> <span class=k>false</span>
+</span></span><span class=line><span class=cl>        <span class=o>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>let</span> <span class=nv>lambdaOriginResponseAssociation</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>        <span class=n>DistributionDefaultCacheBehaviorLambdaFunctionAssociationArgs</span><span class=o>(</span>
+</span></span><span class=line><span class=cl>            <span class=n>EventType</span> <span class=o>=</span> <span class=s>&#34;origin-response&#34;</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>LambdaArn</span> <span class=o>=</span> <span class=nn>Output</span><span class=p>.</span><span class=n>Format</span><span class=o>($</span><span class=s>&#34;{originResponseLambda.Arn}:{originResponseLambda.Version}&#34;</span><span class=o>),</span>
+</span></span><span class=line><span class=cl>            <span class=n>IncludeBody</span> <span class=o>=</span> <span class=k>false</span>
+</span></span><span class=line><span class=cl>        <span class=o>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>let</span> <span class=nv>defaultCacheBehaviorArgs</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>        <span class=n>DistributionDefaultCacheBehaviorArgs</span><span class=o>(</span>
+</span></span><span class=line><span class=cl>            <span class=n>AllowedMethods</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>                <span class=n>inputList</span> <span class=o>[</span> <span class=n>input</span> <span class=s>&#34;GET&#34;</span>
+</span></span><span class=line><span class=cl>                            <span class=n>input</span> <span class=s>&#34;HEAD&#34;</span>
+</span></span><span class=line><span class=cl>                            <span class=n>input</span> <span class=s>&#34;OPTIONS&#34;</span> <span class=o>],</span>
+</span></span><span class=line><span class=cl>            <span class=n>CachedMethods</span> <span class=o>=</span> <span class=n>inputList</span> <span class=o>[</span> <span class=n>input</span> <span class=s>&#34;GET&#34;</span><span class=o>;</span> <span class=n>input</span> <span class=s>&#34;HEAD&#34;</span> <span class=o>],</span>
+</span></span><span class=line><span class=cl>            <span class=n>TargetOriginId</span> <span class=o>=</span> <span class=s>&#34;myS3Origin&#34;</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>ForwardedValues</span> <span class=o>=</span> <span class=n>forwardedValuesArgs</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>ViewerProtocolPolicy</span> <span class=o>=</span> <span class=s>&#34;redirect-to-https&#34;</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>MinTtl</span> <span class=o>=</span> <span class=n>100</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>DefaultTtl</span> <span class=o>=</span> <span class=n>3600</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>MaxTtl</span> <span class=o>=</span> <span class=n>86400</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>SmoothStreaming</span> <span class=o>=</span> <span class=k>false</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>Compress</span> <span class=o>=</span> <span class=k>true</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>LambdaFunctionAssociations</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>                <span class=n>inputList</span> <span class=o>[</span> <span class=n>input</span> <span class=n>lambdaViewerRequestAssociation</span>
+</span></span><span class=line><span class=cl>                            <span class=n>input</span> <span class=n>lambdaOriginResponseAssociation</span> <span class=o>]</span>
+</span></span><span class=line><span class=cl>        <span class=o>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>let</span> <span class=nv>geoRestrictions</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>        <span class=n>DistributionRestrictionsGeoRestrictionArgs</span><span class=o>(</span><span class=n>RestrictionType</span> <span class=o>=</span> <span class=s>&#34;none&#34;</span><span class=o>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>let</span> <span class=nv>restrictionArgs</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>        <span class=n>DistributionRestrictionsArgs</span><span class=o>(</span><span class=n>GeoRestriction</span> <span class=o>=</span> <span class=n>geoRestrictions</span><span class=o>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>let</span> <span class=nv>cloudFrontDistributionArgs</span> <span class=o>=</span>
+</span></span><span class=line><span class=cl>        <span class=n>DistributionArgs</span><span class=o>(</span>
+</span></span><span class=line><span class=cl>            <span class=n>Origins</span> <span class=o>=</span> <span class=n>originArgs</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>Enabled</span> <span class=o>=</span> <span class=k>true</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>Comment</span> <span class=o>=</span> <span class=s>&#34;Distribution for content delivery&#34;</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>DefaultRootObject</span> <span class=o>=</span> <span class=s>&#34;index.html&#34;</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>PriceClass</span> <span class=o>=</span> <span class=s>&#34;PriceClass_100&#34;</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>ViewerCertificate</span> <span class=o>=</span> <span class=n>viewerCertificate</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>DefaultCacheBehavior</span> <span class=o>=</span> <span class=n>defaultCacheBehaviorArgs</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>Restrictions</span> <span class=o>=</span> <span class=n>restrictionArgs</span>
+</span></span><span class=line><span class=cl>        <span class=o>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=n>Distribution</span><span class=o>(</span><span class=s>&#34;imageResizerDistribution&#34;</span><span class=o>,</span> <span class=n>cloudFrontDistributionArgs</span><span class=o>)</span>
+</span></span></code></pre></div><h5 id=outputs>Outputs</h5><p>At the end of our infrastructure code we define some outputs. These are not necessary in our case, but Pulumi will log the values after deployment and we will have an overview of the resources we have created.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-fsharp data-lang=fsharp><span class=line><span class=cl><span class=n>dict</span> <span class=o>[</span> <span class=o>(</span><span class=s>&#34;BucketName&#34;</span><span class=o>,</span> <span class=n>bucket</span><span class=o>.</span><span class=n>Id</span> <span class=o>:&gt;</span> <span class=kt>obj</span><span class=o>)</span>
+</span></span><span class=line><span class=cl>        <span class=o>(</span><span class=s>&#34;Distribution&#34;</span><span class=o>,</span> <span class=n>cloudFrontDistribution</span><span class=o>.</span><span class=n>Id</span> <span class=o>:&gt;</span> <span class=kt>obj</span><span class=o>)</span>
+</span></span><span class=line><span class=cl>        <span class=o>(</span><span class=s>&#34;LambdaRole&#34;</span><span class=o>,</span> <span class=n>lambdaRole</span><span class=o>.</span><span class=n>Arn</span> <span class=o>:&gt;</span> <span class=kt>obj</span><span class=o>)</span>
+</span></span><span class=line><span class=cl>        <span class=o>(</span><span class=s>&#34;OriginAccessIdentity&#34;</span><span class=o>,</span> <span class=n>originAccessIdentity</span><span class=o>.</span><span class=n>IamArn</span> <span class=o>:&gt;</span> <span class=kt>obj</span><span class=o>)</span>
+</span></span><span class=line><span class=cl>        <span class=o>(</span><span class=s>&#34;ViewerRequestLambda&#34;</span><span class=o>,</span> <span class=n>viewerRequestLambda</span><span class=o>.</span><span class=n>Arn</span> <span class=o>:&gt;</span> <span class=kt>obj</span><span class=o>)</span>
+</span></span><span class=line><span class=cl>        <span class=o>(</span><span class=s>&#34;OriginResponseLambda&#34;</span><span class=o>,</span> <span class=n>originResponseLambda</span><span class=o>.</span><span class=n>Arn</span> <span class=o>:&gt;</span> <span class=kt>obj</span><span class=o>)</span>
+</span></span><span class=line><span class=cl>        <span class=o>(</span><span class=s>&#34;ImageBucketPolicy&#34;</span><span class=o>,</span> <span class=n>imageBucketPolicy</span><span class=o>.</span><span class=n>Id</span> <span class=o>:&gt;</span> <span class=kt>obj</span><span class=o>)</span> <span class=o>]</span>
+</span></span></code></pre></div><p>In the
+<a href=https://simonschoof.com/post/cloudfront-lambda-edge-lambda-functions/>next part</a>
+, we show how to implement and build the Lambda@Edge functions using TypeScript.</p><div class=footnotes role=doc-endnotes><hr><ol><li id=fn:1><p>Ensure that you use the <code>BucketRegionalDomainName</code> property instead of the <code>BucketDomainName</code> property when defining the origin. Otherwise, CloudFront redirects requests to the bucket domain and makes the origin unreachable when you work with a private bucket.&#160;<a href=#fnref:1 class=footnote-backref role=doc-backlink>&#8617;&#xfe0e;</a></p></li></ol></div></article></div></div><footer><span class=copyright>Build with <a href=https://gohugo.io/ title=hugo alt=hugo target=_blank>hugo</a> & <span class=emojify>❤️</span>
+| Theme: Based on <a href=https://github.com/aanupam23/hugo-sugoi title=hugo-sugoi alt=hugo-sugoi target=_blank>hugo-sugoi</a>
+extended by <a href=https://github.com/simonschoof/hugo-sugoi title="my theme" alt="my theme" target=_blank>me</a>.<br>&copy; 2022 Simon Schoof
+| <a href=https://simonschoof.com/imprint title=Imprint alt=Imprint>Imprint</a>
+| <a href=https://simonschoof.com/privacy title=Privacy alt=Privacy>Privacy</a></span></footer></body></html>
