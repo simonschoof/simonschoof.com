@@ -48,7 +48,7 @@ For clarity, we place the Lambda@Edge function code in separate folders and will
 └───pulumi
 ```
 
-As we can see in the snippet below and have also seen in the {{< next-in-section "previous article" >}}, we have inlined the viewer request function code which does nothing more than return the original viewer request.  
+As we can see in the snippet below and have also seen in the {{< prev-in-section "previous article" >}}, we have inlined the viewer request function code which does nothing more than return the original viewer request.  
 
 ```fsharp
 Code =
