@@ -30,14 +30,15 @@ https://github.com/marketplace/actions/delete-run-artifacts
 https://github.com/actions/cache
 https://levelup.gitconnected.com/github-actions-how-to-share-data-between-jobs-fc1547defc3e
 
-* more Secure Setup for policy
+* more Secure Setup for policy, no starred access
 * Deployment takes log for Cloudfront to propagate the changes to the edge locations
 * Upload of the origin respsone function takes long -> therefore maybe just build function if something changed otherwise return success in and
-* cleanup artifacts after deployment
 * use caching instead of articfact up and downloading
+* cleanup artifacts after deployment
 * use OICD provider for AWS still using log term credentials for pulumi
-
 * missing tests unit/acceptance/smoke
+* add pulumi up to infrastructure text
+* add reference on deployment text to lambda part
 
 
 ```fsharp
