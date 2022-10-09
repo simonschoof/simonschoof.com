@@ -12,8 +12,23 @@ tags = [
 series = "CloudFront and Lambda@Edge with Pulumi"
 draft = true
 +++
-Deploy to AWS via GitHub Actions using OICD
+This post is part of a small series of articles on using Pulumi to leverage CloudFront and Lambda@Edge for on the fly image resizing. The code for this part can be found [here](https://github.com/simonschoof/lambda-at-edge-example/tree/main/pulumi-identity-federation) and [here](https://github.com/simonschoof/lambda-at-edge-example/tree/main/.github/workflows).
+
 {{< series "CloudFront and lambda@edge with Pulumi" >}} 
+
+In this part, we will set up a deployment pipeline with GitHub Actions so that we can automate the the deployment of the infrastructure and AWS Lambda functions defined in the previous articles. To allow for secure deployments to AWS we will first configure OpenID connect in AWS. After we enabled GitHub Actions to deploy to AWS, using OIDC, we define the GitHub Actions workflows to create the AWS infrastructure and to build and deploy the AWS Lambda functions. At the end we will discuss options on how to improve the pipeline.    
+
+### Configuring OpenID Connect in AWS #
+
+Since October 2021 GitHub supports OpenID Connect (OIDC) for secure deployments in the cloud. Using this feature allows us to use short-lived tokens that are automatically rotated for each deployment instead of storing long-lived AWS credentials in GitHub.    
+
+you can author secure cloud deployment workflows without needing any cloud secrets stored in GitHub.
+
+
+### Deployment pipeline with GitHub Actions
+
+### Conclusion
+
 
 For this article:
 
