@@ -20,41 +20,27 @@ In this part, we will set up a deployment pipeline with GitHub Actions so that w
 
 ### Configuring OpenID Connect in AWS #
 
-Since October 2021 GitHub supports OpenID Connect (OIDC) for secure deployments in the cloud. Using this feature allows us to use short-lived tokens that are automatically rotated for each deployment instead of storing long-lived AWS credentials in GitHub.    
+Since October 2021 GitHub supports [OpenID Connect (OIDC) for secure deployments in the cloud](https://github.blog/changelog/2021-10-27-github-actions-secure-cloud-deployments-with-openid-connect/). Using this feature allows us to use short-lived tokens that are automatically rotated for each deployment instead of storing long-lived AWS credentials in GitHub. In this section we will create the neccessary resources in AWS to allow for secure cloud deployment workflows without needing any cloud secrets stored in GitHub. We will not go into much detail on how this works but one can find plenty of information about the topic, e.g. [here](https://github.blog/changelog/2021-10-27-github-actions-secure-cloud-deployments-with-openid-connect/
+), [here](https://scalesec.com/blog/identity-federation-for-github-actions-on-aws/
+) and [here](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc.html). 
+Nevertheless in the following we will describe the needed resources to create with Pulumi to enable secure deployments fron within GitHub Actions into AWS. 
+The code belonging to this section can be found [here](https://github.com/simonschoof/lambda-at-edge-example/tree/main/pulumi-identity-federation)
 
-you can author secure cloud deployment workflows without needing any cloud secrets stored in GitHub.
+The first ressource we need to allow deployments from GitHub Actions into AWS is the OICD provider itself.
 
+```fsharp
+let openIdConnectProviderArgs = OpenIdConnectProviderArgs(
+    Url = "https://token.actions.githubusercontent.com",
+    ClientIdLists = inputList [input "sts.amazonaws.com"],
+    ThumbprintLists = inputList [input "6938fd4d98bab03faadb97b34396831e3780aea1"])
 
-### Deployment pipeline with GitHub Actions
+let openIdConnectProvider = OpenIdConnectProvider("GithubOidc", openIdConnectProviderArgs)
 
-### Conclusion
+let federatedPrincipal =
+  GetPolicyDocumentStatementPrincipalInputArgs(Type = "Federated", Identifiers = inputList [ io openIdConnectProvider.Arn])
+```
 
-
-For this article:
-
-https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc_verify-thumbprint.html
-https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services
-https://github.com/github/roadmap/issues/249
-https://github.blog/changelog/2021-10-27-github-actions-secure-cloud-deployments-with-openid-connect/
-https://scalesec.com/blog/identity-federation-for-github-actions-on-aws/
-https://www.pulumi.com/docs/guides/continuous-delivery/github-actions/
-https://github.com/actions/upload-artifact
-https://github.com/actions/download-artifact
-https://github.com/pulumi/actions
-https://github.com/marketplace/actions/delete-run-artifacts
-https://github.com/actions/cache
-https://levelup.gitconnected.com/github-actions-how-to-share-data-between-jobs-fc1547defc3e
-
-* more Secure Setup for policy, no starred access
-* Deployment takes log for Cloudfront to propagate the changes to the edge locations
-* Upload of the origin respsone function takes long -> therefore maybe just build function if something changed otherwise return success in and
-* use caching instead of articfact up and downloading
-* cleanup artifacts after deployment
-* use OICD provider for AWS still using log term credentials for pulumi
-* missing tests unit/acceptance/smoke
-* add pulumi up to infrastructure text
-* add reference on deployment text to lambda part
-
+In addition to the OICD provider we have to create a policy in which we define the allowed actions we can execute in our deployment workflow. For our example we need access to CloudFront, S3, Lambda and IAM. In a real world project it would be good practice to neglect the access to all ressources with the "*" operator and just define the actions which are realy needed following the [principle of least privilege](https://en.wikipedia.org/wiki/Principle_of_least_privilege). 
 
 ```fsharp
 let cloudFrontPolicy =
@@ -85,17 +71,7 @@ let cloudFrontPolicy =
       Policy("cloudFrontPolicy", policyArgs)
 ```
 
-```fsharp
-let openIdConnectProviderArgs = OpenIdConnectProviderArgs(
-    Url = "https://token.actions.githubusercontent.com",
-    ClientIdLists = inputList [input "sts.amazonaws.com"],
-    ThumbprintLists = inputList [input "6938fd4d98bab03faadb97b34396831e3780aea1"])
-
-let openIdConnectProvider = OpenIdConnectProvider("GithubOidc", openIdConnectProviderArgs)
-
-let federatedPrincipal =
-  GetPolicyDocumentStatementPrincipalInputArgs(Type = "Federated", Identifiers = inputList [ io openIdConnectProvider.Arn])
-```
+The last thing we create is a role which can be used by our deployment pipeline and that tells IAM that this role can be assumed by GitHub Actions in our repository. It is important to define the condition, in the policy document statement, to restrict the access to the wanted repository. Otherwise every workflow in GitHub could assume this role. 
 
 ```fsharp
 let githubActionsRole =
@@ -129,6 +105,30 @@ let githubActionsRole =
       ManagedPolicyArns = inputList [ io cloudFrontPolicy.Arn])
       )
 ```
+
+
+### Deployment pipeline with GitHub Actions
+
+### Conclusion
+
+
+For this article:
+
+https://www.pulumi.com/docs/guides/continuous-delivery/github-actions/
+https://github.com/actions/upload-artifact
+https://github.com/actions/download-artifact
+https://github.com/pulumi/actions
+https://github.com/marketplace/actions/delete-run-artifacts
+https://github.com/actions/cache
+https://levelup.gitconnected.com/github-actions-how-to-share-data-between-jobs-fc1547defc3e
+
+
+
+* use OICD provider for AWS still using log term credentials for pulumi
+
+* add pulumi up to infrastructure text
+* add reference on deployment text to lambda part
+
 
 ```yaml
 name: Deploy CloudFront with Lambda@Edge
@@ -224,6 +224,12 @@ jobs:
 ```
 
 {{< figure2 src="images/github_action_deployment_pipeline.png" class="github-action-deployment-pipeline" caption="Github Actions deployment pipeline " attrrel="noopener noreferrer" >}} 
+
+* Deployment takes log for Cloudfront to propagate the changes to the edge locations
+* Upload of the origin respsone function takes long -> therefore maybe just build function if something changed otherwise return success in and
+* use caching instead of articfact up and downloading
+* cleanup artifacts after deployment
+* missing tests unit/acceptance/smoke
 
 {{< series "CloudFront and lambda@edge with Pulumi" >}}
 
