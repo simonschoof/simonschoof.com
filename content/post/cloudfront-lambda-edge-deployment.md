@@ -109,26 +109,13 @@ let githubActionsRole =
 
 ### Deployment pipeline with GitHub Actions
 
-### Conclusion
+Now that we have the OICD provider in place, we can start to define our deployment pipeline to build and deploy the Lambda functions and CloudFront. In the end we want to be able to get to an CI/CD workflow. To do so we will define the following jobs in our pipeline:
 
+* Build the viewer request function
+* Build the origin response function
+* Create or update or Lambda@Edge and CloudFront environment in AWS with Pulumi
 
-For this article:
-
-https://www.pulumi.com/docs/guides/continuous-delivery/github-actions/
-https://github.com/actions/upload-artifact
-https://github.com/actions/download-artifact
-https://github.com/pulumi/actions
-https://github.com/marketplace/actions/delete-run-artifacts
-https://github.com/actions/cache
-https://levelup.gitconnected.com/github-actions-how-to-share-data-between-jobs-fc1547defc3e
-
-
-
-* use OICD provider for AWS still using log term credentials for pulumi
-
-* add pulumi up to infrastructure text
-* add reference on deployment text to lambda part
-
+As mentioned above the first job is to build the viewer request function. For this we just have to setup a nodeJs environment and install the dependencies and build the function. At the end we uopload the articfacts as build outputs with a [predefined action](https://github.com/actions/upload-artifact). As the upload  and later on the dowload of the of the artifacts takes quite a long time a better solution would have probably been to use the [caching mechanism of GitHub Actions](https://github.com/actions/cache).
 
 ```yaml
 name: Deploy CloudFront with Lambda@Edge
@@ -163,6 +150,9 @@ jobs:
          path: lambda/viewer-request-function/dist/
 ```
 
+Parallel to the first job we can also build the origin response function. As we have seen in the {{< prev-in-section "previous article" >}}, the origin response function uses the [Sharp library](https://sharp.pixelplumbing.com/), which requires the [`libvips` native extension](https://sharp.pixelplumbing.com/install). Which means we need to build and package the function for the Lambda execution environment. We also can do this in the deployment pipeline by using the [Amazon Linux Docker image](https://hub.docker.com/_/amazonlinux/) and the defined [Dockerfile](https://github.com/simonschoof/lambda-at-edge-example/blob/main/lambda/origin-response-function/Dockerfile). An interesting detail to see when building the origin response function is the use of the `npm ci` command with the `--ignore-scripts` flag. We want to use this flag in order to prevent us from supply chain attacks. As a result of the flag we have to rebuild the Sharp library after the `npm ci` command. A more detailed description on this topic and  how to prevent this can be found [here](https://dev.to/naugtur/get-safe-and-remain-productive-with-can-i-ignore-scripts-2ddc). In the end we also upload the output of the install and build command with the [predefined upload action](https://github.com/actions/upload-artifact).
+
+
 ```yaml
  build-origin-response:
    name: Build origin response
@@ -183,6 +173,14 @@ jobs:
            lambda/origin-response-function/dist/
            lambda/origin-response-function/node_modules
 ```
+
+In the last part we want to create or update the Lambda@Edge functions and the CloudFront instance in AWS. This job will only run if both functions from the previous jobs were successfully build. Within the job we just have to execute the following steps:
+
+* Download the viewer request and origins response build artifacts with the [respective download action](https://github.com/actions/download-artifact)
+* Configure the AWS credentials assuming the role we defined in the first section of this article
+* Run `pulumi up` using the [Pulumi action](https://github.com/pulumi/actions)
+
+Note that the job will take quite a time, because the changes have to be propagtated to the edge locations of the CloudFront instance. Also we have to provide an access token for Pulumi stored as GitHub secret.
 
 ```yaml
  deploy:
@@ -223,7 +221,34 @@ jobs:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
 ```
 
+After the pipeline finished successfully we can start to upload images to S3 and provide the Links for the images leveraging the CloudFront domain. Consumers of the images can also provide the resizing parameters to get the on-the-fly resized images. 
+
 {{< figure2 src="images/github_action_deployment_pipeline.png" class="github-action-deployment-pipeline" caption="Github Actions deployment pipeline " attrrel="noopener noreferrer" >}} 
+
+
+
+### Conclusion
+
+
+For this article:
+
+https://www.pulumi.com/docs/guides/continuous-delivery/github-actions/
+https://github.com/actions/upload-artifact
+https://github.com/actions/download-artifact
+https://github.com/pulumi/actions
+https://github.com/marketplace/actions/delete-run-artifacts
+https://github.com/actions/cache
+https://levelup.gitconnected.com/github-actions-how-to-share-data-between-jobs-fc1547defc3e
+
+
+
+* use OICD provider for AWS still using log term credentials for pulumi
+
+* add pulumi up to infrastructure text
+* add reference on deployment text to lambda part
+
+
+
 
 * Deployment takes log for Cloudfront to propagate the changes to the edge locations
 * Upload of the origin respsone function takes long -> therefore maybe just build function if something changed otherwise return success in and
