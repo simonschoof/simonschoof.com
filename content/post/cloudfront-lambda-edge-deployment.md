@@ -229,32 +229,14 @@ After the pipeline finished successfully we can start to upload images to S3 and
 
 ### Conclusion
 
+Finally we have arrived at the first version for our deployment pipeline and we are now able to continously integrate and deploy our resizing function. Nevertheless this first version is not optimal and would probably fail a proper [continous integration certification](https://martinfowler.com/bliki/ContinuousIntegrationCertification.html). The first reason for this is the lack of tests, which makes it nearly impossible to continously deliver or deploy the application. Unless you don't mind not knowing if the application still works the way it was intended or even runs at all. The second reason is the total run time of our pipeline. If we want to be able to rollback our changes within 10 minutes we have to optimize the runtime of our pipeline. 
+When we look at the long running task of our pipeline we can identify easily identify some tasks that could be optimized:
 
-For this article:
+* The upload and download of the origin response function takes quite long. We could possibly optimize this using a [different approach for sharing the data between the jobs](https://levelup.gitconnected.com/github-actions-how-to-share-data-between-jobs-fc1547defc3e), e.g. maybe [caching](https://github.com/actions/cache)
+* We could also tweak the trigger for building the fuctions and only build them if the functions changed but not when we  only updated the CloudFront configuration.
 
-https://www.pulumi.com/docs/guides/continuous-delivery/github-actions/
-https://github.com/actions/upload-artifact
-https://github.com/actions/download-artifact
-https://github.com/pulumi/actions
-https://github.com/marketplace/actions/delete-run-artifacts
-https://github.com/actions/cache
-https://levelup.gitconnected.com/github-actions-how-to-share-data-between-jobs-fc1547defc3e
+Another point to consider is that when using the upload and dowload artifact actions GitHub stores the artifacts for the pipeline run. For private repositories GitHub only offers a certain amount of storage so that it would be a good idea to [delete the run artifacts](https://github.com/marketplace/actions/delete-run-artifacts) after the pipeline finished successfully.
 
+Another long running task is the change propagation into the edge locations. Unfornutately this not a part we can optimize in ourselves, instead we are dependend on AWS here.
 
-
-* use OICD provider for AWS still using log term credentials for pulumi
-
-* add pulumi up to infrastructure text
-* add reference on deployment text to lambda part
-
-
-
-
-* Deployment takes log for Cloudfront to propagate the changes to the edge locations
-* Upload of the origin respsone function takes long -> therefore maybe just build function if something changed otherwise return success in and
-* use caching instead of articfact up and downloading
-* cleanup artifacts after deployment
-* missing tests unit/acceptance/smoke
-
-{{< series "CloudFront and lambda@edge with Pulumi" >}}
-
+Nevertheless, we now have a first working version of our deployment pipeline, which is a good starting point from which we can optimize and further develop the application.
