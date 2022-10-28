@@ -320,7 +320,9 @@ dict [ ("BucketName", bucket.Id :> obj)
         ("OriginResponseLambda", originResponseLambda.Arn :> obj)
         ("ImageBucketPolicy", imageBucketPolicy.Id :> obj) ]
 ```
-  
+
+After the definition of the needed infrastructure we are able to simply run `pulumi up` and all of the resources described earlier on are created in AWS.    
 In the {{< next-in-section "next part" >}}, we show how to implement and build the Lambda@Edge functions using TypeScript. 
 
 [^1]: Ensure that you use the `BucketRegionalDomainName` property instead of the `BucketDomainName` property when defining the origin. Otherwise, CloudFront redirects requests to the bucket domain and makes the origin unreachable when you work with a private bucket.
+
