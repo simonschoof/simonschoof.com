@@ -1,8 +1,8 @@
 +++
 author = "Simon Schoof"
 title = "Pulumi, CloudFront & Lambda@Edge: Deployment"
-date = "2022-10-29"
-description = "Setup AWS CloudFront and AWS Lambda@Edge with Pulumi"
+date = "2022-10-28"
+description = "Build and deploy CloudFront with Lambda@Edge using GitHub Actions"
 tags = [
     "infrastructure as code", 
     "pulumi",
