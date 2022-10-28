@@ -4,13 +4,17 @@ Disallow: /tags/aws/
 
 Disallow: /series/cloudfront-and-lambdaedge-with-pulumi/
 
+Disallow: /tags/fsharp/
+
+Disallow: /tags/github-actions/
+
 Disallow: /tags/infrastructure-as-code/
 
 Disallow: /post/
 
 Disallow: /tags/pulumi/
 
-Disallow: /post/cloudfront-lambda-edge-lambda-functions/
+Disallow: /post/cloudfront-lambda-edge-deployment/
 
 Disallow: /series/
 
@@ -18,9 +22,9 @@ Disallow: /
 
 Disallow: /tags/
 
-Disallow: /tags/typescript/
+Disallow: /post/cloudfront-lambda-edge-lambda-functions/
 
-Disallow: /tags/fsharp/
+Disallow: /tags/typescript/
 
 Disallow: /post/cloudfront-lambda-edge-infrastructure/
 
@@ -37,5 +41,7 @@ Disallow: /about/
 Disallow: /imprint/
 
 Disallow: /privacy/
+
+Disallow: /tags/ci/cd/
 
 Disallow: /tags/index/
