@@ -28,7 +28,7 @@ As of October 2021, GitHub supports [OpenID Connect (OIDC) for secure deployment
 Nonetheless, below we will describe the required resources that need to be created using Pulumi to enable secure deployments within GitHub Actions in AWS. 
 The code associated with this section can be found [here](https://github.com/simonschoof/lambda-at-edge-example/tree/main/pulumi-identity-federation)
 
-The first resource we need to enable deployments of GitHub actions in AWS is the OICD provider itself.
+The first resource we need to enable deployments of GitHub actions in AWS is the OIDC provider itself.
 
 ```fsharp
 let openIdConnectProviderArgs = OpenIdConnectProviderArgs(
@@ -42,7 +42,7 @@ let federatedPrincipal =
   GetPolicyDocumentStatementPrincipalInputArgs(Type = "Federated", Identifiers = inputList [ io openIdConnectProvider.Arn])
 ```
 
-In addition to the OICD provider, we need to create a policy where we define the allowed actions that we can perform in our deployment workflow. For our example, we need access to CloudFront, S3, Lambda, and IAM. In a real project, a good practice would be to disregard access to all resources with the "*" operator and define only the actions that are really needed, applying the [Principle of Least Privilege](https://en.wikipedia.org/wiki/Principle_of_least_privilege).  
+In addition to the OIDC provider, we need to create a policy where we define the allowed actions that we can perform in our deployment workflow. For our example, we need access to CloudFront, S3, Lambda, and IAM. In a real project, a good practice would be to disregard access to all resources with the "*" operator and define only the actions that are really needed, applying the [Principle of Least Privilege](https://en.wikipedia.org/wiki/Principle_of_least_privilege).  
 
 ```fsharp
 let cloudFrontPolicy =
@@ -111,7 +111,7 @@ let githubActionsRole =
 
 ### Deployment pipeline with GitHub Actions
 
-Now that we have the OICD provider in place, we can start to define our deployment pipeline to build and deploy the Lambda functions and CloudFront. At the end, we want to be able to achieve a CI/CD workflow. To this end, we will define the following tasks in our pipeline:
+Now that we have the OIDC provider in place, we can start to define our deployment pipeline to build and deploy the Lambda functions and CloudFront. At the end, we want to be able to achieve a CI/CD workflow. To this end, we will define the following tasks in our pipeline:
 
 * Creating the viewer request function
 * Create the origin response function
