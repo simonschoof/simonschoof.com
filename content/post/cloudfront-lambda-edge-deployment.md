@@ -16,17 +16,17 @@ This post is part of a small series of articles on using Pulumi to leverage Clou
 
 {{< series "CloudFront and lambda@edge with Pulumi" >}} 
 
-In this part, we will set up a deployment pipeline with GitHub Actions so that we can automate the the deployment of the infrastructure and AWS Lambda functions defined in the previous articles. To allow for secure deployments to AWS we will first configure OpenID connect in AWS. After we enabled GitHub Actions to deploy to AWS, using OIDC, we define the GitHub Actions workflows to create the AWS infrastructure and to build and deploy the AWS Lambda functions. At the end we will discuss options on how to improve the pipeline.    
+In this part, we will set up a deployment pipeline using GitHub Actions so that we can automate the deployment of the infrastructure defined in the previous articles. To enable secure deployments in AWS, we first set up an OpenID Connect provider in AWS. After enabling GitHub Actions for deployment in AWS with OIDC, we will define the GitHub Actions workflows to set up the AWS infrastructure and create and deploy the AWS Lambda functions. At the end, we will discuss options to improve the pipeline.     
 
 ### Configuring OpenID Connect in AWS #
 
-Since October 2021 GitHub supports [OpenID Connect (OIDC) for secure deployments in the cloud](https://github.blog/changelog/2021-10-27-github-actions-secure-cloud-deployments-with-openid-connect/). Using this feature allows us to use short-lived tokens that are automatically rotated for each deployment instead of storing long-lived AWS credentials in GitHub. In this section we will create the neccessary resources in AWS to allow for secure cloud deployment workflows without needing any cloud secrets stored in GitHub. We will not go into much detail on how this works but one can find plenty of information about the topic, e.g. [here](https://github.blog/changelog/2021-10-27-github-actions-secure-cloud-deployments-with-openid-connect/
+As of October 2021, GitHub supports [OpenID Connect (OIDC) for secure deployments in the cloud](https://github.blog/changelog/2021-10-27-github-actions-secure-cloud-deployments-with-openid-connect/). With this feature, we can use short-lived tokens that are automatically rotated with each deployment instead of storing long-lived AWS credentials in GitHub. In this section, we will create the necessary resources in AWS to enable secure cloud deployment workflows without requiring cloud secrets stored in GitHub. We won't go into too much detail on how this works, but you can find a lot of information on this topic, e.g. [here](https://github.blog/changelog/2021-10-27-github-actions-secure-cloud-deployments-with-openid-connect/
 ), [here](https://scalesec.com/blog/identity-federation-for-github-actions-on-aws/
-) and [here](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc.html). 
-Nevertheless in the following we will describe the needed resources to create with Pulumi to enable secure deployments fron within GitHub Actions into AWS. 
-The code belonging to this section can be found [here](https://github.com/simonschoof/lambda-at-edge-example/tree/main/pulumi-identity-federation)
+), and [here](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc.html). 
+Nonetheless, below we will describe the required resources that need to be created using Pulumi to enable secure deployments within GitHub Actions in AWS. 
+The code associated with this section can be found [here](https://github.com/simonschoof/lambda-at-edge-example/tree/main/pulumi-identity-federation)
 
-The first ressource we need to allow deployments from GitHub Actions into AWS is the OICD provider itself.
+The first resource we need to enable deployments of GitHub actions in AWS is the OICD provider itself.
 
 ```fsharp
 let openIdConnectProviderArgs = OpenIdConnectProviderArgs(
@@ -40,7 +40,7 @@ let federatedPrincipal =
   GetPolicyDocumentStatementPrincipalInputArgs(Type = "Federated", Identifiers = inputList [ io openIdConnectProvider.Arn])
 ```
 
-In addition to the OICD provider we have to create a policy in which we define the allowed actions we can execute in our deployment workflow. For our example we need access to CloudFront, S3, Lambda and IAM. In a real world project it would be good practice to neglect the access to all ressources with the "*" operator and just define the actions which are realy needed following the [principle of least privilege](https://en.wikipedia.org/wiki/Principle_of_least_privilege). 
+IIn addition to the OICD provider, we need to create a policy where we define the allowed actions that we can perform in our deployment workflow. For our example, we need access to CloudFront, S3, Lambda, and IAM. In a real project, a good practice would be to disregard access to all resources with the "*" operator and define only the actions that are really needed, applying the [Principle of Least Privilege](https://en.wikipedia.org/wiki/Principle_of_least_privilege).  
 
 ```fsharp
 let cloudFrontPolicy =
@@ -71,7 +71,7 @@ let cloudFrontPolicy =
       Policy("cloudFrontPolicy", policyArgs)
 ```
 
-The last thing we create is a role which can be used by our deployment pipeline and that tells IAM that this role can be assumed by GitHub Actions in our repository. It is important to define the condition, in the policy document statement, to restrict the access to the wanted repository. Otherwise every workflow in GitHub could assume this role. 
+Last, we create a role that can be used by our deployment pipeline that tells AWS IAM that this role can be taken by GitHub actions in our repository. It is important to define the condition in the policy document statement to restrict access to the desired repository. Otherwise, any workflow in GitHub could take over this role.  
 
 ```fsharp
 let githubActionsRole =
@@ -109,13 +109,13 @@ let githubActionsRole =
 
 ### Deployment pipeline with GitHub Actions
 
-Now that we have the OICD provider in place, we can start to define our deployment pipeline to build and deploy the Lambda functions and CloudFront. In the end we want to be able to get to an CI/CD workflow. To do so we will define the following jobs in our pipeline:
+Now that we have the OICD provider in place, we can start to define our deployment pipeline to build and deploy the Lambda functions and CloudFront. At the end, we want to be able to achieve a CI/CD workflow. To this end, we will define the following tasks in our pipeline:
 
-* Build the viewer request function
-* Build the origin response function
-* Create or update or Lambda@Edge and CloudFront environment in AWS with Pulumi
+* Creating the viewer request function
+* Create the origin response function
+* Create or update the Lambda@Edge and CloudFront environment in AWS using Pulumi
 
-As mentioned above the first job is to build the viewer request function. For this we just have to setup a nodeJs environment and install the dependencies and build the function. At the end we uopload the articfacts as build outputs with a [predefined action](https://github.com/actions/upload-artifact). As the upload  and later on the dowload of the of the artifacts takes quite a long time a better solution would have probably been to use the [caching mechanism of GitHub Actions](https://github.com/actions/cache).
+As mentioned earlier, the first task is to build the viewer request function. To do this, we just need to set up a Node.js environment, install the dependencies, and build the function. At the end, we upload the artifacts as build output with a [predefined action](https://github.com/actions/upload-artifact). Since uploading and later downloading the artifacts takes quite a long time, it probably would have been better to use the [caching mechanism of GitHub Actions](https://github.com/actions/cache).
 
 ```yaml
 name: Deploy CloudFront with Lambda@Edge
@@ -150,7 +150,7 @@ jobs:
          path: lambda/viewer-request-function/dist/
 ```
 
-Parallel to the first job we can also build the origin response function. As we have seen in the {{< prev-in-section "previous article" >}}, the origin response function uses the [Sharp library](https://sharp.pixelplumbing.com/), which requires the [`libvips` native extension](https://sharp.pixelplumbing.com/install). Which means we need to build and package the function for the Lambda execution environment. We also can do this in the deployment pipeline by using the [Amazon Linux Docker image](https://hub.docker.com/_/amazonlinux/) and the defined [Dockerfile](https://github.com/simonschoof/lambda-at-edge-example/blob/main/lambda/origin-response-function/Dockerfile). An interesting detail to see when building the origin response function is the use of the `npm ci` command with the `--ignore-scripts` flag. We want to use this flag in order to prevent us from supply chain attacks. As a result of the flag we have to rebuild the Sharp library after the `npm ci` command. A more detailed description on this topic and  how to prevent this can be found [here](https://dev.to/naugtur/get-safe-and-remain-productive-with-can-i-ignore-scripts-2ddc). In the end we also upload the output of the install and build command with the [predefined upload action](https://github.com/actions/upload-artifact).
+In parallel with the first task, we can also create the origin response function. As we saw in the {{< prev-in-section "previous article" >}}, the original response function uses the [Sharp library](https://sharp.pixelplumbing.com/), which requires the [`libvips` native extension](https://sharp.pixelplumbing.com/install). This means that we need to create and package the function for the Lambda execution environment. We can also do this in the deployment pipeline using the [Amazon Linux Docker image](https://hub.docker.com/_/amazonlinux/) and the defined [Dockerfile](https://github.com/simonschoof/lambda-at-edge-example/blob/main/lambda/origin-response-function/Dockerfile). An interesting detail in creating the origin response function is to use the `npm ci` command with the `-ignore-scripts` flag. We want to use this flag to protect us from supply chain attacks. As a result of the flag, we need to rebuild the Sharp library after the `npm ci` command. A more detailed description of this issue and how to prevent it can be found [here](https://dev.to/naugtur/get-safe-and-remain-productive-with-can-i-ignore-scripts-2ddc). Finally, we upload the output of the install and build command using the [predefined upload action](https://github.com/actions/upload-artifact).
 
 
 ```yaml
@@ -174,13 +174,13 @@ Parallel to the first job we can also build the origin response function. As we 
            lambda/origin-response-function/node_modules
 ```
 
-In the last part we want to create or update the Lambda@Edge functions and the CloudFront instance in AWS. This job will only run if both functions from the previous jobs were successfully build. Within the job we just have to execute the following steps:
+In the last part, we want to create or update the Lambda@Edge functions and CloudFront instance in AWS. This job will only run if both functions have been successfully created from the previous jobs. Within the job, we only need to perform the following steps:
 
-* Download the viewer request and origins response build artifacts with the [respective download action](https://github.com/actions/download-artifact)
+* Download the viewer request and origin response build artifacts using the [respective download action](https://github.com/actions/download-artifact)
 * Configure the AWS credentials assuming the role we defined in the first section of this article
-* Run `pulumi up` using the [Pulumi action](https://github.com/pulumi/actions)
+* Run `Pulumi up` with the [pulumi action](https://github.com/pulumi/actions)
 
-Note that the job will take quite a time, because the changes have to be propagtated to the edge locations of the CloudFront instance. Also we have to provide an access token for Pulumi stored as GitHub secret.
+Note that the job will take quite a bit of time, as the changes need to be propagated to the edge locations of the CloudFront instance. We also need to provide an access token for Pulumi, which is stored as a GitHub secret.
 
 ```yaml
  deploy:
@@ -221,7 +221,7 @@ Note that the job will take quite a time, because the changes have to be propagt
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
 ```
 
-After the pipeline finished successfully we can start to upload images to S3 and provide the Links for the images leveraging the CloudFront domain. Consumers of the images can also provide the resizing parameters to get the on-the-fly resized images. 
+After the pipeline completes successfully, we can start uploading images to S3 and providing the links for the images through the CloudFront domain. The users of the images can also specify the resizing parameters to get the resized images on the fly.
 
 {{< figure2 src="images/github_action_deployment_pipeline.png" class="github-action-deployment-pipeline" caption="Github Actions deployment pipeline " attrrel="noopener noreferrer" >}} 
 
@@ -229,14 +229,14 @@ After the pipeline finished successfully we can start to upload images to S3 and
 
 ### Conclusion
 
-Finally we have arrived at the first version for our deployment pipeline and we are now able to continously integrate and deploy our resizing function. Nevertheless this first version is not optimal and would probably fail a proper [continous integration certification](https://martinfowler.com/bliki/ContinuousIntegrationCertification.html). The first reason for this is the lack of tests, which makes it nearly impossible to continously deliver or deploy the application. Unless you don't mind not knowing if the application still works the way it was intended or even runs at all. The second reason is the total run time of our pipeline. If we want to be able to rollback our changes within 10 minutes we have to optimize the runtime of our pipeline. 
-When we look at the long running task of our pipeline we can identify easily identify some tasks that could be optimized:
+Finally, we have reached the first version of our deployment pipeline, and we are now able to continuously integrate and deploy our resizing function. Nevertheless, this first version is not optimal and would probably fail a proper [continuous integration certification](https://martinfowler.com/bliki/ContinuousIntegrationCertification.html). The first reason is the lack of testing, which makes it almost impossible to continuously deliver or deploy the application. Unless you don't mind not knowing if the application is still working as it was intended, or if it is running at all. The second reason is the overall run time of our pipeline. If we want to be able to roll back our changes within 10 minutes, we need to optimize the runtime of our pipeline. 
+If we look at the long-running tasks in our pipeline, we can easily identify some tasks that could be optimized:
 
-* The upload and download of the origin response function takes quite long. We could possibly optimize this using a [different approach for sharing the data between the jobs](https://levelup.gitconnected.com/github-actions-how-to-share-data-between-jobs-fc1547defc3e), e.g. maybe [caching](https://github.com/actions/cache)
-* We could also tweak the trigger for building the fuctions and only build them if the functions changed but not when we  only updated the CloudFront configuration.
+* Uploading and downloading the origin response function takes quite a long time. We could possibly optimize this by using a [different approach to sharing data between jobs](https://levelup.gitconnected.com/github-actions-how-to-share-data-between-jobs-fc1547defc3e), e.g. perhaps [caching](https://github.com/actions/cache)
+* We could also optimize the trigger for creating the functions and only create them when the functions have changed, but not when we have only updated the CloudFront configuration.
 
-Another point to consider is that when using the upload and dowload artifact actions GitHub stores the artifacts for the pipeline run. For private repositories GitHub only offers a certain amount of storage so that it would be a good idea to [delete the run artifacts](https://github.com/marketplace/actions/delete-run-artifacts) after the pipeline finished successfully.
+Another point to consider is that when using the upload and dowload artifact actions, GitHub stores the artifacts for the pipeline run. For [private repositories, GitHub only provides a certain amount of storage](https://docs.github.com/en/billing/managing-billing-for-github-actions/about-billing-for-github-actions), so it would be a good idea to [delete the executed artifacts](https://github.com/marketplace/actions/delete-run-artifacts) after the pipeline has completed successfully.
 
-Another long running task is the change propagation into the edge locations. Unfornutately this not a part we can optimize in ourselves, instead we are dependend on AWS here.
+Another tedious task is the propagation of changes to the edge sites. Unfortunately, this is not a part that we can optimize ourselves; we rely on AWS for this.
 
-Nevertheless, we now have a first working version of our deployment pipeline, which is a good starting point from which we can optimize and further develop the application.
+Nonetheless, we now have a first working version of our deployment pipeline, which is a good starting point for the optimization and further development of the application.
