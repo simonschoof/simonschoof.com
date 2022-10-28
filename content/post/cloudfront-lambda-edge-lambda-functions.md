@@ -286,3 +286,5 @@ docker build --tag amazonlinux:nodejs .
 ```bash
 docker run --rm --volume ${PWD}:/build amazonlinux:nodejs /bin/bash -c "source ~/.bashrc; npm init -f -y; rm -rf node_modules; npm install; npm run build"
 ```
+
+In the {{< next-in-section "next and last part" >}}, we show how to create a deployment pipeline using GitHub Actions.
