@@ -42,7 +42,7 @@ let federatedPrincipal =
   GetPolicyDocumentStatementPrincipalInputArgs(Type = "Federated", Identifiers = inputList [ io openIdConnectProvider.Arn])
 ```
 
-IIn addition to the OICD provider, we need to create a policy where we define the allowed actions that we can perform in our deployment workflow. For our example, we need access to CloudFront, S3, Lambda, and IAM. In a real project, a good practice would be to disregard access to all resources with the "*" operator and define only the actions that are really needed, applying the [Principle of Least Privilege](https://en.wikipedia.org/wiki/Principle_of_least_privilege).  
+In addition to the OICD provider, we need to create a policy where we define the allowed actions that we can perform in our deployment workflow. For our example, we need access to CloudFront, S3, Lambda, and IAM. In a real project, a good practice would be to disregard access to all resources with the "*" operator and define only the actions that are really needed, applying the [Principle of Least Privilege](https://en.wikipedia.org/wiki/Principle_of_least_privilege).  
 
 ```fsharp
 let cloudFrontPolicy =
