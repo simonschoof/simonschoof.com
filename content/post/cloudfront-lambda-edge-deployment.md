@@ -1,16 +1,18 @@
 +++
 author = "Simon Schoof"
 title = "Pulumi, CloudFront & Lambda@Edge: Deployment"
-date = "2022-08-28"
+date = "2022-10-29"
 description = "Setup AWS CloudFront and AWS Lambda@Edge with Pulumi"
 tags = [
     "infrastructure as code", 
     "pulumi",
     "aws",
-    "fsharp"
+    "fsharp",
+    "ci/cd",
+    "github actions"
 ]
 series = "CloudFront and Lambda@Edge with Pulumi"
-draft = true
+draft = false
 +++
 This post is part of a small series of articles on using Pulumi to leverage CloudFront and Lambda@Edge for on the fly image resizing. The code for this part can be found [here](https://github.com/simonschoof/lambda-at-edge-example/tree/main/pulumi-identity-federation) and [here](https://github.com/simonschoof/lambda-at-edge-example/tree/main/.github/workflows).
 
