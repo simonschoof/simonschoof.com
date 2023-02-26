@@ -2,7 +2,7 @@ User-agent: *
 
 Disallow: /tags/aws/
 
-Disallow: /series/cloudfront-and-lambdaedge-with-pulumi/
+Disallow: /series/cloudfront-and-lambda@edge-with-pulumi/
 
 Disallow: /tags/fsharp/
 

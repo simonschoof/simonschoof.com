@@ -103,8 +103,8 @@ This is just an obvious security restriction. In a production environment, you w
 </span></span><span class=line><span class=cl>        <span class=nn>Lambda</span><span class=p>.</span><span class=n>FunctionArgs</span><span class=o>(</span>
 </span></span><span class=line><span class=cl>            <span class=n>Handler</span> <span class=o>=</span> <span class=s>&#34;index.handler&#34;</span><span class=o>,</span>
 </span></span><span class=line><span class=cl>            <span class=n>Runtime</span> <span class=o>=</span> <span class=s>&#34;nodejs14.x&#34;</span><span class=o>,</span>
-</span></span><span class=line><span class=cl>            <span class=n>MemorySize</span> <span class=o>=</span> <span class=n>128</span><span class=o>,</span>
-</span></span><span class=line><span class=cl>            <span class=n>Timeout</span> <span class=o>=</span> <span class=n>1</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>MemorySize</span> <span class=o>=</span> <span class=mi>128</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>Timeout</span> <span class=o>=</span> <span class=mi>1</span><span class=o>,</span>
 </span></span><span class=line><span class=cl>            <span class=n>Role</span> <span class=o>=</span> <span class=n>lambdaRole</span><span class=o>.</span><span class=n>Arn</span><span class=o>,</span>
 </span></span><span class=line><span class=cl>            <span class=n>Publish</span> <span class=o>=</span> <span class=k>true</span><span class=o>,</span>
 </span></span><span class=line><span class=cl>            <span class=n>Code</span> <span class=o>=</span>
@@ -134,8 +134,8 @@ This is just an obvious security restriction. In a production environment, you w
 </span></span><span class=line><span class=cl>        <span class=nn>Lambda</span><span class=p>.</span><span class=n>FunctionArgs</span><span class=o>(</span>
 </span></span><span class=line><span class=cl>            <span class=n>Handler</span> <span class=o>=</span> <span class=s>&#34;index.handler&#34;</span><span class=o>,</span>
 </span></span><span class=line><span class=cl>            <span class=n>Runtime</span> <span class=o>=</span> <span class=s>&#34;nodejs14.x&#34;</span><span class=o>,</span>
-</span></span><span class=line><span class=cl>            <span class=n>MemorySize</span> <span class=o>=</span> <span class=n>512</span><span class=o>,</span>
-</span></span><span class=line><span class=cl>            <span class=n>Timeout</span> <span class=o>=</span> <span class=n>5</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>MemorySize</span> <span class=o>=</span> <span class=mi>512</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>Timeout</span> <span class=o>=</span> <span class=mi>5</span><span class=o>,</span>
 </span></span><span class=line><span class=cl>            <span class=n>Role</span> <span class=o>=</span> <span class=n>lambdaRole</span><span class=o>.</span><span class=n>Arn</span><span class=o>,</span>
 </span></span><span class=line><span class=cl>            <span class=n>Publish</span> <span class=o>=</span> <span class=k>true</span><span class=o>,</span>
 </span></span><span class=line><span class=cl>            <span class=n>Code</span> <span class=o>=</span>
@@ -214,9 +214,9 @@ We will not explain them here, but recommend reading the <a href=https://docs.aw
 </span></span><span class=line><span class=cl>            <span class=n>TargetOriginId</span> <span class=o>=</span> <span class=s>&#34;myS3Origin&#34;</span><span class=o>,</span>
 </span></span><span class=line><span class=cl>            <span class=n>ForwardedValues</span> <span class=o>=</span> <span class=n>forwardedValuesArgs</span><span class=o>,</span>
 </span></span><span class=line><span class=cl>            <span class=n>ViewerProtocolPolicy</span> <span class=o>=</span> <span class=s>&#34;redirect-to-https&#34;</span><span class=o>,</span>
-</span></span><span class=line><span class=cl>            <span class=n>MinTtl</span> <span class=o>=</span> <span class=n>100</span><span class=o>,</span>
-</span></span><span class=line><span class=cl>            <span class=n>DefaultTtl</span> <span class=o>=</span> <span class=n>3600</span><span class=o>,</span>
-</span></span><span class=line><span class=cl>            <span class=n>MaxTtl</span> <span class=o>=</span> <span class=n>86400</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>MinTtl</span> <span class=o>=</span> <span class=mi>100</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>DefaultTtl</span> <span class=o>=</span> <span class=mi>3600</span><span class=o>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>MaxTtl</span> <span class=o>=</span> <span class=mi>86400</span><span class=o>,</span>
 </span></span><span class=line><span class=cl>            <span class=n>SmoothStreaming</span> <span class=o>=</span> <span class=k>false</span><span class=o>,</span>
 </span></span><span class=line><span class=cl>            <span class=n>Compress</span> <span class=o>=</span> <span class=k>true</span><span class=o>,</span>
 </span></span><span class=line><span class=cl>            <span class=n>LambdaFunctionAssociations</span> <span class=o>=</span>
@@ -254,6 +254,7 @@ We will not explain them here, but recommend reading the <a href=https://docs.aw
 <a href=https://simonschoof.com/post/cloudfront-lambda-edge-lambda-functions/>next part</a>
 , we show how to implement and build the Lambda@Edge functions using TypeScript.</p><div class=footnotes role=doc-endnotes><hr><ol><li id=fn:1><p>Ensure that you use the <code>BucketRegionalDomainName</code> property instead of the <code>BucketDomainName</code> property when defining the origin. Otherwise, CloudFront redirects requests to the bucket domain and makes the origin unreachable when you work with a private bucket.&#160;<a href=#fnref:1 class=footnote-backref role=doc-backlink>&#8617;&#xfe0e;</a></p></li></ol></div></article></div></div><footer><span class=copyright>Build with <a href=https://gohugo.io/ title=hugo alt=hugo target=_blank>hugo</a> & <span class=emojify>❤️</span>
 | Theme: Based on <a href=https://github.com/aanupam23/hugo-sugoi title=hugo-sugoi alt=hugo-sugoi target=_blank>hugo-sugoi</a>
-extended by <a href=https://github.com/simonschoof/hugo-sugoi title="my theme" alt="my theme" target=_blank>me</a>.<br>&copy; 2022 Simon Schoof
+extended by <a href=https://github.com/simonschoof/hugo-sugoi title="my theme" alt="my theme" target=_blank>me</a>.<br>&copy; 2023 Simon Schoof
 | <a href=https://simonschoof.com/imprint title=Imprint alt=Imprint>Imprint</a>
-| <a href=https://simonschoof.com/privacy title=Privacy alt=Privacy>Privacy</a></span></footer></body></html>
+| <a href=https://simonschoof.com/privacy title=Privacy alt=Privacy>Privacy</a>
+| <a rel=me href=https://social.simonschoof.com/@connect></a></span></footer></body></html>
