@@ -11,22 +11,66 @@ tags = [
 series = "Running Mastodon on AWS"
 draft = true
 +++
-This post is the first part of a two article series on deploying and running a Mastodon instance on AWS. 
+This post is the first part of a two article series on running a [Mastodon](https://joinmastodon.org/) instance on AWS with ECS and Fargate. To get familiar with Mastodon and its configuration, I decided to run Mastodon locally with [docker-compose](https://docs.docker.com/compose/) first. This post will cover the steps to run Mastodon locally with docker-compose. The second part will cover the steps to run Mastodon on AWS with ECS and Fargate.
 The code for this part can be found [here](https://github.com/simonschoof/mastodon-aws).
 
 {{< series "Running Mastodon on AWS" >}} 
 
 ### Introduction
 
-Motivation here: Testing, playing around and make my self familiar with Mastodon and its configuration.
+As I was never a huge fan of the existing social media platforms, I was looking for an alternative for a while. I stumbled upon Mastodon and got interested in it and the idea of [building protocolls instead of platforms](https://knightcolumbia.org/content/protocols-not-platforms-a-technological-approach-to-free-speech). As I was searching for Mastodon instances, the idea to host my own instance came up. I also thought it could be a good next project to write a blog post about. As I used AWS for my last project already, I thought it might be interesting to also run Mastodon on AWS. 
 
-### Adapting to run locally
+Before I start with the AWS part, I wanted to get familiar with Mastodon and its configuration. Therefore I decided to run Mastodon locally with docker-compose first. In the next sections I will cover the steps to run Mastodon locally with docker-compose. To get Mastodon to run with docker-compose, I am thankful that I found the following blog posts of Ben Tasker and Peter Babič, which helped me a lot:
+* https://www.bentasker.co.uk/posts/blog/general/running-mastodon-in-docker-compose.html#self_hosting
+* https://peterbabic.dev/blog/running-mastodon-with-docker-compose/
 
-#### Remove networks
+In the next section I will describe the steps to adjust the docker-compose file to run Mastodon in a local setup for exploration and testing purposes.
+
+### Adjusting to run locally
+
+As I only want to run Mastodon locally for exploration and testing purposes, I will make some changes to the docker-compose file and the nginx configuration and deviate from the setup described in the blog posts of [Ben Tasker](https://www.bentasker.co.uk/posts/blog/general/running-mastodon-in-docker-compose.html#self_hosting) and [Peter Babič](https://peterbabic.dev/blog/running-mastodon-with-docker-compose/). 
+
+##### Get docker-compose file
+
+First, I will get the docker-compose file from the [Mastodon repository](https://github.com/mastodon/mastodon/blob/main/docker-compose.yml). There is no need to clone the whole repository, as the docker-compose file is the only file I need. Of cause you can also clone the repository and copy the docker-compose file from there.
+
+##### Remove build statements
+
+##### Remove networks
 
 Remove the internal and external networks from the docker-compose file as there is no need to distinguish between internal and external networks when running locally.
 
-#### Create local certificate
+##### Add Mailcatcher
+
+```yaml
+mailcatcher:
+  restart: always
+  image: schickling/mailcatcher
+  container_name: mastodon-mailcatcher
+  ports:
+    - 1025:1025
+    - 1080:1080
+```
+
+##### Add Minio
+
+```yaml
+minio:
+  restart: always
+  image: minio/minio
+  ports:
+    - "9000:9000"
+    - "9001:9001"
+  volumes:
+    - minio_storage:/data
+  environment:
+    MINIO_ROOT_USER: minio
+    MINIO_ROOT_PASSWORD: minio123
+  command: server --console-address ":9001" /data
+```
+##### Adjust nginx configuration
+
+I will create a self-signed certificate for the local domain: 
 
 ```bash
 openssl req -x509 -out social.localhost.crt -keyout social.localhost.key \
@@ -51,6 +95,8 @@ http:
       - ./nginx/certs:/etc/letsencrypt/
       - ./nginx/lebase:/lebase
 ```
+
+Create a nginx configuration file for the local domain:
 
 ```conf
 server {
@@ -117,35 +163,6 @@ server {
             tcp_nodelay on;
         }
 }
-```
-
-#### Add Mailcatcher
-
-```yaml
-mailcatcher:
-  restart: always
-  image: schickling/mailcatcher
-  container_name: mastodon-mailcatcher
-  ports:
-    - 1025:1025
-    - 1080:1080
-```
-
-#### Add Minio
-
-```yaml
-minio:
-  restart: always
-  image: minio/minio
-  ports:
-    - "9000:9000"
-    - "9001:9001"
-  volumes:
-    - minio_storage:/data
-  environment:
-    MINIO_ROOT_USER: minio
-    MINIO_ROOT_PASSWORD: minio123
-  command: server --console-address ":9001" /data
 ```
 
 ### Prepare and run Mastodon
