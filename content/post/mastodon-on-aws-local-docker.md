@@ -28,19 +28,62 @@ In the next section I will describe the steps to adjust the docker-compose file 
 
 ### Adjusting to run locally
 
-As I only want to run Mastodon locally for exploration and testing purposes, I will make some changes to the docker-compose file and the nginx configuration and deviate from the setup described in the blog posts of [Ben Tasker](https://www.bentasker.co.uk/posts/blog/general/running-mastodon-in-docker-compose.html#self_hosting) and [Peter Babič](https://peterbabic.dev/blog/running-mastodon-with-docker-compose/). 
+As I only want to run Mastodon locally for exploration and testing purposes, I will make some changes to the docker-compose file and the Nginx configuration and deviate from the setup described in the blog posts of [Ben Tasker](https://www.bentasker.co.uk/posts/blog/general/running-mastodon-in-docker-compose.html#self_hosting) and [Peter Babič](https://peterbabic.dev/blog/running-mastodon-with-docker-compose/). 
 
-##### Get docker-compose file
+##### Docker-compose and env file
 
 First, I will get the docker-compose file from the [Mastodon repository](https://github.com/mastodon/mastodon/blob/main/docker-compose.yml). There is no need to clone the whole repository, as the docker-compose file is the only file I need. Of cause you can also clone the repository and copy the docker-compose file from there.
 
+The second file I need is the .env.production file. This file contains the environment variables for the docker-compose file. I can start with an empty file and add the variables I need later. Within a shell you can create the file with the following command:
+
+```bash
+touch .env.production
+```
+
 ##### Remove build statements
+
+In the second step I removed the build statements from the docker-compose file as we will use the pre-built images from the [Docker Hub](https://hub.docker.com/r/tootsuite/mastodon) instead of building the images locally.
+
+Just replace the build statement in the docker-compose file
+
+```yaml
+build: .
+```
+
+with the following line
+
+```yaml
+image: tootsuite/mastodon:v4.1.1
+```
+
+The lastest image version to this time of this writing is v4.1.1.
 
 ##### Remove networks
 
-Remove the internal and external networks from the docker-compose file as there is no need to distinguish between internal and external networks when running locally.
+In a third step I removed the internal and external networks from the docker-compose file as there is no need to distinguish between internal and external networks when running locally only.
+
+Just remove the following lines from the docker-compose file:
+
+```yaml
+networks:
+  - internal_network
+  - external_network
+```
+
+and 
+
+```yaml
+etworks:
+  external_network:
+  internal_network:
+    internal: true
+```
+
+I also removed the local host ip, `127.0.0.1`, in front of the port mappings and deleted the comments for the elasticsearch cluster and the allow hidden services federation configuration. This was not necessary, but I thought it would be cleaner to remove them.
 
 ##### Add Mailcatcher
+
+To be able to send and receive emails locally, I will add [Mailcatcher](https://mailcatcher.me/) to the docker-compose file. Mailcatcher is a simple SMTP server which catches any message sent to it to display in a web interface. With Mailcatcher we can send emails locally on port 1025 and receive them on port 1080.
 
 ```yaml
 mailcatcher:
@@ -53,6 +96,8 @@ mailcatcher:
 ```
 
 ##### Add Minio
+
+To be able to upload media files to a local S3 compatible storage, I added [Minio](https://min.io/) to the docker-compose file. Minio is an open source object storage server compatible with Amazon S3 cloud storage service. With Minio we can upload media files locally on port 9000 and access the Minio console on port 9001. I was not able to use a local mock AWS S3 mock server, as it seems that the AWS S3 client used by Mastodon is hard wired to use the AWS S3 API endpoints. 
 
 ```yaml
 minio:
@@ -68,18 +113,16 @@ minio:
     MINIO_ROOT_PASSWORD: minio123
   command: server --console-address ":9001" /data
 ```
-##### Adjust nginx configuration
 
-I will create a self-signed certificate for the local domain: 
+##### Adjust Nginx configuration
 
-```bash
-openssl req -x509 -out social.localhost.crt -keyout social.localhost.key \
-  -newkey rsa:2048 -nodes -sha256 \
-  -subj '/CN=social.localhost' -extensions EXT -config <( \
-   printf "[dn]\nCN=social.localhost\n[req]\ndistinguished_name = dn\n[EXT]\nsubjectAltName=DNS:social.localhost\nkeyUsage=digitalSignature\nextendedKeyUsage=serverAuth")
-```
+In the last step of the preparation I will adjust the Nginx configuration to run Mastodon locally. I will use the Nginx configuration provided by [Ben Tasker](https://www.bentasker.co.uk/posts/blog/general/running-mastodon-in-docker-compose.html#self_hosting) and will configure it to run Mastodon on the local domain `social.localhost` with self-signed certificates for this local domain. To do so I created a new folder `nginx` and added the following subfolders:
+* `conf.d` - contains the Nginx configuration files
+* `certs` - contains the self-signed certificates
+* `tmp` - contains the Nginx temporary files.
+* `lebase` - don't know what this is for. Just copied it from Ben Tasker's setup.
 
-and add them to the nginx web server configuration:
+The folder are mounted to the Nginx container as volumes. The Nginx container is configured as follows:
 
 ```yaml
 http:
@@ -96,7 +139,18 @@ http:
       - ./nginx/lebase:/lebase
 ```
 
-Create a nginx configuration file for the local domain:
+To create the self-signed certificates I used the following command:
+
+```bash
+openssl req -x509 -out social.localhost.crt -keyout social.localhost.key \
+  -newkey rsa:2048 -nodes -sha256 \
+  -subj '/CN=social.localhost' -extensions EXT -config <( \
+   printf "[dn]\nCN=social.localhost\n[req]\ndistinguished_name = dn\n[EXT]\nsubjectAltName=DNS:social.localhost\nkeyUsage=digitalSignature\nextendedKeyUsage=serverAuth")
+```
+
+The created certificates are then placed in the `nginx/certs` folder.
+
+The Nginx configuration file is called `mastodon.development.conf` placed in the `nginx/conf.d` folder and looks like this:
 
 ```conf
 server {
