@@ -32,31 +32,18 @@ As I only want to run Mastodon locally for exploration and testing purposes, I w
 
 ##### Docker-compose and env file
 
-First, I will get the docker-compose file from the [Mastodon repository](https://github.com/mastodon/mastodon/blob/main/docker-compose.yml). There is no need to clone the whole repository, as the docker-compose file is the only file I need. Of cause you can also clone the repository and copy the docker-compose file from there.
+First, we will get the docker-compose file from the [Mastodon repository](https://github.com/mastodon/mastodon/blob/main/docker-compose.yml). There is no need to clone the whole repository, as the docker-compose file is the only file we need. Of cause you can also clone the repository and copy the docker-compose file from there.
 
-The second file I need is the .env.production file. This file contains the environment variables for the docker-compose file. I can start with an empty file and add the variables I need later. Within a shell you can create the file with the following command:
+The second file we need is an `.env.development` file. This file contains the environment variables for the Mastodon web, streaming and sidekiq container definitions in the docker-compose file. We can start with an empty file and add the variables we need later. Within a shell you can create the file with the following command: `touch .env.development`.
 
-```bash
-touch .env.production
-```
+The environment part of the .env file determines the Rails environment. We will set it to development, as we want to run Mastodon locally for exploration and testing purposes. Therefore we have to replace `.env.production` with `.env.development` in the docker-compose file.
+
 
 ##### Remove build statements
 
 In the second step I removed the build statements from the docker-compose file as we will use the pre-built images from the [Docker Hub](https://hub.docker.com/r/tootsuite/mastodon) instead of building the images locally.
 
-Just replace the build statement in the docker-compose file
-
-```yaml
-build: .
-```
-
-with the following line
-
-```yaml
-image: tootsuite/mastodon:v4.1.1
-```
-
-The lastest image version to this time of this writing is v4.1.1.
+Just replace the build statement `build:.` with `image: tootsuite/mastodon:v4.1.1` in the docker-compose file. The lastest image version to the time of this writing is v4.1.1.
 
 ##### Remove networks
 
@@ -227,7 +214,7 @@ The main parts of the Nginx configuration file are doing the following:
 With the preparation done, we can now setup the Mastodon instance. To recap, we need to have the following in place:
 
 * The adjusted docker-compose file
-* An (empty) .env.production file
+* An (empty) `.env.development` file
 * The Nginx configuration file and the self-signed certificates
 
 As also mentioned by Peter Babič, this part is a bit tricky, but we will see that it is a bit easier if we want to run Mastodon on a local domain only instead of running it in a docker environment in production.
@@ -292,7 +279,7 @@ SMTP password | |
 SMTP authentication | plain | plain
 SMTP OpenSSL verify mode | none | List choice
 Enable STARTTLS | auto | List choice
-E-mail address to send e-mails "from" | Mastodon <notifications@social.localhost> | Mastodon <notifications@`domain`>
+E-mail address to send e-mails "from" | Mastodon \<notifications@social.localhost\> | Mastodon <notifications@`domain`>
 Send a test e-mail with this configuration right now | y | y
 Send a test e-mail to | mail@social.localhost | 
 
@@ -304,7 +291,8 @@ Question | Answer | Default
 --------|------|--------
 Save configuration | y | y
 
-When answering yes to the last question the configuration will be saved to the `.env.production` file within the currently running Docker container and will also be displayed on the screen. We can now copy the configuration to the `.env.production` file on our local machine.
+When answering yes to the last question the configuration will be saved to the `.env.production` file within the currently running Docker container and will also be displayed on the screen. We can now copy the outputted
+configuration to the `.env.development` file on our local machine.
 
 ```env
 # Generated with mastodon:setup on 2023-03-19 21:16:41 UTC
@@ -367,8 +355,7 @@ To run mastodon we only need to run `docker-compose up` and we should be able to
 
 {{< figure2 src="images/mastodon-running-locally.webp" class="mastodon-running-locally" caption="Mastodon running on social.localhost" attrrel="noopener noreferrer" >}}
 
-
-After logging in we can change the password of our admin user, add an avatar and a header image and write our first toots.
+After logging in we can change the password of our admin user, add an avatar and a header image and write our first toots. After we uploaded somes images we can see that they are not displayed on Mastodon. This is because Minio has a Content Security Policy (CSP) in place which [prevents mixed (HTTP / HTTPS content)](https://github.com/minio/minio/blob/6c11dbffd53dffd439d198f4b44e423d3e37e746/cmd/generic-handlers.go#L545). As a workaround I temporarily installed the [Disable Content Security extension](https://chrome.google.com/webstore/detail/disable-content-security/ieelmcmcagommplceebfedjlakkhpden/related) in my Chromium browser. After disbaling the CSP on the Mastodon page we can see the images. 
 
 {{< figure2 src="images/mastodon-mastodon.webp" class="mastodon-first-toot" caption="Mastodon first toots" attrrel="noopener noreferrer" >}}
 
