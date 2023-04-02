@@ -119,9 +119,9 @@ a.footnote-ref::after {
 
 img {
   display: block;
-  width: 50%;
+  width: 100%;
   margin: 0.7rem auto;
-  max-height: 500px;
+  max-height: 850px;
   object-fit: contain;
 }
 
