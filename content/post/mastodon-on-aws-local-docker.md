@@ -2,7 +2,7 @@
 author = "Simon Schoof"
 title = "Mastodon on AWS: Running locally"
 date = "2023-03-11"
-description = "Running Mastodon locally using Docker and docker-compose"
+description = "Running Mastodon locally using Docker and Docker Compose"
 tags = [
     "mastodon",
     "docker",
@@ -11,45 +11,45 @@ tags = [
 series = "Running Mastodon on AWS"
 draft = true
 +++
-This post is the first part of a two article series on running a [Mastodon](https://joinmastodon.org/) instance on AWS with ECS and Fargate. To get familiar with Mastodon and its configuration, I decided to run Mastodon locally with [docker-compose](https://docs.docker.com/compose/) first. This post will cover the steps to run Mastodon locally with docker-compose. The second part will cover the steps to run Mastodon on AWS with ECS and Fargate.
+This post is the first part of a series of two articles about running a [Mastodon](https://joinmastodon.org/) instance on AWS with ECS and Fargate. To familiarize myself with Mastodon and its configuration, I decided to first run Mastodon locally using [Docker Compose](https://docs.docker.com/compose/). This post will describe the steps to run Mastodon locally with Docker Compose. The second part will cover the steps to run Mastodon on AWS using ECS and Fargate.
 The code for this part can be found [here](https://github.com/simonschoof/mastodon-aws).
 
 {{< series "Running Mastodon on AWS" >}} 
 
 ### Introduction
 
-As I was never a huge fan of the existing social media platforms, I was looking for an alternative for a while. I stumbled upon Mastodon and got interested in it and the idea of [building protocolls instead of platforms](https://knightcolumbia.org/content/protocols-not-platforms-a-technological-approach-to-free-speech). As I was searching for Mastodon instances, the idea to host my own instance came up. I also thought it could be a good next project to write a blog post about. As I used AWS for my last project already, I thought it might be interesting to also run Mastodon on AWS. 
+Since I was never a big fan of the existing social media platforms, I was looking for an alternative for a while. I came across Mastodon and got interested in it and the idea of [building protocols instead of platforms](https://knightcolumbia.org/content/protocols-not-platforms-a-technological-approach-to-free-speech). When I was looking for Mastodon instances, I came up with the idea of hosting my own instance. I also thought it might be a good next project to write a blog post about. Since I already used AWS for my last project, I thought it might be interesting to run Mastodon on AWS as well. 
 
-Before I start with the AWS part, I wanted to get familiar with Mastodon and its configuration. Therefore I decided to run Mastodon locally with docker-compose first. In the next sections I will cover the steps to run Mastodon locally with docker-compose. To get Mastodon to run with docker-compose, I am thankful that I found the following blog posts of Ben Tasker and Peter Babič, which helped me a lot:
-* https://www.bentasker.co.uk/posts/blog/general/running-mastodon-in-docker-compose.html#self_hosting
+Before I start with the AWS part, I wanted to get familiar with Mastodon and its configuration. Therefore, I decided to run Mastodon locally with Docker Compose for now. In the next sections, I will describe the steps to run Mastodon locally with Docker Compose. To get Mastodon running with Docker Compose, I am grateful to have found the following blog posts by Ben Tasker and Peter Babič, which helped me a lot:
+
+* https://www.bentasker.co.uk/posts/blog/general/running-mastodon-in-docker-compose.html#self_hosting.
 * https://peterbabic.dev/blog/running-mastodon-with-docker-compose/
 
-In the next section I will describe the steps to adjust the docker-compose file to run Mastodon in a local setup for exploration and testing purposes.
+In the next section, I describe the steps to customize the Docker Compose file to run Mastodon in a local setup for exploration and testing purposes.
 
 ### Adjusting to run locally
 
-As I only want to run Mastodon locally for exploration and testing purposes, I will make some changes to the docker-compose file and the Nginx configuration and deviate from the setup described in the blog posts of [Ben Tasker](https://www.bentasker.co.uk/posts/blog/general/running-mastodon-in-docker-compose.html#self_hosting) and [Peter Babič](https://peterbabic.dev/blog/running-mastodon-with-docker-compose/). 
+Since we only want to run Mastodon locally for research and testing purposes, we will make some small changes to the Docker Compose file and Nginx configuration, and deviate somewhat from the setup described in the blog posts by [Ben Tasker](https://www.bentasker.co.uk/posts/blog/general/running-mastodon-in-docker-compose.html#self_hosting) and [Peter Babič](https://peterbabic.dev/blog/running-mastodon-with-docker-compose/).
 
-##### Docker-compose and env file
+##### Docker Compose and .env file
 
-First, we will get the docker-compose file from the [Mastodon repository](https://github.com/mastodon/mastodon/blob/main/docker-compose.yml). There is no need to clone the whole repository, as the docker-compose file is the only file we need. Of cause you can also clone the repository and copy the docker-compose file from there.
+First, we get the Docker Compose file from the [Mastodon repository](https://github.com/mastodon/mastodon/blob/main/docker-compose.yml). There is no need to clone the entire repository, as the Docker Compose file is the only file we need from the repository. Of course, you can also clone the repository and copy the Docker Compose file from there.
 
-The second file we need is an `.env.development` file. This file contains the environment variables for the Mastodon web, streaming and sidekiq container definitions in the docker-compose file. We can start with an empty file and add the variables we need later. Within a shell you can create the file with the following command: `touch .env.development`.
+The second file we need is the `.env.development` file. This file contains the environment variables for the Mastodon web, streaming, and Sidekiq service definitions in the Docker Compose file. We can start with an empty file and add the variables we need later. Inside a shell, you can create the file with the following command: `touch .env.development`.
 
-The environment part of the .env file determines the Rails environment. We will set it to development, as we want to run Mastodon locally for exploration and testing purposes. Therefore we have to replace `.env.production` with `.env.development` in the docker-compose file.
-
+The environment part of the .env file determines the Rails environment. We will set it to `development` since we want to run Mastodon locally for exploration and testing purposes. Therefore, we need to replace `.env.production` with `.env.development` in the Docker Compose file.
 
 ##### Remove build statements
 
-In the second step I removed the build statements from the docker-compose file as we will use the pre-built images from the [Docker Hub](https://hub.docker.com/r/tootsuite/mastodon) instead of building the images locally.
-
-Just replace the build statement `build:.` with `image: tootsuite/mastodon:v4.1.1` in the docker-compose file. The lastest image version to the time of this writing is v4.1.1.
+In the second step, we need to remove the build statements from the Docker Compose file, since we will use the prebuilt images from the [Docker Hub](https://hub.docker.com/r/tootsuite/mastodon) instead of building the images locally.
+Simply replace the build statement `build:.` with `image: tootsuite/mastodon:v4.1.1` in the Docker Compose file. The latest image version at the time of writing is v4.1.1.
 
 ##### Remove networks
 
-In a third step I removed the internal and external networks from the docker-compose file as there is no need to distinguish between internal and external networks when running locally only.
+In a third step, we need to remove the internal and external networks from the Docker Compose file, since it is not necessary to distinguish between internal and external networks when running locally only.
+Simply remove the networks from the service definitions and the Networks section in the Docker Compose file.
 
-Just remove the following lines from the docker-compose file:
+Remove the following lines from the service definitions
 
 ```yaml
 networks:
@@ -57,20 +57,21 @@ networks:
   - external_network
 ```
 
-and 
+and the networks section at the end of the Docker Compose file.
+
 
 ```yaml
-etworks:
+networks:
   external_network:
   internal_network:
     internal: true
 ```
 
-I also removed the local host ip, `127.0.0.1`, in front of the port mappings and deleted the comments for the elasticsearch cluster and the allow hidden services federation configuration. This was not necessary, but I thought it would be cleaner to remove them.
+I also removed the local host IP, `127.0.0.1`, before the port mappings and deleted the comments for the Elasticsearch cluster and the hidden services federation configuration. This was probably not necessary, but I thought it would be cleaner to remove them.
 
 ##### Add Mailcatcher
 
-To be able to send and receive emails locally, I will add [Mailcatcher](https://mailcatcher.me/) to the docker-compose file. Mailcatcher is a simple SMTP server which catches any message sent to it to display in a web interface. With Mailcatcher we can send emails locally on port 1025 and receive them on port 1080.
+To be able to send and receive emails locally, we can add [Mailcatcher](https://mailcatcher.me/) to the Docker Compose file. Mailcatcher is a simple SMTP server that intercepts all messages sent to it and displays them in a web interface. With Mailcatcher, we can send emails locally on port 1025 and receive them on port 1080.
 
 ```yaml
 mailcatcher:
@@ -84,7 +85,7 @@ mailcatcher:
 
 ##### Add Minio
 
-To be able to upload media files to a local S3 compatible storage, I added [Minio](https://min.io/) to the docker-compose file. Minio is an open source object storage server compatible with Amazon S3 cloud storage service. With Minio we can upload media files locally on port 9000 and access the Minio console on port 9001. I was not able to use a local mock AWS S3 mock server, as it seems that the AWS S3 client used by Mastodon is hard wired to use the AWS S3 API endpoints. Hence, I had to use Minio instead.
+To be able to upload media files to a local S3-compatible storage, we can add [Minio](https://min.io/) to the Docker Compose file. Minio is an open source object storage server that is compatible with the Amazon S3 cloud storage service. With Minio, we can upload media files locally on port 9000 and access the Minio console on port 9001. I was unable to use a local AWS S3 mock server because the AWS S3 client used by Mastodon appears to be hardwired to use the AWS S3 API endpoints. Therefore, I had to use Minio instead.
 
 ```yaml
 minio:
@@ -103,14 +104,14 @@ minio:
 
 ##### Adjust Nginx configuration
 
-In the last step of the preparation I will adjust the Nginx configuration to run Mastodon locally. I will use the Nginx configuration provided by [Ben Tasker](https://www.bentasker.co.uk/posts/blog/general/running-mastodon-in-docker-compose.html#self_hosting) and will configure it to run Mastodon on the local domain `social.localhost` with [self-signed certificates for this local domain](https://letsencrypt.org/docs/certificates-for-localhost/). To do so I created a new folder `nginx` and added the following subfolders:
+In the last step of the preparation we will customize the Nginx configuration to run Mastodon locally. We will use the Nginx configuration provided by [Ben Tasker](https://www.bentasker.co.uk/posts/blog/general/running-mastodon-in-docker-compose.html#self_hosting) and configure it to run Mastodon on the local domain `social.localhost` with [self-signed certificates for this local domain](https://letsencrypt.org/docs/certificates-for-localhost/). For this purpose I created a new folder `nginx` and added the following subfolders:
 
 * `conf.d` - contains the Nginx configuration files
 * `certs` - contains the self-signed certificates
 * `tmp` - contains the Nginx temporary files.
 * `lebase` - don't know what this is for. Just copied it from Ben Tasker's setup.
 
-The folders are mounted to the Nginx container as volumes. The Nginx container is configured as follows:
+The folders are mounted as volumes in the Nginx container. The Nginx container is configured as follows:
 
 ```yaml
 http:
@@ -127,7 +128,7 @@ http:
       - ./nginx/lebase:/lebase
 ```
 
-To create the self-signed certificates I used the following command:
+To create the self-signed certificates, we can run the following command:
 
 ```bash
 openssl req -x509 -out social.localhost.crt -keyout social.localhost.key \
@@ -136,9 +137,8 @@ openssl req -x509 -out social.localhost.crt -keyout social.localhost.key \
    printf "[dn]\nCN=social.localhost\n[req]\ndistinguished_name = dn\n[EXT]\nsubjectAltName=DNS:social.localhost\nkeyUsage=digitalSignature\nextendedKeyUsage=serverAuth")
 ```
 
-The created certificates are then placed in the `nginx/certs` folder.
-
-The Nginx configuration file is called `mastodon.development.conf` and is placed in the `nginx/conf.d` folder and looks like this:
+The created certificates are then placed in the folder `nginx/certs`.
+The Nginx configuration file is called `mastodon.development.conf` and is located in the `nginx/conf.d` folder and looks like this:
 
 ```conf
 server {
@@ -211,31 +211,33 @@ The main parts of the Nginx configuration file are doing the following:
 
 ### Prepare and run Mastodon
 
-With the preparation done, we can now setup the Mastodon instance. To recap, we need to have the following in place:
+Now that the preparations are complete, we can set up the Mastodon instance. To summarize, the following must be in place:
 
-* The adjusted docker-compose file
-* An (empty) `.env.development` file
-* The Nginx configuration file and the self-signed certificates
+* The customized Docker Compose file.
+* An (empty) `.env.development` file.
+* The Nginx configuration file and the self-signed certificates.
 
-As also mentioned by Peter Babič, this part is a bit tricky, but we will see that it is a bit easier if we want to run Mastodon on a local domain only instead of running it in a docker environment in production.
+As also mentioned by Peter Babič, this part is a bit tricky, but we will see that it is a bit easier if we just want to run Mastodon on a local domain instead of running it in a Docker environment in production.
 
-To setup the Mastodon instance we need to run the following command:
+To set up the Mastodon instance, we need to run the following command:
 
 ```bash
 docker-compose run --rm web bundle exec rake mastodon:setup DISABLE_DATABASE_ENVIRONMENT_CHECK=1
 ```
 
-I added the `DISABLE_DATABASE_ENVIRONMENT_CHECK=1` to the command to be able to run the command all over again if I made a mistake. This is not recommended in production, but for a local setup it is fine.
+I added the `DISABLE_DATABASE_ENVIRONMENT_CHECK=1` option to the command to be able to re-run the command and recreate the database if I made a mistake. This is not recommended for production, but it is fine for a local setup.
 
-The command will ask you a few questions and will then setup the Mastodon instance. We will go through the questions and the answers I used to setup Mastodon on the local domain `social.localhost`. I have split the questions intto several sections to make it easier to read and to be able to add comments on the different parts of the Mastodon setup.
+The command asks you a few questions and then sets up the Mastodon instance. We will go through the questions and answers I used to set up Mastodon on the local domain `social.localhost`. I have split the questions into several sections for ease of reading and to be able to add comments on the different parts of Mastodon setup.
+
 
 Question | Answer | Default
 --------|------|--------
 Domain name | social.localhost | n/a 
-Do you want to enable single user mode? | y | n
-Are you using Docker to run Mastodon? | y | y
+Do you want to enable single user mode | y | n
+Are you using Docker to run Mastodon | y | y
 
-I enabled single user mode, because that is how I want to run my own instance for the start. I am thinking about opening it up to other users later on, but for now I want to keep it to myself. You can of course also run Mastodon locally in multi-user mode. The next step is to configure the database and Redis.
+
+I have enabled single user mode because I want to run my own instance that way for now. I'm thinking about opening it up to other users later, but for now I want to keep it to myself. You can, of course, run Mastodon locally in multi-user mode. The next step is to configure the database and Redis.
 
 Question | Answer | Default
 --------|------|--------
@@ -245,7 +247,7 @@ Name of PostgreSQL database | mastodon | postgres
 Name of PostgreSQL user | postgres | postgres
 Password of PostgreSQL user | |
 
-Setting up PostgreSQL is straight forward. After entering the values for the PostgreSQL setup you should see the following output: `Database configuration works! 🎆`
+PostgreSQL setup is very simple. After entering the PostgreSQL setup values, you should see the following output: `Database configuration works! 🎆`
 
 Question | Answer | Default
 --------|------|--------
@@ -253,9 +255,9 @@ Redis host | redis | redis
 Redis port | 6379 | 6379
 Redis password | |
 
-Setting up Redis is also straight forward. After entering the values for the Redis setup you should see the following output: `Redis configuration works! 🎆`
+The Redis setup is also simple. After entering the values for the Redis setup, you should see the following output: `Redis configuration works! 🎆`
 
-The next step is to configure the file storage. I am using Minio as the file storage. Here I am taking advantage on how Docker networks work. This is not very elegant, but it works for now. I am sure there is a better way to get a file storage up and running locally to use with Mastodon.
+The next step is to configure the file storage. I use Minio as the S3 compatible file store. Here I take advantage of how Docker networks work. It's not very elegant, but it works for now. I'm sure there is a better way to set up and run a local S3 compatible file store for use with Mastodon.
 
 Question | Answer | Default
 --------|------|--------
@@ -267,7 +269,7 @@ Minio access key | minio | minio
 Minio secret key | minio123 | minio123
 Do you want to access the uploaded files from your own domain | y | y
 
-After the file storage is configured we need to configure the SMTP server. I am using Mailcatcher to catch all outgoing e-mails. 
+After the file store is configured, we need to configure the SMTP server. I use Mailcatcher to intercept all outgoing emails.
 
 Question | Answer | Default
 --------|------|--------
@@ -283,7 +285,7 @@ E-mail address to send e-mails "from" | Mastodon \<notifications@social.localhos
 Send a test e-mail with this configuration right now | y | y
 Send a test e-mail to | mail@social.localhost | 
 
-The last question of the SMTP server configuration is to send a test e-mail. If everything is configured correctly we can open the Mailcatcher web interface on `http://localhost:1080` and see the test e-mail.
+The last question of SMTP server configuration is sending a test email, which we should have answered yes. If everything is configured correctly, we can open the Mailcatcher web interface on `http://localhost:1080` and see the test email.
 
 {{< figure2 src="images/mastodon-mailcatcher.webp" class="mastodon-mailcatcher" caption="Mastodon test email" attrrel="noopener noreferrer" >}}
 
@@ -291,8 +293,7 @@ Question | Answer | Default
 --------|------|--------
 Save configuration | y | y
 
-When answering yes to the last question the configuration will be saved to the `.env.production` file within the currently running Docker container and will also be displayed on the screen. We can now copy the outputted
-configuration to the `.env.development` file on our local machine.
+If you answer 'yes' to the last question, the configuration will be saved in the `.env.production` file in the currently running Docker container and also displayed on the screen. We can now copy the output configuration from the screen to the `.env.development` file on our local machine.
 
 ```env
 # Generated with mastodon:setup on 2023-03-19 21:16:41 UTC
@@ -333,7 +334,7 @@ SMTP_ENABLE_STARTTLS=auto
 SMTP_FROM_ADDRESS=Mastodon <notifications@social.localhost>
 ```
 
-The last step for the Mastodon setup is to prepare the database and create an admin user.
+The final step in setting up Mastodon is to prepare the database and create an admin user.
 
 Question | Answer | Default
 --------|------|--------
@@ -342,24 +343,24 @@ Do you want to create an admin user straight away | y | y
 Username | admin | admin
 E-mail | admin@social.localhost | 
 
-After preparing the database and creating the admin user we should see the following output:
+After preparing the database and creating the admin user, we should see the following output:
 
 ```bash
 You can login with the password: <generated password>
 You can change your password once you login.
 ```
 
-Copy the generated password and maybe store it somewhere safe. We will need it in a minute to login to the Mastodon instance.
+Copy the generated password and save it somewhere. We will need it in a minute to log in to the Mastodon instance.
 
-To run mastodon we only need to run `docker-compose up` and we should be able to access the Mastodon instance on `https://social:localhost`<cite>[^1]<cite>. We can login with the username `admin` and the password we generated earlier. 
+To start Mastodon, we just need to run `docker-compose up` and we should be able to access the Mastodon instance at `https://social:localhost`<cite>[^1]<cite>. We can log in with the username `admin` and the password generated earlier.
 
 {{< figure2 src="images/mastodon-running-locally.webp" class="mastodon-running-locally" caption="Mastodon running on social.localhost" attrrel="noopener noreferrer" >}}
 
-After logging in we can change the password of our admin user, add an avatar and a header image and write our first toots. After we uploaded somes images we can see that they are not displayed on Mastodon. This is because Minio has a Content Security Policy (CSP) in place which [prevents mixed (HTTP / HTTPS content)](https://github.com/minio/minio/blob/6c11dbffd53dffd439d198f4b44e423d3e37e746/cmd/generic-handlers.go#L545). As a workaround I temporarily installed the [Disable Content Security extension](https://chrome.google.com/webstore/detail/disable-content-security/ieelmcmcagommplceebfedjlakkhpden/related) in my Chromium browser. After disbaling the CSP on the Mastodon page we can see the images. 
+After logging in, we can change the password of our admin user, add an avatar and a header image and write our first toots. After uploading some images, we can see that they are not displayed on Mastodon. This is because Minio uses a Content Security Policy (CSP) that prevents [mixed (HTTP / HTTPS content)](https://github.com/minio/minio/blob/6c11dbffd53dffd439d198f4b44e423d3e37e746/cmd/generic-handlers.go#L545). As a workaround, I temporarily installed the [Disable Content Security extension](https://chrome.google.com/webstore/detail/disable-content-security/ieelmcmcagommplceebfedjlakkhpden/related) in my Chromium browser. After disabling the CSP on the Mastodon site, we can see the images.
 
 {{< figure2 src="images/mastodon-mastodon.webp" class="mastodon-first-toot" caption="Mastodon first toots" attrrel="noopener noreferrer" >}}
 
-We can then check if the images are stored on the Minio instance by opening the Minio web interface on `http://localhost:9000` and checking the `files.social.localhost` bucket.
+We can then verify that the images are stored on the Minio instance by opening the Minio web interface to `http://localhost:9000` and checking the `files.social.localhost` bucket.
 
 {{< figure2 src="images/mastodon-minio-bucket.webp" class="mastodon-minio" caption="Local Minio bucket" attrrel="noopener noreferrer" >}}
 
