@@ -229,7 +229,7 @@ I added the `DISABLE_DATABASE_ENVIRONMENT_CHECK=1` option to the command to be a
 
 The command asks you a few questions and then sets up the Mastodon instance. We will go through the questions and answers I used to set up Mastodon on the local domain `social.localhost`. I have split the questions into several sections for ease of reading and to be able to add comments on the different parts of Mastodon setup.
 
-{{<table>}}
+{{<table tableWidth="95%">}}
 Prompt | Answer | Default
 --------|------|--------
 Domain name | social.localhost | n/a 
@@ -239,7 +239,7 @@ Are you using Docker to run Mastodon | y | y
 
 I have enabled single user mode because I want to run my own instance that way for now. I'm thinking about opening it up to other users later, but for now I want to keep it to myself. You can, of course, run Mastodon locally in multi-user mode. The next step is to configure the database and Redis.
 
-{{<table>}}
+{{<table tableWidth="95%">}}
 Prompt | Answer | Default
 --------|------|--------
 PostgreSQL host | db | db
@@ -249,9 +249,9 @@ Name of PostgreSQL user | postgres | postgres
 Password of PostgreSQL user | |
 {{</table>}}
 
-PostgreSQL setup is very simple. After entering the PostgreSQL setup values, you should see the following output: `Database configuration works! 🎆`
+The PostgreSQL setup is very simple. After entering the PostgreSQL setup values, you should see the following output: `Database configuration works! 🎆`
 
-{{<table>}}
+{{<table tableWidth="95%">}}
 Prompt | Answer | Default
 --------|------|--------
 Redis host | redis | redis
@@ -263,7 +263,7 @@ The Redis setup is also simple. After entering the values for the Redis setup, y
 
 The next step is to configure the file storage. I use Minio as the S3 compatible file store. Here I take advantage of how Docker networks work. It's not very elegant, but it works for now. I'm sure there is a better way to set up and run a local S3 compatible file store for use with Mastodon.
 
-{{<table>}}
+{{<table tableWidth="95%">}}
 Prompt | Answer | Default
 --------|------|--------
 Do you want to store uploaded files on the cloud? | y | n
@@ -277,7 +277,7 @@ Do you want to access the uploaded files from your own domain | y | y
 
 After the file store is configured, we need to configure the SMTP server. I use Mailcatcher to intercept all outgoing emails.
 
-{{<table>}}
+{{<table tableWidth="95%">}}
 Prompt | Answer | Default
 --------|------|--------
 Do you want to send e-mails from localhost | n | n
@@ -298,8 +298,7 @@ The last question of the SMTP server configuration is sending a test email, whic
 {{< figure2 src="images/mastodon-mailcatcher.webp" class="mastodon-mailcatcher" caption="Mastodon test email" attrrel="noopener noreferrer" >}}
 
 The second to last step is to save the config to the `.env.production` file in the Docker container. This is done by answering the following question:
-
-{{<table>}}
+{{<table tableWidth="95%">}}
 Prompt | Answer | Default
 --------|------|--------
 Save configuration | y | y
@@ -347,8 +346,7 @@ SMTP_FROM_ADDRESS=Mastodon <notifications@social.localhost>
 ```
 
 The final step in setting up Mastodon is to prepare the database and create an admin user.
-
-{{<table>}}
+{{<table tableWidth="95%">}}
 Prompt | Answer | Default
 --------|------|--------
 Prepare the database now | y | y
