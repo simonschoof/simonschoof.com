@@ -89,7 +89,7 @@ This is For the instance domain name, the certificate will be requested in the `
 
 Another part of the application where I did not use Pulumi was the setup of the AWS SES service. The setup of AWS SES is quite simple and is described in the [AWS SES documentation](https://docs.aws.amazon.com/ses/latest/DeveloperGuide/send-email-set-up.html). The SMTP credentials can be created manually in the AWS SES console. The SMTP credentials will be stored in AWS Secrets Manager from where they will be retrieved during the deployment of the Mastodon instance as we will see later in the [configuration and secrets section](#configuration-and-secrets). The SES credentials to be created are unique per region. When you start using AWS SES you will be in the sandbox mode. In the sandbox mode you can only send e-mails to verified e-mail addresses. To send e-mails to unverified e-mail addresses, you have to request production access. This is also described in the [AWS SES documentation](https://docs.aws.amazon.com/ses/latest/DeveloperGuide/request-production-access.html). In the setup of a single user instance configuration, there is no need to request production access as the only e-mail the instance will write to is the e-mail of my admin user account. So I only verified the e-mail address of my admin user account. 
 
-### VPC and Security Groups
+### VPC and security groups
 
 To run Mastodon in AWS we will need a network infrastructure to run the different services. As mentioned above, we will use the default VPC and subnets provided by AWS. To secure the services within the VPC we will use security groups for the different services. For a single user Mastodon instance this setup seems to be sufficient. For a multi user instance, you might want to consider using a private subnet for the database and Redis as recommended by AWS. The VPC and security groups will be created via Pulumi. Whereas the default VPC and subnets are automatically created by AWS when you create an AWS account. 
 
@@ -226,8 +226,8 @@ After defining the inbound rules for the security groups, we can define the outb
 * The load balancer security group allows outbound traffic to port 3000 and 4000 for the Mastodon web and streaming service running on the ECS service.
 * The ECS security group allows outbound traffic to the RDS security group on port 5432 for the PostgreSQL database.
 * The ECS security group allows outbound traffic to the Elasticache security group on port 6379 for the Redis database.
-* The ECS seurity group allows outbound traffic to the internet on port 80 and 443 for the Mastodon web and streaming service.
-* The ECS seurity group allows outbound traffic to SES on port 587 for sending emails.
+* The ECS security group allows outbound traffic to the internet on port 80 and 443 for the Mastodon web and streaming service.
+* The ECS security group allows outbound traffic to SES on port 587 for sending emails.
 
 ```fsharp
 let loadBalancerSecurityGroupIp4WebTcpOutboundRule = 
@@ -251,6 +251,7 @@ let loadBalancerSecurityGroupIp4StreamingTcpOutboundRule =
             Protocol = "tcp",
             CidrBlocks = inputList [ input "0.0.0.0/0" ])
     SecurityGroupRule(prefixMastodonResource "loadbalancer-outbound-all-streaming-ip4-security-group-rule", securityGroupRuleArgs)
+
 let ecsSecurityGroupIp4RdsTcpOutboundRule = 
     let securityGroupRuleArgs =
         SecurityGroupRuleArgs(
@@ -309,43 +310,52 @@ let ecsSecurityGroupIp4HttpsTcpOutboundRule =
 
 ### PostgreSQL and Redis
 
-###### PostgreSQL
+After defining the VPC, the subnets, the security groups, and the security group rules, we can start to add the resources that will be deployed in the VPC. The first resources that we will add are the PostgreSQL and Redis databases. 
+
+##### PostgreSQL
+
+For the PostgreSQL database I decided to try the AWS Aurora serverless v2 version which is, according to AWS, [a good fit for development and testing environments][3] because we can  define a low minimum capacity for the database. Defining the PostgreSQL database is straigthforward and it is defined as follows:
 
 ```fsharp
-let createRdsCluster () =
-    let clusterServerlessv2ScalingConfigurationArgs =
-        ClusterServerlessv2ScalingConfigurationArgs(MaxCapacity = 1.0, MinCapacity = 0.5)
-    let cluster =
-        let clusterArgs =
-            ClusterArgs(
-                ClusterIdentifier = prefixMastodonResource "rds-cluster-identifier",
-                Engine = "aurora-postgresql",
-                EngineMode = "provisioned",
-                EngineVersion = "14.5",
-                DatabaseName = "mastodon",
-                MasterUsername = "postgres",
-                MasterPassword = io (Output.CreateSecret rdsDbMasterPassword),
-                SkipFinalSnapshot = false,
-                FinalSnapshotIdentifier = "mastodon-rds-final-snapshot",
-                ApplyImmediately = true,
-                DeletionProtection = true,
-                Serverlessv2ScalingConfiguration = clusterServerlessv2ScalingConfigurationArgs,
-                VpcSecurityGroupIds = inputList [ io rdsSecurityGroup.Id ]
-            )
-        Cluster(prefixMastodonResource "rds-cluster", clusterArgs)
-    let clusterInstanceArgs =
-        ClusterInstanceArgs(
-            ClusterIdentifier = cluster.Id,
-            InstanceClass = "db.serverless",
-            Engine = cluster.Engine,
-            EngineVersion = cluster.EngineVersion
+let clusterServerlessv2ScalingConfigurationArgs =
+    ClusterServerlessv2ScalingConfigurationArgs(MaxCapacity = 1.0, MinCapacity = 0.5)
+
+let cluster =
+    let clusterArgs =
+        ClusterArgs(
+            ClusterIdentifier = prefixMastodonResource "rds-cluster-identifier",
+            Engine = "aurora-postgresql",
+            EngineMode = "provisioned",
+            EngineVersion = "14.5",
+            DatabaseName = "mastodon",
+            MasterUsername = "postgres",
+            MasterPassword = io (Output.CreateSecret rdsDbMasterPassword),
+            SkipFinalSnapshot = false,
+            FinalSnapshotIdentifier = "mastodon-rds-final-snapshot",
+            ApplyImmediately = true,
+            DeletionProtection = true,
+            Serverlessv2ScalingConfiguration = clusterServerlessv2ScalingConfigurationArgs,
+            VpcSecurityGroupIds = inputList [ io rdsSecurityGroup.Id ]
         )
-    
-    ClusterInstance(prefixMastodonResource "rds-cluster-instance", clusterInstanceArgs) |> ignore
-    ()
+    Cluster(prefixMastodonResource "rds-cluster", clusterArgs)
+
+let clusterInstanceArgs =
+    ClusterInstanceArgs(
+        ClusterIdentifier = cluster.Id,
+        InstanceClass = "db.serverless",
+        Engine = cluster.Engine,
+        EngineVersion = cluster.EngineVersion
+    )
+
+ClusterInstance(prefixMastodonResource "rds-cluster-instance", clusterInstanceArgs) |> ignore
 ```
 
-###### Redis
+To use the Aurora serverless v2 version we need to define the `EngineMode` as `provisioned` and provide the `Serverlessv2ScalingConfiguration` argument. I also set the deletion protection to `true` to prevent the database from being deleted by accident. Furthermore, I set the `SkipFinalSnapshot` argument to `false` and provide a `FinalSnapshotIdentifier` to create a final snapshot of the database when it is deleted. The last thin g to point out is that I set the `ApplyImmediately` argument to `true` to apply changes immediately and not wait for the next maintenance window.
+
+
+##### Redis
+
+The Redis database is even easier to define than the PostgreSQL database. The Redis database is defined as follows where I chose the smallest instance type `cache.t3.micro` and the latest Redis version `7.0`:
 
 ```fsharp
 let createElastiCacheCluster () =
@@ -363,7 +373,319 @@ let createElastiCacheCluster () =
     ()
 ```
 
-### ALB, ESC and Fargate
+As in the case of the PostgreSQL database, I set the `ApplyImmediately` argument to `true` to apply changes immediately and not wait for the next maintenance window.
+
+### ALB, container task definitions and ECS with Fargate
+
+The next step is to define the Application Load Balancer (ALB), the Elastic Container Service (ECS) and the Fargate tasks. This is, next to the S3 Bucket and CloudFront distribution, the most complex part of the deployment. We will go through the different parts step by step starting with the ALB. For the Pulumi code in this section we use the classic AWS package `Pulumi.Aws` as well as the AWS crosswalk package `Pulumi.Awsx`. When using the crosswalk package we will use the qualified name `Awsx` to avoid name clashes with the classic AWS package. 
+##### ALB
+
+Before we can start to define the ALB we need to get the certificate for the Mastodon instance domain:
+
+```fsharp
+let cert =
+    let getCertificateInvokeArgs =
+        GetCertificateInvokeArgs(
+            Domain = localDomain,
+            MostRecent = true,
+            Types = inputList [ input "AMAZON_ISSUED" ]
+    )
+    GetCertificate.Invoke(getCertificateInvokeArgs)
+```
+
+With the certificate at hand we can start to define the ALB itself:
+
+```fsharp
+let loadBalancerArgs = LoadBalancerArgs(
+    IpAddressType = "ipv4",
+    LoadBalancerType = "application",
+    SecurityGroups = inputList [ io loadBalancerSecurityGroup.Id],
+    Subnets = inputList (defaultSubnetIds |> List.map io)
+
+let loadBalancer = LoadBalancer(prefixMastodonResource "load-balancer", loadBalancerArgs)
+```
+
+In addition to the load balancer itself we define two target groups. Target groups are used to route requests to the different services that are running in the ECS cluster. In our case we define one target group for the Mastodon web application listening on port `3000` and one target group for the Mastodon  streaming application listening on port `4000`:
+
+```fsharp
+let webTargetGroupArgs =
+    TargetGroupArgs(
+        TargetType = "ip",
+        Port = 3000,
+        Protocol = "HTTP",
+        VpcId = defaultVpc.Id,
+        HealthCheck = TargetGroupHealthCheckArgs(Interval = 30, Path = "/health")
+        
+let webTargetGroup = TargetGroup(prefixMastodonResource "web-tg", webTargetGroupArgs
+
+let streamingTargetGroupArgs =
+    TargetGroupArgs(
+        TargetType = "ip",
+        Port = 4000,
+        Protocol = "HTTP",
+        VpcId = defaultVpc.Id,
+        HealthCheck = TargetGroupHealthCheckArgs(Interval = 30, Path = "/api/v1/streaming/health")
+    )
+
+let streamingTargetGroup = TargetGroup(prefixMastodonResource "streaming-tg", streamingTargetGroupArgs)
+```
+
+As mentioned before the http requests on port 80 are redirected to port 443. To reflect this in AWS with Pulumi we define a http listener as follows:
+
+```fsharp
+let httpDefaultAction =
+    ListenerDefaultActionArgs(
+        Type = "redirect",
+        Redirect =
+            ListenerDefaultActionRedirectArgs(
+                Port = "443",
+                Protocol = "HTTPS",
+                StatusCode = "HTTP_301"
+            )
+    )
+
+let httpListenerArgs = ListenerArgs(
+        LoadBalancerArn = loadBalancer.Arn,
+        Port = 80, 
+        Protocol = "HTTP",
+        DefaultActions = inputList [ input httpDefaultAction ]
+    )
+
+Listener(prefixMastodonResource "http-listener", httpListenerArgs) |> ignore
+```
+
+In the listener args we connect the listener to the load balancer and define the default action to redirect the requests to port 443. To handle the https requests we define a https listener which is connected to the load balancer and the certificate we retrieved at the beginning of this section:
+
+```fsharp
+let httpsDefaultAction =
+    ListenerDefaultActionArgs(
+        Type = "forward",                
+        TargetGroupArn = webTargetGroup.Arn
+    
+let httpsListenerArgs = 
+    ListenerArgs(
+        LoadBalancerArn = loadBalancer.Arn,
+        Port = 443,
+        Protocol = "HTTPS",
+        SslPolicy = "ELBSecurityPolicy-2016-08",
+        CertificateArn = io (cert.Apply(fun cert -> cert.Arn)),
+        DefaultActions =  inputList [ input httpsDefaultAction ]
+    )
+
+let httpsListener = Listener(prefixMastodonResource "https-listener", httpsListenerArgs)
+```
+
+The streaming application is reachable on port 4000 and the path `/api/v1/streaming`. To get the correct routing we have to define a rule for the streaming target group:
+
+```fsharp
+let listRuleConditionPathPatternArgs = ListenerRuleConditionPathPatternArgs(
+    Values = inputList  [ input "/api/v1/streaming"]
+
+let listenerRuleConditionArgs = ListenerRuleConditionArgs(
+    PathPattern = listRuleConditionPathPatternArgs
+
+let listenerRuleActionArgs = ListenerRuleActionArgs(
+    Type = "forward",
+    TargetGroupArn = streamingTargetGroup.Arn
+
+let listenerRuleArgs = ListenerRuleArgs(
+    ListenerArn = httpsListener.Arn,
+    Priority = 1,
+    Conditions = inputList [input listenerRuleConditionArgs ],
+    Actions = inputList [input listenerRuleActionArgs]
+
+ListenerRule(prefixMastodonResource "streaming-api-path-rule",listenerRuleArgs) |> ignore
+```
+
+##### Container task definitions
+
+With the ALB in place we can start to define the container task definitions. The task definitions are used to define the containers that are running in the ECS cluster. In our case we define four task definitions, one for the Mastodon web application, one for the Mastodon streaming application, one for the Mastodon Sidekiq application and one optional task definition for PostgreSQL for maintenance and debugging purposes.
+
+All task definitions are stored in a list which is later provided to the Fargate service:
+
+```fsharp
+let containerDefinitionsList =
+    System.Collections.Generic.Dictionary<string, Awsx.Ecs.Inputs.TaskDefinitionContainerDefinitionArgs>()
+```
+
+We stat with defining the PostgreSQL task definition. The PostgreSQL task definition is optional and can be used for maintenance and debugging purposes. We will only spin up the PostgreSQL task definition if the `runMode` is set to `Debug` or `Maintenance`:
+
+```fsharp
+let postgresContainer = 
+    match runMode with
+        | Maintenance | Debug -> 
+            let taskDefinitionContainerDefinitionArgs =
+                Awsx.Ecs.Inputs.TaskDefinitionContainerDefinitionArgs(
+                    Image = "postgres:latest",
+                        Command =
+                            inputList [ input "bash"
+                                        input "-c"
+                                        input "while true; do sleep 3600; done" ],
+                        Essential = false
+                    
+            containerDefinitionsList.Add("psql", taskDefinitionContainerDefinitionArgs)
+            ()
+        | Production -> ()
+```
+
+The PostgreSQL container is based on the `postgres:latest` image and runs a bash script that sleeps for 3600 seconds. This is done to keep the container running. The PostgreSQL container is not essential and will not be restarted if it fails. This is done to prevent the PostgreSQL container from restarting if the database is not available.
+
+Next we define the Mastodon web application container. For the web application we define a container port mapping for port `3000` in which we map the port to the `webTargetGroup` we defined earlier. We also define a container command that starts the Mastodon web application. The container command is different depending on the `runMode`. For `Maintenance` and `Debug` we start a bash script that sleeps for 3600 seconds so that we can connect to the container and debug the application. For `Production` we start the Mastodon web application. The container is configured via environment variables that are required for Mastodon. How these environment variables are defined is explained in the section [Configuration and secrets](#configuration-and-secrets):
+
+```fsharp
+let webContainerportMappingArgs =
+    Awsx.Ecs.Inputs.TaskDefinitionPortMappingArgs(ContainerPort = 3000, TargetGroup = webTargetGroup
+
+let webContainerCommand = 
+    match runMode with
+    | Maintenance | Debug -> inputList [ input "bash"; input "-c"; input "while true; do sleep 3600; done" ]
+    | Production ->  inputList [ input "bash"; input "-c"; input "rm -f /mastodon/tmp/pids/server.pid; bundle exec rails s -p 3000" ]
+
+let webContainer =
+    Awsx.Ecs.Inputs.TaskDefinitionContainerDefinitionArgs(
+        Image = mastodonImage,
+        Command = webContainerCommand,
+        Cpu = 256,
+        Memory = 512,
+        Essential = true,
+        Environment = mastodonContainerEnvVariables,
+        PortMappings = inputList [ input webContainerportMappingArgs ]
+    
+containerDefinitionsList.Add(prefixMastodonResource "web", webContainer)
+```
+
+In analogy to the web application container we define the Mastodon streaming application container. Again we define a port mapping which maps port `4000` to the `streamingTargetGroup`. Teh container command starts the Mastodon streaming application as a node application. The container is also configured with the environment variables that are required for Mastodon:
+
+```fsharp
+let streamingContainerportMappingArgs =
+    Awsx.Ecs.Inputs.TaskDefinitionPortMappingArgs(ContainerPort = 4000, TargetGroup = streamingTargetGroup
+
+let streamingContainer = Awsx.Ecs.Inputs.TaskDefinitionContainerDefinitionArgs(
+    Image = mastodonImage,
+    Command =
+        inputList [ input "bash"
+                    input "-c"
+                    input "node ./streaming" ],
+    Cpu = 256,
+    Memory = 256,
+    Essential = true,
+    Environment = mastodonContainerEnvVariables,
+    PortMappings = inputList[ input streamingContainerportMappingArgs ]
+
+containerDefinitionsList.Add(prefixMastodonResource "streaming",streamingContainer)
+```
+
+The last container we define is the Mastodon Sidekiq application container. The Sidekiq application is used for background processing. The Sidekiq application is also configured with the environment variables that are required for Mastodon. For the Sidekiq application we don't define a port mapping as the Sidekiq application is not reachable from the outside and only communicates with the Mastodon web application over the internal network of the Fargate service:
+
+```fsharp
+let sidekiqContainer = Awsx.Ecs.Inputs.TaskDefinitionContainerDefinitionArgs(
+    Image = mastodonImage,
+    Command =
+        inputList [ input "bash"
+                    input "-c"
+                    input "bundle exec sidekiq" ],
+    Cpu = 256,
+    Memory = 256,
+    Environment = mastodonContainerEnvVariables,
+    Essential = true
+
+containerDefinitionsList.Add(prefixMastodonResource "sidekiq",sidekiqContainer)
+```
+
+##### ECS with Fargate
+
+After finishing the container task definitions we can start to define ECS cluster using Fargate as the compute engine.
+
+First we define the ECS cluster to logically group the containers that are running in the ECS cluster. Here we also set the capicity provider to `FARGATE_SPOT` in the hope that it will save us some money:
+
+```fsharp
+let clusterArgs = ClusterArgs(
+    CapacityProviders = inputList [input "FARGATE_SPOT"]
+)
+
+let cluster =
+    Cluster(prefixMastodonResource "ecs-cluster", clusterArgs)
+```
+
+In the second step we prepare a task role which allows us to connect to the containers in the ECS cluster. To do this we need an assume role policiy and a task policy which allows us to connect to the containers in the ECS cluster:
+
+```fsharp
+let assumeRolePolicy =
+    @"{
+    ""Version"": ""2012-10-17"",
+    ""Statement"": [
+        {
+            ""Effect"": ""Allow"",
+            ""Principal"": {
+                ""Service"": ""ecs-tasks.amazonaws.com""
+            },
+            ""Action"": ""sts:AssumeRole""
+        }
+    ]
+}
+
+let policiy =
+    @"{
+            ""Version"": ""2012-10-17"",
+            ""Statement"": [
+                {
+                    ""Effect"": ""Allow"",
+                    ""Action"": [
+                        ""ssmmessages:CreateControlChannel"",
+                        ""ssmmessages:CreateDataChannel"",
+                        ""ssmmessages:OpenControlChannel"",
+                        ""ssmmessages:OpenDataChannel""
+                    ],
+                    ""Resource"": ""*""
+                }
+            ]
+        }
+
+let taskPolicy =
+    Policy(prefixMastodonResource "task-policy", PolicyArgs(PolicyDocument = policiy)
+
+let taskRole =
+    Role(
+        prefixMastodonResource "task-role",
+        RoleArgs(AssumeRolePolicy = assumeRolePolicy, ManagedPolicyArns = inputList [ io taskPolicy.Arn ])
+    
+let defaultTaskRoleWithPolicy =
+    Awsx.Awsx.Inputs.DefaultRoleWithPolicyArgs(RoleArn = taskRole.Arn)
+```
+
+The third step comprises the Fargate service definition leveraging the task definitions and the ECS cluster we defined in the previous steps using the the simplified Fargate service definition provided by the `Awsx` library. We also see that we only add the task role with the policy to the Fargate service definition if we are in maintenance or debug mode. In production mode we don't need the task role with the policy as we don't want to connect to the containers in production mode. We also define the network configuration for the Fargate service. Here we set the `AssignPublicIp` property to `true` to make the containers reachable from the outside. To prevent the containers from being reachable from the outside we set the ecs security group which we defined earlier in the section about the [VPC and security groups](#vpc-and-security-groups). Another property which is only set in maintenance and debug mode is the `EnableExecuteCommand` property which is also neededto connect to the containers in the ECS cluster using the AWS Systems Manager Session Manager:
+
+```fsharp
+let fargateServiceTaskDefinitionArgs =
+    match runMode with 
+        | Maintenance | Debug -> Awsx.Ecs.Inputs.FargateServiceTaskDefinitionArgs(
+            Containers = containerDefinitionsList,
+            TaskRole = defaultTaskRoleWithPolicy
+            )
+        | Production -> Awsx.Ecs.Inputs.FargateServiceTaskDefinitionArgs(
+            Containers = containerDefinitionsList
+            
+let networkConfiguration =
+    ServiceNetworkConfigurationArgs(
+        AssignPublicIp = true,
+        Subnets = inputList (defaultSubnetIds |> List.map io),
+        SecurityGroups = inputList [ io ecsSecurityGroup.Id ]
+    
+let enableExecutCommand = 
+    match runMode with
+         | Maintenance | Debug -> true
+         | Production -> fals
+
+let serviceArgs =
+    Awsx.Ecs.FargateServiceArgs(
+        Cluster = cluster.Arn,
+        DesiredCount = 1,
+        EnableExecuteCommand = enableExecutCommand,
+        TaskDefinitionArgs = fargateServiceTaskDefinitionArgs,
+        NetworkConfiguration = networkConfiguration
+    
+Awsx.Ecs.FargateService(prefixMastodonResource "fargate-service", serviceArgs) |> ignore
+```
 
 ### S3 and CloudFront
 
@@ -371,7 +693,7 @@ let createElastiCacheCluster () =
 
 Create user and add it to the group we created. Export the access key and secret key store them in the AWS Secrets Manager from which we will read them in the Pulumi deployment.
 
-### Configuration and Secrets
+### Configuration and secrets
 
 ### Deploymenent and Maintenance
 
@@ -404,4 +726,5 @@ Just invoke `pulumi up`, wait for the deployment to finish and voi la you have y
 
 [1]: https://github.com/simonschoof/mastodon-aws/tree/main/infrastructure/aws-services
 [2]: https://docs.joinmastodon.org/user/run-your-own/#so-you-want-to-run-your-own-mastodon-server
+[3]: https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2.html
 
