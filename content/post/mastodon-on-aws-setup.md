@@ -32,7 +32,7 @@ Configuration and Secrets | AWS Systems Manager Parameter Store and AWS Secrets 
 Database | Amazon Aurora Serverless V2
 Redis | Elasticache for Redis 
 Load Balancer | AWS Application Load Balancer
-VPN | AWS VPN
+VPC | AWS VPC
 Container Orchestration | ECS and Fargate
 E-mail provider | AWS SES
 Object storage provider | AWS S3 
@@ -53,7 +53,7 @@ Therefore we will use the default VPC, which is public by default, and the defau
 
 As we can see from the architecture diagram, we will use the following AWS services: 
 
-* **AWS VPN** for the VPN
+* **AWS VPC** for the VPC
 * **AWS Application Load Balancer** for the load balancer
 * **Amazon Aurora Serverless V2** for the database
 * **Elasticache for Redis** for Redis
@@ -80,7 +80,7 @@ The configuration and secrets will be stored as environment variables in the ECS
 
 After this short overview of the architecture, let's dive into the details of the different parts.
 
-### Domain name certificates
+### Domain name and certificates
 
 As mentioned above, we will use the AWS Certificate Manager to request the certificates for the instance domain name `social.simonschoof.com` and the media file domain name `mastodonmedia.simonschoof.com`. As I already have a domain name registered with a domain registrar, I will not use Route 53 to register the domain name. Instead I will use the DNS validation method to validate the domain names. For this purpose, I will create a CNAME record in the DNS configuration of my domain registrar that points to the DNS name provided by AWS Certificate Manager. For the media file domain which is used as the alternate domain name for the CloudFront distribution, the certificate will be requested in the `us-east-1` region which is an [requirement for CloudFront](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html).
 This is For the instance domain name, the certificate will be requested in the `eu-central-1` region, which is the region I am using for all the other resources. The creation of the certificates is done manually and not via Pulumi. 
@@ -89,8 +89,223 @@ This is For the instance domain name, the certificate will be requested in the `
 
 Another part of the application where I did not use Pulumi was the setup of the AWS SES service. The setup of AWS SES is quite simple and is described in the [AWS SES documentation](https://docs.aws.amazon.com/ses/latest/DeveloperGuide/send-email-set-up.html). The SMTP credentials can be created manually in the AWS SES console. The SMTP credentials will be stored in AWS Secrets Manager from where they will be retrieved during the deployment of the Mastodon instance as we will see later in the [configuration and secrets section](#configuration-and-secrets). The SES credentials to be created are unique per region. When you start using AWS SES you will be in the sandbox mode. In the sandbox mode you can only send e-mails to verified e-mail addresses. To send e-mails to unverified e-mail addresses, you have to request production access. This is also described in the [AWS SES documentation](https://docs.aws.amazon.com/ses/latest/DeveloperGuide/request-production-access.html). In the setup of a single user instance configuration, there is no need to request production access as the only e-mail the instance will write to is the e-mail of my admin user account. So I only verified the e-mail address of my admin user account. 
 
-### VPN and Security Groups
+### VPC and Security Groups
 
+To run Mastodon in AWS we will need a network infrastructure to run the different services. As mentioned above, we will use the default VPC and subnets provided by AWS. To secure the services within the VPC we will use security groups for the different services. For a single user Mastodon instance this setup seems to be sufficient. For a multi user instance, you might want to consider using a private subnet for the database and Redis as recommended by AWS. The VPC and security groups will be created via Pulumi. Whereas the default VPC and subnets are automatically created by AWS when you create an AWS account. 
+
+Defining the default VPC and subnets in Pulumi will add both to the Pulumi stack and are not managed by Pulumi. Removing the default VPC and subnets from the Pulumi stack will not remove them from AWS. To add the default VPC and subnets to the Pulumi stack we just have to write down the following code<cite>[^1]<cite>:
+
+     
+```fsharp
+let defaultVpc = DefaultVpc("default-vpc")
+
+let defaultSubnets =
+    let subnetInvokeArgs =
+        GetSubnetsInvokeArgs(
+            Filters =
+                inputList [ input (
+                                GetSubnetsFilterInputArgs(Name = "vpc-id", Values = inputList [ io defaultVpc.Id ])
+                            ) ]
+        )
+    GetSubnets.Invoke(subnetInvokeArgs)
+
+let defaultSubnetIds = 
+    List.init 3 (fun n -> defaultSubnets.Apply(fun subnets -> subnets.Ids.[n]))
+```
+
+After this we can define the security groups for the different services. There will be a security group for: 
+
+* The AWS Aurora PostgreSQL database
+* The Redis database
+* The AWS ECS Fargate service 
+* The Application Load Balancer
+
+
+```fsharp
+let rdsSecurityGroup =
+    let rdsSecurityGroupArgs =
+        SecurityGroupArgs(Description = "Allow inbound traffic from ECS to RDS")
+    SecurityGroup(prefixMastodonResource "rds-security-group", rdsSecurityGroupArgs)
+
+let elasticacheSecurityGroup =
+    let elasticacheSecurityGroupArgs =
+        SecurityGroupArgs(Description = "Allow inbound traffic from ECS to Elasticache")
+    SecurityGroup(prefixMastodonResource "elasticache-security-group", elasticacheSecurityGroupArgs)
+
+let ecsSecurityGroup =
+    let ecsSecurityGroupArgs =
+        SecurityGroupArgs(Description = "Ecs Security Group")
+    SecurityGroup(prefixMastodonResource "ecs-security-group", ecsSecurityGroupArgs)
+
+let loadBalancerSecurityGroup = 
+    let loadBalancerSecurityGroupArgs = 
+        SecurityGroupArgs(Description = "Loadbalancer Security Group")
+    SecurityGroup(prefixMastodonResource "loadbalancer-security-group", loadBalancerSecurityGroupArgs)
+```
+
+After defining the security groups, we can add the rules to the security groups.
+We can add security group rules to the security groups for inbound and outbound traffic. First we will define the inbound rules for the security groups. The inbound rules for the security groups are defined as follows:
+
+* The RDS security group allows inbound traffic from the ECS security group on port 5432.
+* The Elasticache security group allows inbound traffic from the ECS security group on port 6379.
+* The ECS security group allows inbound traffic from the load balancer security group on port 3000 and 4000 for the Mastodon web and streaming service.
+* The load balancer security group allows inbound traffic from the internet on port 80 and 443 for the Mastodon web service. The inbound traffic on port 80 will be redirected to port 443 as we will see later in the [load balancer section](#load-balancer).
+
+```fsharp
+let rdsSecurityGroupInboundRule =
+    let securityGroupRuleArgs =
+        SecurityGroupRuleArgs(
+            SecurityGroupId = rdsSecurityGroup.Id,
+            Type = "ingress",
+            FromPort = 5432,
+            ToPort = 5432,
+            Protocol = "tcp",
+            SourceSecurityGroupId = ecsSecurityGroup.Id
+        )
+    SecurityGroupRule(prefixMastodonResource "rds-inbound-tcp-security-group-rule", securityGroupRuleArgs)
+
+let elastiCacheSecurityGroupInboundRule =
+    let securityGroupRuleArgs =
+        SecurityGroupRuleArgs(
+            SecurityGroupId = elasticacheSecurityGroup.Id,
+            Type = "ingress",
+            FromPort = 6379,
+            ToPort = 6379,
+            Protocol = "tcp",
+            SourceSecurityGroupId = ecsSecurityGroup.Id
+        )
+    SecurityGroupRule(prefixMastodonResource "elasticache-inbound-tcp-security-group-rule", securityGroupRuleArgs)
+
+let ecsSecurityGroupIp4MastodonWebTrafficInboundRule =
+    let securityGroupRuleArgs =
+        SecurityGroupRuleArgs(
+            SecurityGroupId = ecsSecurityGroup.Id,
+            Type = "ingress",
+            FromPort = 3000,
+            ToPort = 3000,
+            Protocol = "tcp",
+            SourceSecurityGroupId = loadBalancerSecurityGroup.Id)
+    SecurityGroupRule(prefixMastodonResource "ecs-inbound-mastodon-web-ip4-security-group-rule", securityGroupRuleArgs)
+
+let ecsSecurityGroupIp4MastodonStreamingTrafficInboundRule =
+    let securityGroupRuleArgs =
+        SecurityGroupRuleArgs(
+            SecurityGroupId = ecsSecurityGroup.Id,
+            Type = "ingress",
+            FromPort = 4000,
+            ToPort = 4000,
+            Protocol = "tcp",
+            SourceSecurityGroupId = loadBalancerSecurityGroup.Id)
+    SecurityGroupRule(prefixMastodonResource "ecs-inbound-mastodon-streaming-ip4-security-group-rule", securityGroupRuleArgs)
+
+let loadBalancerSecurityGroupIp4HttpTrafficInboundRule =
+    let securityGroupRuleArgs =
+        SecurityGroupRuleArgs(
+            SecurityGroupId = loadBalancerSecurityGroup.Id,
+            Type = "ingress",
+            FromPort = 80,
+            ToPort = 80,
+            Protocol = "tcp",
+            CidrBlocks = inputList [ input "0.0.0.0/0"] )
+    SecurityGroupRule(prefixMastodonResource "loadbalancer-inbound-http-security-group-rule", securityGroupRuleArgs)
+
+let loadBalancerSecurityGroupIp4HttpsTrafficInboundRule =
+    let securityGroupRuleArgs =
+        SecurityGroupRuleArgs(
+            SecurityGroupId = loadBalancerSecurityGroup.Id,
+            Type = "ingress",
+            FromPort = 443,
+            ToPort = 443,
+            Protocol = "tcp",
+            CidrBlocks = inputList [ input "0.0.0.0/0"] )
+    SecurityGroupRule(prefixMastodonResource "loadbalancer-inbound-https-security-group-rule", securityGroupRuleArgs)
+```
+
+After defining the inbound rules for the security groups, we can define the outbound rules for the security groups. The outbound rules for the security groups are defined as follows:
+
+* The load balancer security group allows outbound traffic to port 3000 and 4000 for the Mastodon web and streaming service running on the ECS service.
+* The ECS security group allows outbound traffic to the RDS security group on port 5432 for the PostgreSQL database.
+* The ECS security group allows outbound traffic to the Elasticache security group on port 6379 for the Redis database.
+* The ECS seurity group allows outbound traffic to the internet on port 80 and 443 for the Mastodon web and streaming service.
+* The ECS seurity group allows outbound traffic to SES on port 587 for sending emails.
+
+```fsharp
+let loadBalancerSecurityGroupIp4WebTcpOutboundRule = 
+    let securityGroupRuleArgs =
+        SecurityGroupRuleArgs(
+            SecurityGroupId = loadBalancerSecurityGroup.Id,
+            Type = "egress",
+            FromPort = 3000,
+            ToPort = 3000,
+            Protocol = "tcp",
+            CidrBlocks = inputList [ input "0.0.0.0/0" ])
+    SecurityGroupRule(prefixMastodonResource "loadbalancer-outbound-all-web-ip4-security-group-rule", securityGroupRuleArgs)
+
+let loadBalancerSecurityGroupIp4StreamingTcpOutboundRule = 
+    let securityGroupRuleArgs =
+        SecurityGroupRuleArgs(
+            SecurityGroupId = loadBalancerSecurityGroup.Id,
+            Type = "egress",
+            FromPort = 4000,
+            ToPort = 4000,
+            Protocol = "tcp",
+            CidrBlocks = inputList [ input "0.0.0.0/0" ])
+    SecurityGroupRule(prefixMastodonResource "loadbalancer-outbound-all-streaming-ip4-security-group-rule", securityGroupRuleArgs)
+let ecsSecurityGroupIp4RdsTcpOutboundRule = 
+    let securityGroupRuleArgs =
+        SecurityGroupRuleArgs(
+            SecurityGroupId = ecsSecurityGroup.Id,
+            Type = "egress",
+            FromPort = 5432,
+            ToPort = 5432,
+            Protocol = "tcp",
+            CidrBlocks = inputList [ input "0.0.0.0/0" ])
+    SecurityGroupRule(prefixMastodonResource"ecs-outbound-rds-tcp-ip4-security-group-rule", securityGroupRuleArgs)
+
+let ecsSecurityGroupIp4RedisTcpOutboundRule = 
+    let securityGroupRuleArgs =
+        SecurityGroupRuleArgs(
+            SecurityGroupId = ecsSecurityGroup.Id,
+            Type = "egress",
+            FromPort = 6379,
+            ToPort = 6379,
+            Protocol = "tcp",
+            CidrBlocks = inputList [ input "0.0.0.0/0" ])
+    SecurityGroupRule(prefixMastodonResource"ecs-outbound-redis-tcp-ip4-security-group-rule", securityGroupRuleArgs)
+
+let ecsSecurityGroupIp4SmtpTcpOutboundRule = 
+    let securityGroupRuleArgs =
+        SecurityGroupRuleArgs(
+            SecurityGroupId = ecsSecurityGroup.Id,
+            Type = "egress",
+            FromPort = int smtpPort,
+            ToPort = int smtpPort,
+            Protocol = "tcp",
+            CidrBlocks = inputList [ input "0.0.0.0/0" ])
+    SecurityGroupRule(prefixMastodonResource"ecs-outbound-smtp-tcp-ip4-security-group-rule", securityGroupRuleArgs)
+
+let ecsSecurityGroupIp4HttpTcpOutboundRule = 
+    let securityGroupRuleArgs =
+        SecurityGroupRuleArgs(
+            SecurityGroupId = ecsSecurityGroup.Id,
+            Type = "egress",
+            FromPort = 80,
+            ToPort = 80,
+            Protocol = "tcp",
+            CidrBlocks = inputList [ input "0.0.0.0/0" ])
+    SecurityGroupRule(prefixMastodonResource"ecs-outbound-http-tcp-ip4-security-group-rule", securityGroupRuleArgs)
+
+let ecsSecurityGroupIp4HttpsTcpOutboundRule = 
+    let securityGroupRuleArgs =
+        SecurityGroupRuleArgs(
+            SecurityGroupId = ecsSecurityGroup.Id,
+            Type = "egress",
+            FromPort = 443,
+            ToPort = 443,
+            Protocol = "tcp",
+            CidrBlocks = inputList [ input "0.0.0.0/0" ])
+    SecurityGroupRule(prefixMastodonResource"ecs-outbound-https-tcp-ip4-security-group-rule", securityGroupRuleArgs)
+```
 
 ### PostgreSQL and Redis
 
@@ -148,7 +363,7 @@ let createElastiCacheCluster () =
     ()
 ```
 
-### ESC with Fargate
+### ALB, ESC and Fargate
 
 ### S3 and CloudFront
 
@@ -183,5 +398,10 @@ let main _ =
   Deployment.run infra
 ```
 
+Just invoke `pulumi up`, wait for the deployment to finish and voi la you have your own Mastodon instance running on AWS: 
+
+[^1]: There are 3 subnets in the default VPC for the `eu-central-1` region. One public subnet in each availability zone. I tried to get the number of subnets out of the Output of the `GetSubnets` Invoke but I did not find a way to do it. So I just hardcoded the number of subnets to 3.
+
 [1]: https://github.com/simonschoof/mastodon-aws/tree/main/infrastructure/aws-services
 [2]: https://docs.joinmastodon.org/user/run-your-own/#so-you-want-to-run-your-own-mastodon-server
+
