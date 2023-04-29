@@ -687,11 +687,213 @@ let serviceArgs =
 Awsx.Ecs.FargateService(prefixMastodonResource "fargate-service", serviceArgs) |> ignore
 ```
 
-### S3 and CloudFront
+### S3 and CloudFront 
 
-##### Manual steps
+An optional piece, as to the Mastodon documentation, is an Object storage provider. As we will run Mastodon in Docker containers we need to use an external object storage provider for which we will use AWS S3. In addition to the bucket itself we will also create a CloudFront distribution to serve the user-uploaded files from the S3 bucket. With the CloudFront distribution we also can use a custom domain name to serve the user-uploaded files. With the custom domain  we also don't have to worry about breaking links to the user-uploaded files when we change the object storage provider. Another advantage of using CloudFront is that we don't have to make the S3 bucket being publicly accessible as we can restrict the access to the S3 bucket to the CloudFront distribution. 
 
-Create user and add it to the group we created. Export the access key and secret key store them in the AWS Secrets Manager from which we will read them in the Pulumi deployment.
+##### S3 bucket
+
+For Mastodon to acccess the S3 bucket we have to provide Mastodon with an AWS access key id and an AWS access key id secret. As it is not quite clear from the Mastodon documentation which permissions are needed by Mastodon to access the S3 bucket I followed the approach of Daniel Snider which he describes in [this GitHub gist][4]. Part of this I also configure manually in the AWS console. The parts which I configured manually in the AWS console are creating the user `mastodon-s3-user` and adding this user to the group `mastodon-s3-access-group` which we will create in the Pulumi deployment. I also created the access key and secret key for the user `mastodon-s3-user` and stored them in the AWS Secrets Manager.
+
+First we will create the bucket and  we will block the all public access to it:
+
+```fsharp
+let bucket =
+    
+    let bucketName = prefixMastodonResource "s3-storage"
+    let bucketArgs = BucketArgs(Acl = "private")
+    
+    Bucket(bucketName, bucketArgs)
+
+let bucketPublicAccessBlock =
+    let bucketPublicAccessBlockArgs = 
+        BucketPublicAccessBlockArgs(
+            Bucket = bucket.Id,
+            BlockPublicAcls = true,
+            BlockPublicPolicy = true,
+            IgnorePublicAcls = true,
+            RestrictPublicBuckets = true
+        )
+    
+    BucketPublicAccessBlock(prefixMastodonResource "s3-storage-public-access-block", bucketPublicAccessBlockArgs)
+```
+
+After this we can create the S3 access group, a policy document, a policy and the policy attachment for this group:
+
+```fsharp
+let limitedPermissionsToOneBucketStatement =
+    GetPolicyDocumentStatementInputArgs(
+        Effect = "Allow",
+        Actions =
+            inputList [ input "s3:ListBucket"
+                        input "s3:GetBucketLocation" ],
+        Resources = inputList [ io bucket.Arn ]
+    )
+    
+let permissionsToBucketStatement =
+    GetPolicyDocumentStatementInputArgs(
+        Effect = "Allow",
+        Actions =
+            inputList [ input "s3:GetObject"
+                        input "s3:GetObjectAcl"
+                        input "s3:PutObject"
+                        input "s3:PutObjectAcl"
+                        input "s3:DeleteObject"
+                        input "s3:AbortMultipartUpload"
+                        input "s3:ListMultipartUploadParts" ],
+        Resources = inputList [ io (Output.Format($"{bucket.Arn}/*")) ]
+    )
+
+let policyDocumentInvokeArgs =
+    GetPolicyDocumentInvokeArgs(
+        Statements =
+            inputList [ input limitedPermissionsToOneBucketStatement
+                        input permissionsToBucketStatement ]
+    )
+
+let policyDocument =
+    GetPolicyDocument.Invoke(policyDocumentInvokeArgs)
+
+let policyArgs = PolicyArgs(PolicyDocument = io (policyDocument.Apply(fun (pd) -> pd.Json)))
+
+let policy = Policy(prefixMastodonResource "s3-access-policiy", policyArgs)
+
+let group = Group(prefixMastodonResource "s3-access-group")
+
+let policyAttachmentArgs = PolicyAttachmentArgs(Groups = group.Name, PolicyArn = policy.Arn)
+
+PolicyAttachment(prefixMastodonResource "access-group-policiy-attachment", policyAttachmentArgs)
+```
+
+We can now add the user `mastodon-s3-user` to the group `mastodon-s3-access-group` we created above. Again, this step is done manually in the AWS console.
+From here we only have to provide the access key id and the access key id secret to Mastodon and we are able to store the user-uploaded files in the S3 bucket.
+
+##### CloudFront distribution
+
+For the CloudFront distribution we first define the origin acccess identity and a bucket policy for the S3 bucket so that we allow CloudFront to retrieve objects from the S3 bucket:
+
+```fsharp
+let originAccessIdentity =
+    let originAccessIdentityArgs =
+        OriginAccessIdentityArgs(Comment = "Access identy to access the origin bucket")
+    OriginAccessIdentity("Cloudfront Origin Access Identity", originAccessIdentityArgs)
+
+let cloudFrontPrincipal =
+    GetPolicyDocumentStatementPrincipalInputArgs(
+        Type = "AWS",
+        Identifiers = inputList [ io originAccessIdentity.IamArn ]
+    )
+
+let imageBucketPolicy =
+    
+    let getObjectStatement =
+        GetPolicyDocumentStatementInputArgs(
+            Principals = inputList [ input cloudFrontPrincipal ],
+            Actions = inputList [ input "s3:GetObject" ],
+            Resources =
+                inputList [ io bucket.Arn
+                            io (Output.Format($"{bucket.Arn}/*")) ]
+        )
+    
+    let policyDocumentInvokeArgs =
+        GetPolicyDocumentInvokeArgs(
+            Statements =
+                inputList [ input getObjectStatement ]
+        )
+    
+    let policyDocument =
+        GetPolicyDocument.Invoke(policyDocumentInvokeArgs)
+    
+    let bucketPolicyArgs =
+        BucketPolicyArgs(Bucket = bucket.Id, Policy = io (policyDocument.Apply(fun (pd) -> pd.Json)))
+
+    BucketPolicy(prefixMastodonResource "image-bucket-policy", bucketPolicyArgs)
+```
+
+To support HTTPS we also need to retrieve the certificate for the S3 alias host domain we created with the AWS Certificate Manager.For CloudFront this certificate has to be stored in the us-east-1 region:
+
+```fsharp
+let cert =
+    
+    let certInvokeOptions =
+        let invokeOptions = InvokeOptions()
+        invokeOptions.Provider <- Provider("useast1", ProviderArgs(Region = "us-east-1"))
+        invokeOptions
+    
+    let getCertificateInvokeArgs =
+        GetCertificateInvokeArgs(
+            Domain = s3AliasHost,
+            MostRecent = true,
+            Types = inputList [ input "AMAZON_ISSUED" ]
+        )
+        
+    GetCertificate.Invoke(getCertificateInvokeArgs, certInvokeOptions)
+```
+
+In the end we can create the CloudFront distribution with the certificate, the S3 alias host domain and the S3 bucket as origin:
+
+```fsharp
+let cloudFrontDistribution = 
+
+    let s3OriginConfigArgs = DistributionOriginS3OriginConfigArgs(OriginAccessIdentity = originAccessIdentity.CloudfrontAccessIdentityPath)
+
+    let originArgs =
+        DistributionOriginArgs(
+            DomainName = bucket.BucketRegionalDomainName,
+            OriginId = "myS3Origin",
+            S3OriginConfig = s3OriginConfigArgs
+        )
+
+    let viewerCertificate =
+        DistributionViewerCertificateArgs(AcmCertificateArn = io (cert.Apply(fun cert -> cert.Arn)), SslSupportMethod = "sni-only")
+
+    let forwardeValueCookies =
+        DistributionDefaultCacheBehaviorForwardedValuesCookiesArgs(Forward = "none")
+    
+    let forwardedValuesArgs =
+        DistributionDefaultCacheBehaviorForwardedValuesArgs(
+            QueryString = true,
+            Cookies = forwardeValueCookies
+        )
+
+    let defaultCacheBehaviorArgs =
+        DistributionDefaultCacheBehaviorArgs(
+            AllowedMethods =
+                inputList [ input "GET"
+                            input "HEAD"
+                            input "OPTIONS" ],
+            CachedMethods = inputList [ input "GET"; input "HEAD" ],
+            TargetOriginId = "myS3Origin",
+            ForwardedValues = forwardedValuesArgs,
+            ViewerProtocolPolicy = "redirect-to-https",
+            MinTtl = 100,
+            DefaultTtl = 3600,
+            MaxTtl = 86400,
+            SmoothStreaming = false,
+            Compress = true
+        )
+
+    let geoRestrictions =
+        DistributionRestrictionsGeoRestrictionArgs(RestrictionType = "none")
+
+    let restrictionArgs =
+        DistributionRestrictionsArgs(GeoRestriction = geoRestrictions)
+
+    let cloudFrontDistributionArgs =
+        DistributionArgs(
+            Origins = originArgs,
+            Enabled = true,
+            Aliases = inputList [input s3AliasHost],
+            Comment = "Distribution as S3 alias for Mastodon content delivery",
+            DefaultRootObject = "index.html",
+            PriceClass = "PriceClass_100",
+            ViewerCertificate = viewerCertificate,
+            DefaultCacheBehavior = defaultCacheBehaviorArgs,
+            Restrictions = restrictionArgs
+        )
+
+    Distribution(prefixMastodonResource "media-distribution", cloudFrontDistributionArgs)
+```
 
 ### Configuration and secrets
 
@@ -727,4 +929,5 @@ Just invoke `pulumi up`, wait for the deployment to finish and voi la you have y
 [1]: https://github.com/simonschoof/mastodon-aws/tree/main/infrastructure/aws-services
 [2]: https://docs.joinmastodon.org/user/run-your-own/#so-you-want-to-run-your-own-mastodon-server
 [3]: https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2.html
+[4]: https://gist.github.com/ftpmorph/299c00907c827fbca883eeb45e6a7dc4?permalink_comment_id=4374053#gistcomment-4374053
 
