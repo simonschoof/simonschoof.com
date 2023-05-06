@@ -21,26 +21,19 @@ In this second part we will cover the steps to run Mastodon on AWS using ECS and
 
 ### Introduction 
 
-After successfully getting Mastodon running locally in the previous part of this series, we can now set up Mastodon to run on AWS. In the previous part, we wanted to try out Mastodon and get familiar with it. Now we want to run Mastodon in production on AWS. For this purpose, we want to use ESC with Fargate to run Mastodon. As we saw in the previous post and can also read in the [*Run your own server* section][2] of the Mastodon documentation, we need more than just the compute part of AWS to get Mastodon running. We will take the parts from the *Run your own server* documentation and list them here again along with the AWS services and other components that will provide the needed functionality.
+After successfully getting Mastodon to run locally in the previous part of this series, we can now set up Mastodon to run on AWS. In the previous part, the goal was  to try out Mastodon and get familiar with it so that it would be easier to setup on AWS. To run Mastodon on AWS I chose to use ESC with Fargate. As we saw in the previous post and can also read in the [*Run your own server* section][2] of the Mastodon documentation, we need more than just the compute part of AWS to get Mastodon running. In the table below I listed the needed parts from the *Run your own server* documentation again and wrote down the providers, we will use to provide the functionality, next to it. Later we will go in into more detail on what we have to do for each part in the AWS infrastructure.
 
 
 {{<table tableWidth="95%">}}
-Component | Service 
+Component | Solution
 --------|------
-Domain name | social.simonschoof.com: Not hosted on AWS, just using a subdomain on my already existing domain registrar  
-Configuration and Secrets | AWS Systems Manager Parameter Store and AWS Secrets Manager
-Database | Amazon Aurora Serverless V2
-Redis | Elasticache for Redis 
-Load Balancer | AWS Application Load Balancer
-VPC | AWS VPC
-Container Orchestration | ECS and Fargate
-E-mail provider | AWS SES
-Object storage provider | AWS S3 
-CDN | AWS CloudFront
+A domain name | social.simonschoof.com: Not hosted on AWS, just using a subdomain on my already existing domain registrar  
+A VPS | We will use ECS and Fargate to run Mastodon, Aurora Serverless V2 for the database and Elasticache for Redis
+An e-mail provider. | We will use AWS SES
+Optional: Object storage provider | We will use AWS S3 and CloudFront for the user-uploaded files
 {{</table>}}
 
-In the following sections we will go through the different parts listed in the table above and describe which AWS services or which other components we will use to provide the functionality. For some parts, we will describe the manual steps as the automation overhead was not justified for the small amount of work required for a privately hosted Mastodon instance. 
-Again, we will use Pulumi with F# to provide the infrastructure and deploy Mastodon. 
+In the following sections I will give a brief overview of the architecture and the different parts of the AWS infrastructure. After that we will go into more detail on how to set up the different parts.
 
 ### Architecture
 
@@ -48,8 +41,8 @@ The general architecture in AWS to run Mastodon looks like this:
  
 {{<figure2 src="/images/aws_architecture.drawio.svg" class="mastodon-aws-architecture" caption="AWS Architecture for Mastodon" >}}
 
-The general idea was to make the architecture as simple as possible.
-Therefore we will use the default VPC, which is public by default, and the default subnets provided by AWS. To secure the services within the VPC we will use security groups for the different services. 
+The general idea was to make the architecture as "simple" as possible.
+Which means we will use the default VPC, which is public by default, and the default subnets provided by AWS. For a more critical application I would for example put the database, the ECS service and other components in a private subnet as recommended by AWS. Without a private subnet we can secure the services by using security groups, which we will do.
 
 As we can see from the architecture diagram, we will use the following AWS services: 
 
@@ -65,29 +58,28 @@ As we can see from the architecture diagram, we will use the following AWS servi
 * **AWS Secrets Manager** for secrets
 * **AWS Certificate Manager** for certificates
 
-As mentioned above we are using the default VPC and subnets provided by AWS. Within the VPC we will provide an Application Load Balancer to route the traffic to the the Web and Streaming containers. As the Web and Streaming container are acccesed by a different port and path, we will use two target groups for the Application Load Balancer. One for the Web container listening on port 3000 and the other for the Streaming container listening on port 4000 and reached via the `/api/v1/streaming` path.
-The Application Load Balancer will be secured by a security group that only allows traffic from the Internet. The Web and Streaming containers will be secured by a security group that only allows traffic from the Application Load Balancer and to the PostgreSQL database and Redis. The PostgreSQL database and Redis will be secured by a security group that only allows traffic from the Web and Streaming containers running on ECS and Fargate. 
+As mentioned above we are using the default VPC and subnets provided by AWS. Within the VPC we will provide an Application Load Balancer to route the traffic to the the Web and Streaming containers running on ECS and Fargate. As the Web and Streaming container are acccesed by a different port and path, we will use two target groups for the Application Load Balancer. One for the Web container listening on port 3000 and the other for the Streaming container listening on port 4000 and reached via the `/api/v1/streaming` path. The tasks within the ECS service will be able to access the PostgreSQL and Redis databases, the S3 bucket and the SES service.
 
-The Application Load Balancer will only allow https traffic and will redirect http traffic to https. The https traffic will be secured by a certificate from AWS Certificate Manager. The certificate will be requested for the domain name, `social.simonschoof.com`, of the Mastodon instance. 
+The Application Load Balancer will be secured by a security group that only allows traffic from the Internet on port 80 and 443. Whereas the http traffic on port 80 will be redirected to https on port 443.
+he https traffic will be secured by a certificate from AWS Certificate Manager. The certificate will be requested for the domain name, `social.simonschoof.com`, of the Mastodon instance. The Web and Streaming containers runnning on ECS and Fargate will be secured by a security group that only allows traffic from the Application Load Balancer and to PostgreSQL, Redis, S3 and SES. The PostgreSQL and Redis databases are also secured by a security group that only allows traffic from the Web and Streaming containers running on ECS and Fargate. 
 
 To allow the Mastodon instance to send e-mails, we will use AWS SES.
-AWS SES will be configured to use the domain name of the Mastodon instance as the sender domain. To allow AWS SES to send e-mails for the domain, we will have to verify the domain in AWS SES. AWS SES will be configured to use the SMTP interface to send e-mails. The SMTP credentials will be stored in AWS Secrets Manager.
+AWS SES will be configured to use the domain name of the Mastodon instance as the sender domain. The sender domain has to be verified in AWS SES. Additionally, we will configure AWS SES to use the SMTP interface to send e-mails. The SMTP credentials will be stored in the AWS Secrets Manager.
 
-To store the media files uploaded by the users, we will use AWS S3. As I wanted to keep the bucket private, we will use a CloudFront distribution to serve the media files to the users. AWS CloudFront will be configured to use the subdomain `mastodonmedia.simonschoof.com` and will also only allow https traffic. The certificate for the subdomain will be requested from AWS Certificate Manager.
+To store the user-uploaded media files, we will use AWS S3. As I wanted to keep the bucket private, we will use a CloudFront distribution to serve the media files to the users. AWS CloudFront will be configured to use the subdomain `mastodonmedia.simonschoof.com` and will also only allow https traffic. The certificate for the subdomain will be requested from AWS Certificate Manager.
 
-The configuration for the Mastodon instance will be stored in AWS Systems Manager Parameter Store. The secrets will be stored in AWS Secrets Manager.
-The configuration and secrets will be stored as environment variables in the ECS task definition and set during the deployment of the Mastodon instance via Pulumi. 
+The configuration for the Mastodon instance will be stored in AWS Systems Manager Parameter Store. The secrets will be stored in AWS Secrets Manager. The parameters and secrets will be retrieved during the deployment of the Mastodon instance via Pulumi and set as environment variables in the ECS task definition.
 
-After this short overview of the architecture, let's dive into the details of the different parts.
+After the general overview of the architecture, we will now go into more detail on how to set up the different parts of the AWS infrastructure.
 
 ### Domain name and certificates
 
-As mentioned above, we will use the AWS Certificate Manager to request the certificates for the instance domain name `social.simonschoof.com` and the media file domain name `mastodonmedia.simonschoof.com`. As I already have a domain name registered with a domain registrar, I will not use Route 53 to register the domain name. Instead I will use the DNS validation method to validate the domain names. For this purpose, I will create a CNAME record in the DNS configuration of my domain registrar that points to the DNS name provided by AWS Certificate Manager. For the media file domain which is used as the alternate domain name for the CloudFront distribution, the certificate will be requested in the `us-east-1` region which is an [requirement for CloudFront](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html).
-This is For the instance domain name, the certificate will be requested in the `eu-central-1` region, which is the region I am using for all the other resources. The creation of the certificates is done manually and not via Pulumi. 
+As mentioned above, we will use the AWS Certificate Manager to request the certificates for the instance domain name `social.simonschoof.com` and the media file domain name `mastodonmedia.simonschoof.com`. As I already have a domain name registered with a domain registrar, I will not use Route 53 to register the domain name. Instead I will use the DNS validation method to validate the domain names. For this purpose, I created a CNAME record in the DNS configuration of my domain registrar that points to the DNS name provided by the AWS Certificate Manager. For the media file domain which is used as the alternate domain name for the CloudFront distribution, the certificate will be requested in the `us-east-1` region which is an [requirement for CloudFront](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html).
+For the instance domain name, the certificate will be requested in the `eu-central-1` region, which is the region I am using for all the other resources. All of the steps to request the certificates and the DNS validation were done manually by me in the AWS console and at my domain registrar and are not part of the Pulumi code.
 
 ### SES
 
-Another part of the application where I did not use Pulumi was the setup of the AWS SES service. The setup of AWS SES is quite simple and is described in the [AWS SES documentation](https://docs.aws.amazon.com/ses/latest/DeveloperGuide/send-email-set-up.html). The SMTP credentials can be created manually in the AWS SES console. The SMTP credentials will be stored in AWS Secrets Manager from where they will be retrieved during the deployment of the Mastodon instance as we will see later in the [configuration and secrets section](#configuration-and-secrets). The SES credentials to be created are unique per region. When you start using AWS SES you will be in the sandbox mode. In the sandbox mode you can only send e-mails to verified e-mail addresses. To send e-mails to unverified e-mail addresses, you have to request production access. This is also described in the [AWS SES documentation](https://docs.aws.amazon.com/ses/latest/DeveloperGuide/request-production-access.html). In the setup of a single user instance configuration, there is no need to request production access as the only e-mail the instance will write to is the e-mail of my admin user account. So I only verified the e-mail address of my admin user account. 
+Another part of the application where I did not use Pulumi was the setup of the AWS SES service. The setup of AWS SES is quite simple and is described in the [AWS SES documentation](https://docs.aws.amazon.com/ses/latest/DeveloperGuide/send-email-set-up.html). The SMTP credentials can be created manually in the AWS SES console. The SMTP credentials will be stored in AWS Secrets Manager from where they will be retrieved during the deployment of the Mastodon instance as we will see later in the [configuration and secrets section](#configuration-and-secrets). The SES credentials to be created are unique per region. When you start using AWS SES you will be in the sandbox mode. In the sandbox mode you can only send e-mails to verified e-mail addresses. To send e-mails to unverified e-mail addresses, you have to request production access. This is also described in the [AWS SES documentation](https://docs.aws.amazon.com/ses/latest/DeveloperGuide/request-production-access.html). For the setup of a single user instance configuration, there is no need to request production access as the only e-mail the instance will write to is the e-mail of my admin user account. So I only verified the e-mail address of my admin user account and did not request production access.
 
 ### VPC and security groups
 
