@@ -13,13 +13,15 @@ tags = [
 series = "Running Mastodon on AWS"
 draft = true
 +++
-This post is the second part of a series of two articles on deploying and running a [Mastodon][mastodondocs] instance on [AWS][aws]. The code for this part can be found [here][1]. In this second part we will cover the steps to run Mastodon on AWS with ECS and Fargate.
+This post is the second part of a series of two articles on deploying and running a [Mastodon][mastodondocs] instance on [AWS][aws]. The code for this part can be found [here][githubcode]. In this second part we will cover the steps to run Mastodon on AWS with ECS and Fargate.
 
 {{< series "Running Mastodon on AWS" >}} 
 
 ### Introduction 
 
-Having successfully got Mastodon running locally in the {{< prev-in-section "previous part" >}} of this series, we can now set Mastodon up to run on AWS. In the previous part, the goal was to try out Mastodon and get familiar with it so that it would be easier to set up on AWS. To run Mastodon on AWS, I decided to use [AWS ECS][awsecs] with [AWS Fargate][awsfargate]. As we saw in the previous post and can also read in the [*Run your own server*][2] section of the Mastodon documentation, we need more than just the compute part of AWS to get Mastodon running. In the table below, I have listed the required parts from the *Run your own server* documentation again and noted next to them the providers we will use to provide the functionality. Later we will go into more detail about what we need to do for each part of the AWS infrastructure.
+Having successfully got Mastodon running locally in the {{< prev-in-section "previous part" >}} of this series, we can now set Mastodon up to run on AWS. To set up Mastodon on AWS, we will use [Pulumi][pulumi] with F# to provision the AWS infrastructure and deploy the Mastodon application. Pulumi is my preferred tool for infrastructure as code. I have been using it for a while now as you can see in all of my blog posts in the [infrastructure as code][iac] category. 
+
+For the previous part, the goal was to try out Mastodon and get familiar with it so that it would be easier to set up on AWS. To run Mastodon on AWS, I decided to use [AWS ECS][awsecs] with [AWS Fargate][awsfargate]. As we saw in the previous post and can also read in the [*Run your own server*][mastodonrunownserver] section of the Mastodon documentation, we need more than just the compute part of AWS to get Mastodon running. In the table below, I have listed the required parts from the *Run your own server* documentation again and noted next to them the providers we will use to provide the functionality. Later we will go into more detail about what we need to do for each part of the AWS infrastructure.
 
 {{<table tableWidth="95%">}}
 Component | Solution
@@ -71,12 +73,11 @@ After the general overview of the architecture, we will now go into more detail 
 
 ### Domain name and certificates
 
-As mentioned above, we will use the AWS Certificate Manager to request the certificates for the instance domain name `social.simonschoof.com` and the media file domain name `mastodonmedia.simonschoof.com`. As I already have a domain name registered with a domain registrar, I will not use Route 53 to register the domain name. Instead I will use the DNS validation method to validate the domain names. For this purpose, I created a CNAME record in the DNS configuration of my domain registrar that points to the DNS name provided by the AWS Certificate Manager. For the media file domain which is used as the alternate domain name for the CloudFront distribution, the certificate will be requested in the `us-east-1` region which is an [requirement for CloudFront](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html).
-For the instance domain name, the certificate will be requested in the `eu-central-1` region, which is the region I am using for all the other resources. All of the steps to request the certificates and the DNS validation were done manually by me in the AWS console and at my domain registrar and are not part of the Pulumi code.
+As mentioned above, we will use the AWS Certificate Manager to request the certificates for the instance domain name `social.simonschoof.com` and the media file domain name `mastodonmedia.simonschoof.com`. Since I have already registered a domain name with a domain registrar, I will not use [AWS Route 53][awsroute53] to register the domain name. Instead, I will use the DNS validation method to validate the domain names. For this purpose, I created a CNAME record in my domain registrar's DNS configuration that points to the DNS name provided by the AWS Certificate Manager. For the media file domain used as the alternate domain name for the CloudFront distribution, the certificate is requested in the region `us-east-1`, which is a [requirement for CloudFront][awscloudfrontrequirements]. For the instance's domain name, the certificate is requested in the region `eu-central-1`, which is the region I use for all other resources. All the steps to request the certificates and the DNS validation were done manually by me in the AWS console and at my domain registrar and are not part of the Pulumi code.
 
 ### SES
 
-Another part of the application where I did not use Pulumi was the setup of the AWS SES service. The setup of AWS SES is quite simple and is described in the [AWS SES documentation](https://docs.aws.amazon.com/ses/latest/DeveloperGuide/send-email-set-up.html). The SMTP credentials can be created manually in the AWS SES console. The SMTP credentials will be stored in AWS Secrets Manager from where they will be retrieved during the deployment of the Mastodon instance as we will see later in the [configuration and secrets section](#configuration-and-secrets). The SES credentials to be created are unique per region. When you start using AWS SES you will be in the sandbox mode. In the sandbox mode you can only send e-mails to verified e-mail addresses. To send e-mails to unverified e-mail addresses, you have to request production access. This is also described in the [AWS SES documentation](https://docs.aws.amazon.com/ses/latest/DeveloperGuide/request-production-access.html). For the setup of a single user instance configuration, there is no need to request production access as the only e-mail the instance will write to is the e-mail of my admin user account. So I only verified the e-mail address of my admin user account and did not request production access.
+Another part of the application where I did not use Pulumi was setting up the AWS SES service. Setting up AWS SES is quite simple and is described in the [AWS SES documentation][awssessetup]. The SMTP credentials can be created manually in the AWS SES console. The SMTP credentials are stored in the AWS Secrets Manager, from where they are retrieved during the deployment of the Mastodon instance, as we will see later in the [configuration-and-secrets](#configuration-and-secrets) section. The SES credentials to be created are unique per region. When you start with AWS SES, you are in sandbox mode. In sandbox mode, you can only send emails to verified email addresses. To send email to non-verified email addresses, you must request production access. This is also described in the [AWS SES documentation][awssesrequestprodaccess]. For setting up a single user instance configuration, it is not necessary to request production access because the only email the instance will write to is the email of my admin user account. So I only checked the email address of my admin user account and did not request production access.
 
 ### VPC and security groups
 
@@ -303,7 +304,7 @@ After defining the VPC, the subnets, the security groups, and the security group
 
 ##### PostgreSQL
 
-For the PostgreSQL database I decided to try the AWS Aurora serverless v2 version which is, according to AWS, [a good fit for development and testing environments][3] because we can  define a low minimum capacity for the database. Defining the PostgreSQL database is straigthforward and it is defined as follows:
+For the PostgreSQL database I decided to try the AWS Aurora serverless v2 version which is, according to AWS, [a good fit for development and testing environments][awsaurorav2userguide] because we can  define a low minimum capacity for the database. Defining the PostgreSQL database is straigthforward and it is defined as follows:
 
 ```fsharp
 let clusterServerlessv2ScalingConfigurationArgs =
@@ -682,7 +683,7 @@ An optional piece, as to the Mastodon documentation, is an Object storage provid
 
 ##### S3 bucket
 
-For Mastodon to acccess the S3 bucket we have to provide Mastodon with an AWS access key id and an AWS access key id secret. As it is not quite clear from the Mastodon documentation which permissions are needed by Mastodon to access the S3 bucket I followed the approach of Daniel Snider which he describes in [this GitHub gist][4]. Part of this I also configure manually in the AWS console. The parts which I configured manually in the AWS console are creating the user `mastodon-s3-user` and adding this user to the group `mastodon-s3-access-group` which we will create in the Pulumi deployment. I also created the access key and secret key for the user `mastodon-s3-user` and stored them in the AWS Secrets Manager.
+For Mastodon to acccess the S3 bucket we have to provide Mastodon with an AWS access key id and an AWS access key id secret. As it is not quite clear from the Mastodon documentation which permissions are needed by Mastodon to access the S3 bucket I followed the approach of Daniel Snider which he describes in [this GitHub gist][githubmastodons3permission]. Part of this I also configure manually in the AWS console. The parts which I configured manually in the AWS console are creating the user `mastodon-s3-user` and adding this user to the group `mastodon-s3-access-group` which we will create in the Pulumi deployment. I also created the access key and secret key for the user `mastodon-s3-user` and stored them in the AWS Secrets Manager.
 
 First we will create the bucket and  we will block the all public access to it:
 
@@ -1087,6 +1088,10 @@ For maintenace and debug purposes I added an runMode variable which can be set t
 [awscm]: https://aws.amazon.com/certificate-manager/
 [awssecgroups]: https://docs.aws.amazon.com/vpc/latest/userguide/security-groups.html
 [awssubnets]: https://docs.aws.amazon.com/vpc/latest/userguide/configure-subnets.html
+[awsroute53]: https://aws.amazon.com/route53/\
+[awscloudfrontrequirements]: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html
+[awssessetup]: https://docs.aws.amazon.com/ses/latest/DeveloperGuide/send-email-set-up.html
+[awssesrequestprodaccess]: https://docs.aws.amazon.com/ses/latest/DeveloperGuide/request-production-access.html
 [mastodonweb]: https://docs.joinmastodon.org/dev/overview/
 [mastodonstreaming]: https://docs.joinmastodon.org/methods/streaming/
 [rubyonrails]: https://rubyonrails.org/
@@ -1094,9 +1099,10 @@ For maintenace and debug purposes I added an runMode variable which can be set t
 [nodejs]: https://nodejs.org/en/
 [postgresql]: https://www.postgresql.org/
 [redis]: https://redis.io/
-
-[1]: https://github.com/simonschoof/mastodon-aws/tree/main/infrastructure/aws-services
-[2]: https://docs.joinmastodon.org/user/run-your-own/#so-you-want-to-run-your-own-mastodon-server
-[3]: https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2.html
-[4]: https://gist.github.com/ftpmorph/299c00907c827fbca883eeb45e6a7dc4?permalink_comment_id=4374053#gistcomment-4374053
+[pulumi]: https://www.pulumi.com/
+[iac]: {{< ref "/tags/infrastructure-as-code/" >}}
+[githubcode]: https://github.com/simonschoof/mastodon-aws/tree/main/infrastructure/aws-services
+[mastodonrunownserver]: https://docs.joinmastodon.org/user/run-your-own/#so-you-want-to-run-your-own-mastodon-server
+[awsaurorav2userguide]: https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2.html
+[githubmastodons3permission]: https://gist.github.com/ftpmorph/299c00907c827fbca883eeb45e6a7dc4?permalink_comment_id=4374053#gistcomment-4374053
 
