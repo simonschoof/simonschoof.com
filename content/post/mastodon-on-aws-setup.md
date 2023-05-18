@@ -81,9 +81,9 @@ Another part of the application where I did not use Pulumi was setting up the AW
 
 ### VPC and security groups
 
-To run Mastodon in AWS we will need a network infrastructure to run the different services. As mentioned above, we will use the default VPC and subnets provided by AWS. To secure the services within the VPC we will use security groups for the different services. For a single user Mastodon instance this setup seems to be sufficient. For a multi user instance, you might want to consider using a private subnet for the database and Redis as recommended by AWS. The VPC and security groups will be created via Pulumi. Whereas the default VPC and subnets are automatically created by AWS when you create an AWS account. 
+To run Mastodon in AWS, we need a network infrastructure to run the various services. As mentioned earlier, we will use the default VPC and subnets provided by AWS. To secure the services within the VPC, we will use security groups for the different services. For a Mastodon instance with one user, this setup seems to be sufficient. For an instance with multiple users, you should use a private subnet for the database and Redis, as recommended by AWS. The VPC and security groups are created via Pulumi. The default VPC and subnets should be in place and automatically created by AWS when you create an AWS account.
 
-Defining the default VPC and subnets in Pulumi will add both to the Pulumi stack and are not managed by Pulumi. Removing the default VPC and subnets from the Pulumi stack will not remove them from AWS. To add the default VPC and subnets to the Pulumi stack we just have to write down the following code<cite>[^1]<cite>:
+If you define the [default VPC][pulumidefaultvpc] and [default subnets][pulumidefaultsubnets] in Pulumi, both will be added to the Pulumi stack but will not be managed by Pulumi. This means that removing the default VPC and subnets from the Pulumi stack does not remove them from AWS unless explicitly specified. To add the default VPC and subnets to the Pulumi stack, we just need to write the following code<cite>[^1]<cite>:
 
      
 ```fsharp
@@ -103,12 +103,12 @@ let defaultSubnetIds =
     List.init 3 (fun n -> defaultSubnets.Apply(fun subnets -> subnets.Ids.[n]))
 ```
 
-After this we can define the security groups for the different services. There will be a security group for: 
+Then we can define the security groups for the different services. There will be a security group for: 
 
-* The AWS Aurora PostgreSQL database
-* The Redis database
-* The AWS ECS Fargate service 
-* The Application Load Balancer
+* the PostgreSQL database
+* the Redis database
+* the ECS Fargate service 
+* the ALB
 
 
 ```fsharp
@@ -1100,6 +1100,8 @@ For maintenace and debug purposes I added an runMode variable which can be set t
 [postgresql]: https://www.postgresql.org/
 [redis]: https://redis.io/
 [pulumi]: https://www.pulumi.com/
+[pulumidefaultvpc]: https://www.pulumi.com/registry/packages/aws/api-docs/ec2/defaultvpc/
+[pulumidefaultsubnets]: https://www.pulumi.com/registry/packages/aws/api-docs/ec2/defaultsubnet/
 [iac]: {{< ref "/tags/infrastructure-as-code/" >}}
 [githubcode]: https://github.com/simonschoof/mastodon-aws/tree/main/infrastructure/aws-services
 [mastodonrunownserver]: https://docs.joinmastodon.org/user/run-your-own/#so-you-want-to-run-your-own-mastodon-server
