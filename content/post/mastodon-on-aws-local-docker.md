@@ -380,4 +380,6 @@ We can also see the path of the file when we open one of the images in the brows
 
 {{< figure2 src="images/mastodon-minio-filepath.webp" class="mastodon-minio" caption="Image file path for local Minio bucket" attrrel="noopener noreferrer" >}}
 
+In the {{< next-in-section "next part" >}}, we show how to deploy Mastodon on AWS using Pulumi.
+
 [^1]: You have to disable the security warning in your browser to be able to access the Mastodon instance. This is because we are using a self-signed certificate.

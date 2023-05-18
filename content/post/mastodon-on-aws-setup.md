@@ -13,27 +13,25 @@ tags = [
 series = "Running Mastodon on AWS"
 draft = true
 +++
-This post is the second part of a two article series on deploying and running a Mastodon instance on AWS. 
-The code for this part can be found [here][1].
-In this second part we will cover the steps to run Mastodon on AWS using ECS and Fargate.
+This post is the second part of a series of two articles on deploying and running a [Mastodon][mastodondocs] instance on [AWS][aws]. The code for this part can be found [here][1]. In this second part we will cover the steps to run Mastodon on AWS with ECS and Fargate.
 
 {{< series "Running Mastodon on AWS" >}} 
 
 ### Introduction 
 
-After successfully getting Mastodon to run locally in the previous part of this series, we can now set up Mastodon to run on AWS. In the previous part, the goal was  to try out Mastodon and get familiar with it so that it would be easier to setup on AWS. To run Mastodon on AWS I chose to use ESC with Fargate. As we saw in the previous post and can also read in the [*Run your own server* section][2] of the Mastodon documentation, we need more than just the compute part of AWS to get Mastodon running. In the table below I listed the needed parts from the *Run your own server* documentation again and wrote down the providers, we will use to provide the functionality, next to it. Later we will go in into more detail on what we have to do for each part in the AWS infrastructure.
-
+Having successfully got Mastodon running locally in the {{< prev-in-section "previous part" >}} of this series, we can now set Mastodon up to run on AWS. In the previous part, the goal was to try out Mastodon and get familiar with it so that it would be easier to set up on AWS. To run Mastodon on AWS, I decided to use [AWS ECS][awsecs] with [AWS Fargate][awsfargate]. As we saw in the previous post and can also read in the [*Run your own server*][2] section of the Mastodon documentation, we need more than just the compute part of AWS to get Mastodon running. In the table below, I have listed the required parts from the *Run your own server* documentation again and noted next to them the providers we will use to provide the functionality. Later we will go into more detail about what we need to do for each part of the AWS infrastructure.
 
 {{<table tableWidth="95%">}}
 Component | Solution
+Component | Solution
 --------|------
-A domain name | social.simonschoof.com: Not hosted on AWS, just using a subdomain on my already existing domain registrar  
-A VPS | We will use ECS and Fargate to run Mastodon, Aurora Serverless V2 for the database and Elasticache for Redis
-An e-mail provider. | We will use AWS SES
-Optional: Object storage provider | We will use AWS S3 and CloudFront for the user-uploaded files
+A domain name | [social.simonschoof.com](https://social.simonschoof.com): Not hosted on AWS, just a subdomain on my existing domain registrar. 
+A VPS | We will use ECS and Fargate to run Mastodon, Aurora Serverless V2 for the database and Elasticache for Redis.
+An email provider. | We will use AWS SES.
+Optional: Object storage provider | We will use AWS S3 and CloudFront for the files uploaded by the users.
 {{</table>}}
 
-In the following sections I will give a brief overview of the architecture and the different parts of the AWS infrastructure. After that we will go into more detail on how to set up the different parts.
+In the following sections I will give a brief overview of the architecture and the different parts of the AWS infrastructure. We will then go into more detail on how the different parts are set up.
 
 ### Architecture
 
@@ -42,26 +40,26 @@ The general architecture in AWS to run Mastodon looks like this:
 {{<figure2 src="/images/aws_architecture.drawio.svg" class="mastodon-aws-architecture" caption="AWS Architecture for Mastodon" >}}
 
 The general idea was to make the architecture as "simple" as possible.
-Which means we will use the default VPC, which is public by default, and the default subnets provided by AWS. For a more critical application I would for example put the database, the ECS service and other components in a private subnet as recommended by AWS. Without a private subnet we can secure the services by using security groups, which we will do.
+This means that we will use the default VPC, which is public by default, and the default subnets provided by AWS. For a more critical application, for example, I would put the database, ECS service and other components on a private subnet as [recommended by AWS][awsnetworksec]. Without a private subnet, we can secure the services using security groups, which we will do.
 
-As we can see from the architecture diagram, we will use the following AWS services: 
+As shown in the architecture diagram, we will use the following AWS services:
 
-* **AWS VPC** for the VPC
-* **AWS Application Load Balancer** for the load balancer
-* **Amazon Aurora Serverless V2** for the database
-* **Elasticache for Redis** for Redis
-* **ECS and Fargate** for the container orchestration
-* **AWS SES** for the e-mail provider
-* **AWS S3** for the object storage provider
-* **AWS CloudFront** for the CDN
-* **AWS Systems Manager Parameter Store** for configuration
-* **AWS Secrets Manager** for secrets
-* **AWS Certificate Manager** for certificates
+* [AWS VPC][awsvpc] for the VPC
+* [AWS Application Load Balancer(ALB)][awsalb] for the load balancer
+* [Amazon Aurora Serverless V2][awsaurorav2] with a [PostgreSQL][postgresql] engine for the database
+* [Elasticache for Redis][awselasticacheredis] for [Redis][redis]
+* [AWS ECS][awsecs] and  [AWS Fargate][awsfargate] for the container orchestration
+* [AWS SES][awsses] for the e-mail provider
+* [AWS S3][awss3] for the object storage provider
+* [AWS CloudFront][awscloudfront] for the CDN
+* [AWS Systems Manager Parameter Store][awsssm] for configuration
+* [AWS Secrets Manager][awssm] for secrets
+* [AWS Certificate Manager][awscm] for certificates
 
-As mentioned above we are using the default VPC and subnets provided by AWS. Within the VPC we will provide an Application Load Balancer to route the traffic to the the Web and Streaming containers running on ECS and Fargate. As the Web and Streaming container are acccesed by a different port and path, we will use two target groups for the Application Load Balancer. One for the Web container listening on port 3000 and the other for the Streaming container listening on port 4000 and reached via the `/api/v1/streaming` path. The tasks within the ECS service will be able to access the PostgreSQL and Redis databases, the S3 bucket and the SES service.
+As mentioned above we are using the default VPC and subnets provided by AWS. Within the VPC we will provide an ALB to route the traffic to the [web container][mastodonweb], running a [Ruby on Rails][rubyonrails] backend with a [React.js][reactjs] frontend, and the [streaming container][mastodonstreaming], a [Node.js][nodejs] application for the streaming API. As the web and streaming container are acccesed by a different port and path, we will use two target groups for the ALB. One for the web container listening on port 3000 and the other for the streaming container listening on port 4000 and reached via the `/api/v1/streaming` path. The tasks within the ECS service will be able to access the PostgreSQL and Redis databases, the S3 bucket and the SES service.
 
-The Application Load Balancer will be secured by a security group that only allows traffic from the Internet on port 80 and 443. Whereas the http traffic on port 80 will be redirected to https on port 443.
-he https traffic will be secured by a certificate from AWS Certificate Manager. The certificate will be requested for the domain name, `social.simonschoof.com`, of the Mastodon instance. The Web and Streaming containers runnning on ECS and Fargate will be secured by a security group that only allows traffic from the Application Load Balancer and to PostgreSQL, Redis, S3 and SES. The PostgreSQL and Redis databases are also secured by a security group that only allows traffic from the Web and Streaming containers running on ECS and Fargate. 
+The ALB will be secured by a security group that only allows traffic from the Internet on port 80 and 443. Whereas the http traffic on port 80 will be redirected to https on port 443.
+he https traffic will be secured by a certificate from AWS Certificate Manager. The certificate will be requested for the domain name, `social.simonschoof.com`, of the Mastodon instance. The web and streaming containers runnning on ECS and Fargate will be secured by a security group that only allows traffic from the ALB and to PostgreSQL, Redis, S3 and SES. The PostgreSQL and Redis databases are also secured by a security group that only allows traffic from the web and streaming containers running on ECS and Fargate. 
 
 To allow the Mastodon instance to send e-mails, we will use AWS SES.
 AWS SES will be configured to use the domain name of the Mastodon instance as the sender domain. The sender domain has to be verified in AWS SES. Additionally, we will configure AWS SES to use the SMTP interface to send e-mails. The SMTP credentials will be stored in the AWS Secrets Manager.
@@ -342,7 +340,7 @@ let clusterInstanceArgs =
 ClusterInstance(prefixMastodonResource "rds-cluster-instance", clusterInstanceArgs) |> ignore
 ```
 
-To use the Aurora serverless v2 version we need to define the `EngineMode` as `provisioned` and provide the `Serverlessv2ScalingConfiguration` argument. I also set the deletion protection to `true` to prevent the database from being deleted by accident. Furthermore, I set the `SkipFinalSnapshot` argument to `false` and provide a `FinalSnapshotIdentifier` to create a final snapshot of the database when it is deleted. The last thin g to point out is that I set the `ApplyImmediately` argument to `true` to apply changes immediately and not wait for the next maintenance window.
+To use the Aurora serverless v2 version we need to define the `EngineMode` as `provisioned` and provide the `Serverlessv2ScalingConfiguration` argument. I also set the deletion protection to `true` to prevent the database from being deleted by accident. Furthermore, I set the `SkipFinalSnapshot` argument to `false` and provide a `FinalSnapshotIdentifier` to create a final snapshot of the database when it is deleted. The last thing to point out is that I set the `ApplyImmediately` argument to `true` to apply changes immediately and not wait for the next maintenance window.
 
 
 ##### Redis
@@ -500,7 +498,7 @@ let containerDefinitionsList =
     System.Collections.Generic.Dictionary<string, Awsx.Ecs.Inputs.TaskDefinitionContainerDefinitionArgs>()
 ```
 
-We stat with defining the PostgreSQL task definition. The PostgreSQL task definition is optional and can be used for maintenance and debugging purposes. We will only spin up the PostgreSQL task definition if the `runMode` is set to `Debug` or `Maintenance`:
+We start with defining the PostgreSQL task definition. The PostgreSQL task definition is optional and can be used for maintenance and debugging purposes. We will only spin up the PostgreSQL task definition if the `runMode` is set to `Debug` or `Maintenance`:
 
 ```fsharp
 let postgresContainer = 
@@ -546,7 +544,7 @@ let webContainer =
 containerDefinitionsList.Add(prefixMastodonResource "web", webContainer)
 ```
 
-In analogy to the web application container we define the Mastodon streaming application container. Again we define a port mapping which maps port `4000` to the `streamingTargetGroup`. Teh container command starts the Mastodon streaming application as a node application. The container is also configured with the environment variables that are required for Mastodon:
+In analogy to the web application container we define the Mastodon streaming application container. Again we define a port mapping which maps port `4000` to the `streamingTargetGroup`. The container command starts the Mastodon streaming application as a Node.js application. The container is also configured with the environment variables that are required for Mastodon:
 
 ```fsharp
 let streamingContainerportMappingArgs =
@@ -645,7 +643,7 @@ let defaultTaskRoleWithPolicy =
     Awsx.Awsx.Inputs.DefaultRoleWithPolicyArgs(RoleArn = taskRole.Arn)
 ```
 
-The third step comprises the Fargate service definition leveraging the task definitions and the ECS cluster we defined in the previous steps using the the simplified Fargate service definition provided by the `Awsx` library. We also see that we only add the task role with the policy to the Fargate service definition if we are in maintenance or debug mode. In production mode we don't need the task role with the policy as we don't want to connect to the containers in production mode. We also define the network configuration for the Fargate service. Here we set the `AssignPublicIp` property to `true` to make the containers reachable from the outside. To prevent the containers from being reachable from the outside we set the ecs security group which we defined earlier in the section about the [VPC and security groups](#vpc-and-security-groups). Another property which is only set in maintenance and debug mode is the `EnableExecuteCommand` property which is also neededto connect to the containers in the ECS cluster using the AWS Systems Manager Session Manager:
+The third step comprises the Fargate service definition leveraging the task definitions and the ECS cluster we defined in the previous steps using the the simplified Fargate service definition provided by the `Awsx` library. We also see that we only add the task role with the policy to the Fargate service definition if we are in maintenance or debug mode. In production mode we don't need the task role with the policy as we don't want to connect to the containers in production mode. We also define the network configuration for the Fargate service. Here we set the `AssignPublicIp` property to `true` to make the containers reachable from the outside. To prevent the containers from being reachable from the outside we set the ecs security group which we defined earlier in the section about the [VPC and security groups](#vpc-and-security-groups). Another property which is only set in maintenance and debug mode is the `EnableExecuteCommand` property which is also needed to connect to the containers in the ECS cluster using the AWS Systems Manager Session Manager:
 
 ```fsharp
 let fargateServiceTaskDefinitionArgs =
@@ -1072,6 +1070,29 @@ For maintenace and debug purposes I added an runMode variable which can be set t
 
 [^1]: There are 3 subnets in the default VPC for the `eu-central-1` region. One public subnet in each availability zone. I tried to get the number of subnets out of the Output of the `GetSubnets` Invoke but I did not find a way to do it. So I just hardcoded the number of subnets to 3.
 
+[mastodondocs]: https://docs.joinmastodon.org/
+[aws]: https://aws.amazon.com/
+[awsecs]: https://aws.amazon.com/ecs/
+[awsfargate]: https://aws.amazon.com/fargate/
+[socialsimonschoof]: https://social.simonschoof.com
+[awsnetworksec]: https://docs.aws.amazon.com/vpc/latest/userguide/infrastructure-security.html
+[awsvpc]: https://aws.amazon.com/vpc/
+[awsalb]: https://aws.amazon.com/elasticloadbalancing/application-load-balancer/?nc=sn&loc=2&dn=2
+[awsaurorav2]: https://aws.amazon.com/rds/aurora/serverless/
+[awselasticacheredis]: https://aws.amazon.com/elasticache/redis/
+[awsses]: https://aws.amazon.com/ses/
+[awss3]: https://aws.amazon.com/s3/
+[awscloudfront]: https://aws.amazon.com/cloudfront/
+[awsssm]: https://aws.amazon.com/systems-manager/features/#Parameter_Store
+[awssm]: https://aws.amazon.com/secrets-manager/
+[awscm]: https://aws.amazon.com/certificate-manager/
+[mastodonweb]: https://docs.joinmastodon.org/dev/overview/
+[mastodonstreaming]: https://docs.joinmastodon.org/methods/streaming/
+[rubyonrails]: https://rubyonrails.org/
+[reactjs]: https://reactjs.org/
+[nodejs]: https://nodejs.org/en/
+[postgresql]: https://www.postgresql.org/
+[redis]: https://redis.io/
 [1]: https://github.com/simonschoof/mastodon-aws/tree/main/infrastructure/aws-services
 [2]: https://docs.joinmastodon.org/user/run-your-own/#so-you-want-to-run-your-own-mastodon-server
 [3]: https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2.html
