@@ -40,7 +40,7 @@ The general architecture in AWS to run Mastodon looks like this:
 {{<figure2 src="/images/aws_architecture.drawio.svg" class="mastodon-aws-architecture" caption="AWS Architecture for Mastodon" >}}
 
 The general idea was to make the architecture as "simple" as possible.
-This means that we will use the default VPC, which is public by default, and the default subnets provided by AWS. For a more critical application, for example, I would put the database, ECS service and other components on a private subnet as [recommended by AWS][awsnetworksec]. Without a private subnet, we can secure the services using security groups, which we will do.
+This means that we will use the default [VPC][awsvpc], which is public by default, and the default [subnets][awssubnets] provided by AWS. For a more critical application, for example, I would put the database, ECS service and other components on a private subnet as [recommended by AWS][awsnetworksec]. Without a private subnet, we can secure the services using [security groups][awssecgroups], which we will do.
 
 As shown in the architecture diagram, we will use the following AWS services:
 
@@ -56,19 +56,18 @@ As shown in the architecture diagram, we will use the following AWS services:
 * [AWS Secrets Manager][awssm] for secrets
 * [AWS Certificate Manager][awscm] for certificates
 
-As mentioned above we are using the default VPC and subnets provided by AWS. Within the VPC we will provide an ALB to route the traffic to the [web container][mastodonweb], running a [Ruby on Rails][rubyonrails] backend with a [React.js][reactjs] frontend, and the [streaming container][mastodonstreaming], a [Node.js][nodejs] application for the streaming API. As the web and streaming container are acccesed by a different port and path, we will use two target groups for the ALB. One for the web container listening on port 3000 and the other for the streaming container listening on port 4000 and reached via the `/api/v1/streaming` path. The tasks within the ECS service will be able to access the PostgreSQL and Redis databases, the S3 bucket and the SES service.
+As mentioned earlier, we will use the standard VPC and subnets provided by AWS. Within the VPC, we will provide an ALB to direct traffic to the [web container][mastodonweb], running a [Ruby on Rails][rubyonrails] backend with a [React.js][reactjs] frontend, and to the [streaming container][mastodonstreaming], a [Node.js][nodejs] application for the streaming API. Since the web container and the streaming container are accessed via different ports and paths, we will use two target groups for the ALB. One for the web container listening on port 3000 and the other for the streaming container listening on port 4000 and accessed via the path `/api/v1/streaming`. The tasks within the ECS service will be able to access the PostgreSQL and Redis databases, the S3 bucket and the SES service.
 
-The ALB will be secured by a security group that only allows traffic from the Internet on port 80 and 443. Whereas the http traffic on port 80 will be redirected to https on port 443.
-he https traffic will be secured by a certificate from AWS Certificate Manager. The certificate will be requested for the domain name, `social.simonschoof.com`, of the Mastodon instance. The web and streaming containers runnning on ECS and Fargate will be secured by a security group that only allows traffic from the ALB and to PostgreSQL, Redis, S3 and SES. The PostgreSQL and Redis databases are also secured by a security group that only allows traffic from the web and streaming containers running on ECS and Fargate. 
+The ALB is secured by a security group that only allows traffic from the Internet via port 80 and 443. The http traffic on port 80 is redirected to https on port 443. The https traffic is secured by a certificate from AWS Certificate Manager. The certificate is requested for the domain name `social.simonschoof.com` of the Mastodon instance. The web and streaming containers running on ECS and Fargate are secured by a security group that only allows traffic from the ALB and to PostgreSQL, Redis, S3 and SES. The PostgreSQL and Redis databases are also protected by a security group that only allows traffic from the web and streaming containers running on ECS and Fargate.
 
-To allow the Mastodon instance to send e-mails, we will use AWS SES.
-AWS SES will be configured to use the domain name of the Mastodon instance as the sender domain. The sender domain has to be verified in AWS SES. Additionally, we will configure AWS SES to use the SMTP interface to send e-mails. The SMTP credentials will be stored in the AWS Secrets Manager.
+In order for the Mastodon instance to send emails, we use AWS SES.
+AWS SES is configured to use the domain name of the Mastodon instance as the sender domain. The sender domain must be verified in AWS SES. In addition, AWS SES is configured to use the SMTP interface to send emails. The SMTP credentials are stored in AWS Secrets Manager.
 
-To store the user-uploaded media files, we will use AWS S3. As I wanted to keep the bucket private, we will use a CloudFront distribution to serve the media files to the users. AWS CloudFront will be configured to use the subdomain `mastodonmedia.simonschoof.com` and will also only allow https traffic. The certificate for the subdomain will be requested from AWS Certificate Manager.
+AWS S3 will be used to store the user uploaded media files. As I wanted to keep the bucket private, we will use a CloudFront distribution to serve the media files to the users. AWS CloudFront will be configured to use the subdomain `mastodonmedia.simonschoof.com` and only allow https traffic. The certificate for the subdomain is requested from the AWS Certificate Manager.
 
-The configuration for the Mastodon instance will be stored in AWS Systems Manager Parameter Store. The secrets will be stored in AWS Secrets Manager. The parameters and secrets will be retrieved during the deployment of the Mastodon instance via Pulumi and set as environment variables in the ECS task definition.
+The configuration for the Mastodon instance is stored in the AWS Systems Manager Parameter Store. The secrets are stored in AWS Secrets Manager. The parameters and secrets are retrieved via Pulumi during the deployment of the Mastodon instance and set as environment variables in the ECS task definition.
 
-After the general overview of the architecture, we will now go into more detail on how to set up the different parts of the AWS infrastructure.
+After the general overview of the architecture, we will now go into more detail on how the different parts of the AWS infrastructure are set up.
 
 ### Domain name and certificates
 
@@ -1086,6 +1085,8 @@ For maintenace and debug purposes I added an runMode variable which can be set t
 [awsssm]: https://aws.amazon.com/systems-manager/features/#Parameter_Store
 [awssm]: https://aws.amazon.com/secrets-manager/
 [awscm]: https://aws.amazon.com/certificate-manager/
+[awssecgroups]: https://docs.aws.amazon.com/vpc/latest/userguide/security-groups.html
+[awssubnets]: https://docs.aws.amazon.com/vpc/latest/userguide/configure-subnets.html
 [mastodonweb]: https://docs.joinmastodon.org/dev/overview/
 [mastodonstreaming]: https://docs.joinmastodon.org/methods/streaming/
 [rubyonrails]: https://rubyonrails.org/
@@ -1093,6 +1094,7 @@ For maintenace and debug purposes I added an runMode variable which can be set t
 [nodejs]: https://nodejs.org/en/
 [postgresql]: https://www.postgresql.org/
 [redis]: https://redis.io/
+
 [1]: https://github.com/simonschoof/mastodon-aws/tree/main/infrastructure/aws-services
 [2]: https://docs.joinmastodon.org/user/run-your-own/#so-you-want-to-run-your-own-mastodon-server
 [3]: https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2.html
