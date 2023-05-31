@@ -48,8 +48,8 @@ As shown in the architecture diagram, we will use the following AWS services:
 
 * [AWS VPC][awsvpc] for the VPC
 * [AWS Application Load Balancer(ALB)][awsalb] for the load balancer
-* [Amazon Aurora Serverless V2][awsaurorav2] with a [PostgreSQL][postgresql] engine for the database
-* [Elasticache for Redis][awselasticacheredis] for [Redis][redis]
+* [AWS Aurora Serverless V2][awsaurorav2] with a [PostgreSQL][postgresql] engine for the database
+* [AWS Elasticache for Redis][awselasticacheredis] for [Redis][redis]
 * [AWS ECS][awsecs] and  [AWS Fargate][awsfargate] for the container orchestration
 * [AWS SES][awsses] for the e-mail provider
 * [AWS S3][awss3] for the object storage provider
@@ -77,7 +77,7 @@ As mentioned above, we will use the AWS Certificate Manager to request the certi
 
 ### SES
 
-Another part of the application where I did not use Pulumi was setting up the AWS SES service. Setting up AWS SES is quite simple and is described in the [AWS SES documentation][awssessetup]. The SMTP credentials can be created manually in the AWS SES console. The SMTP credentials are stored in the AWS Secrets Manager, from where they are retrieved during the deployment of the Mastodon instance, as we will see later in the [configuration-and-secrets](#configuration-and-secrets) section. The SES credentials to be created are unique per region. When you start with AWS SES, you are in sandbox mode. In sandbox mode, you can only send emails to verified email addresses. To send email to non-verified email addresses, you must request production access. This is also described in the [AWS SES documentation][awssesrequestprodaccess]. For setting up a single user instance configuration, it is not necessary to request production access because the only email the instance will write to is the email of my admin user account. So I only checked the email address of my admin user account and did not request production access.
+Another part of the application where I did not use Pulumi was setting up the AWS SES service. Setting up AWS SES is quite simple and is described in the [AWS SES documentation][awssessetup]. The SMTP credentials can be created manually in the AWS SES console. The SMTP credentials are stored in the AWS Secrets Manager, from where they are retrieved during the deployment of the Mastodon instance, as we will see later in the [configuration-and-secrets](#configuration-and-secrets) section. The SES credentials to be created are unique per region. When you start with AWS SES, you are in the sandbox mode. In the sandbox mode, you can only send emails to verified email addresses. To send email to non-verified email addresses, you must request production access. This is also described in the [AWS SES documentation][awssesrequestprodaccess]. For setting up a single user instance configuration, it is not necessary to request production access because the only email the instance will write to is the email of my admin user account. So I only checked the email address of my admin user account and did not request production access.
 
 ### VPC and security groups
 
@@ -105,7 +105,7 @@ let defaultSubnetIds =
 
 Then we can define the security groups for the different services. There will be a security group for: 
 
-* the PostgreSQL database
+* the PostgreSQL database<cite>[^2]<cite>
 * the Redis database
 * the ECS Fargate service 
 * the ALB
@@ -133,13 +133,12 @@ let loadBalancerSecurityGroup =
     SecurityGroup(prefixMastodonResource "loadbalancer-security-group", loadBalancerSecurityGroupArgs)
 ```
 
-After defining the security groups, we can add the rules to the security groups.
-We can add security group rules to the security groups for inbound and outbound traffic. First we will define the inbound rules for the security groups. The inbound rules for the security groups are defined as follows:
+After we have defined the security groups, we can add rules to these groups. We can add rules for incoming and outgoing traffic. First we define the rules for incoming traffic as follows:
 
-* The RDS security group allows inbound traffic from the ECS security group on port 5432.
-* The Elasticache security group allows inbound traffic from the ECS security group on port 6379.
+* The RDS security group allows incoming traffic from the ECS security group on port 5432.
+* The Elasticache security group allows incoming traffic from the ECS security group on port 6379.
 * The ECS security group allows inbound traffic from the load balancer security group on port 3000 and 4000 for the Mastodon web and streaming service.
-* The load balancer security group allows inbound traffic from the internet on port 80 and 443 for the Mastodon web service. The inbound traffic on port 80 will be redirected to port 443 as we will see later in the [load balancer section](#load-balancer).
+* The load balancer security group allows incoming traffic from the Internet on port 80 and 443 for the Mastodon web service. The incoming traffic on port 80 is redirected to port 443, as we will see later in the [Load Balancer section](#alb).
 
 ```fsharp
 let rdsSecurityGroupInboundRule =
@@ -211,7 +210,7 @@ let loadBalancerSecurityGroupIp4HttpsTrafficInboundRule =
     SecurityGroupRule(prefixMastodonResource "loadbalancer-inbound-https-security-group-rule", securityGroupRuleArgs)
 ```
 
-After defining the inbound rules for the security groups, we can define the outbound rules for the security groups. The outbound rules for the security groups are defined as follows:
+After we have defined the rules for incoming traffic, we can define the rules for outgoing traffic as follows:
 
 * The load balancer security group allows outbound traffic to port 3000 and 4000 for the Mastodon web and streaming service running on the ECS service.
 * The ECS security group allows outbound traffic to the RDS security group on port 5432 for the PostgreSQL database.
@@ -1062,13 +1061,16 @@ let mastodonContainerEnvVariables  = inputList [
 ]
 ```
 
-### Deploymenent and Maintenance
+### Spin up the Mastodon instance
 
-Just invoke `pulumi up`, wait for the deployment to finish and voi la you have your own Mastodon instance running on AWS. You can find my instance at [social.simonschoof.com](https://social.simonschoof.com). If you want to deploy your own instance you can find the code for the infrastructure in the [aws-services][1] folder.
+Now that we have set up all the infrastructure code and manually prepared the [domain name and certificates](#domain-name-and-certificates), [SES](#ses) and the [access to the S3 bucket](#s3-bucket), we can deploy our own Mastodon instance. We just need to call `pulumi up`, wait for the deployment to complete and voi la we have our own Mastodon instance running on AWS. 
 
-For maintenace and debug purposes I added an runMode variable which can be set to `Production`, `Maintenance` or `Debug`. 
+You can find my instance at [social.simonschoof.com](https://social.simonschoof.com). If you want to deploy your own instance, you can find the code for the infrastructure in the [aws-services][githubcode] folder.
+ 
 
 [^1]: There are 3 subnets in the default VPC for the `eu-central-1` region. One public subnet in each availability zone. I tried to get the number of subnets out of the Output of the `GetSubnets` Invoke but I did not find a way to do it. So I just hardcoded the number of subnets to 3.
+
+[^2]: The security group for the PostgreSQL database is called `rdsSecurityGroup` because we use the [RDS service][awsrds] from AWS with the Aurora Serverless v2 engine, which is compatible with PostgreSQL.
 
 [mastodondocs]: https://docs.joinmastodon.org/
 [aws]: https://aws.amazon.com/
@@ -1092,6 +1094,7 @@ For maintenace and debug purposes I added an runMode variable which can be set t
 [awscloudfrontrequirements]: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html
 [awssessetup]: https://docs.aws.amazon.com/ses/latest/DeveloperGuide/send-email-set-up.html
 [awssesrequestprodaccess]: https://docs.aws.amazon.com/ses/latest/DeveloperGuide/request-production-access.html
+[awsrds]: https://docs.aws.amazon.com/rds/index.html
 [mastodonweb]: https://docs.joinmastodon.org/dev/overview/
 [mastodonstreaming]: https://docs.joinmastodon.org/methods/streaming/
 [rubyonrails]: https://rubyonrails.org/
@@ -1107,4 +1110,3 @@ For maintenace and debug purposes I added an runMode variable which can be set t
 [mastodonrunownserver]: https://docs.joinmastodon.org/user/run-your-own/#so-you-want-to-run-your-own-mastodon-server
 [awsaurorav2userguide]: https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2.html
 [githubmastodons3permission]: https://gist.github.com/ftpmorph/299c00907c827fbca883eeb45e6a7dc4?permalink_comment_id=4374053#gistcomment-4374053
-
