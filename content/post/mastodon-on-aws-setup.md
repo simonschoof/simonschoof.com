@@ -366,10 +366,11 @@ As in the case of the PostgreSQL database, I set the `ApplyImmediately` argument
 
 ### ALB, container task definitions and ECS with Fargate
 
-The next step is to define the Application Load Balancer (ALB), the Elastic Container Service (ECS) and the Fargate tasks. This is, next to the S3 Bucket and CloudFront distribution, the most complex part of the deployment. We will go through the different parts step by step starting with the ALB. For the Pulumi code in this section we use the classic AWS package `Pulumi.Aws` as well as the AWS crosswalk package `Pulumi.Awsx`. When using the crosswalk package we will use the qualified name `Awsx` to avoid name clashes with the classic AWS package. 
+The next step is to define the Application Load Balancer (ALB), the Elastic Container Service (ECS) and the Fargate tasks. This is, next to the S3 bucket and the CloudFront distribution, the most complex part of the deployment. We will go through the different parts step by step, starting with the ALB. For the Pulumi code in this section, we use both the [classic AWS package][pulumiawsclassic] `Pulumi.Aws` and the [AWS crosswalk package][pulumiawscrosswalk] `Pulumi.Awsx`. When using the crosswalk package, we use the qualified name `Awsx` to avoid name conflicts with the classic AWS package.
+
 ##### ALB
 
-Before we can start to define the ALB we need to get the certificate for the Mastodon instance domain:
+Before we can start defining the ALB, we need to obtain the certificate for the Mastodon instance domain:
 
 ```fsharp
 let cert =
@@ -382,7 +383,7 @@ let cert =
     GetCertificate.Invoke(getCertificateInvokeArgs)
 ```
 
-With the certificate at hand we can start to define the ALB itself:
+With the certificate in hand, we can start defining the ALB itself:
 
 ```fsharp
 let loadBalancerArgs = LoadBalancerArgs(
@@ -394,7 +395,7 @@ let loadBalancerArgs = LoadBalancerArgs(
 let loadBalancer = LoadBalancer(prefixMastodonResource "load-balancer", loadBalancerArgs)
 ```
 
-In addition to the load balancer itself we define two target groups. Target groups are used to route requests to the different services that are running in the ECS cluster. In our case we define one target group for the Mastodon web application listening on port `3000` and one target group for the Mastodon  streaming application listening on port `4000`:
+In addition to the load balancer itself, we define two [target groups][awstargetgroups]. Target groups are used to forward requests to the different services running in the ECS cluster. In our case, we define a target group for the Mastodon web application listening on port `3000` and a target group for the Mastodon streaming application listening on port `4000` and the path `/api/v1/streaming/health`. The target groups are defined as follows
 
 ```fsharp
 let webTargetGroupArgs =
@@ -419,7 +420,7 @@ let streamingTargetGroupArgs =
 let streamingTargetGroup = TargetGroup(prefixMastodonResource "streaming-tg", streamingTargetGroupArgs)
 ```
 
-As mentioned before the http requests on port 80 are redirected to port 443. To reflect this in AWS with Pulumi we define a http listener as follows:
+As mentioned earlier, the http requests on port 80 are redirected to port 443. To map this in AWS with Pulumi, we define an http listener as follows:
 
 ```fsharp
 let httpDefaultAction =
@@ -443,7 +444,7 @@ let httpListenerArgs = ListenerArgs(
 Listener(prefixMastodonResource "http-listener", httpListenerArgs) |> ignore
 ```
 
-In the listener args we connect the listener to the load balancer and define the default action to redirect the requests to port 443. To handle the https requests we define a https listener which is connected to the load balancer and the certificate we retrieved at the beginning of this section:
+In the listener args we connect the listener to the load balancer and define the default action to redirect the requests to port 443. To handle the https requests, we define an https listener connected to the load balancer and the certificate we obtained at the beginning of this section:
 
 ```fsharp
 let httpsDefaultAction =
@@ -464,7 +465,7 @@ let httpsListenerArgs =
 let httpsListener = Listener(prefixMastodonResource "https-listener", httpsListenerArgs)
 ```
 
-The streaming application is reachable on port 4000 and the path `/api/v1/streaming`. To get the correct routing we have to define a rule for the streaming target group:
+The streaming application is accessible via port 4000 and the path `/api/v1/streaming`. To get the correct routing, we need to define a rule for the streaming target group:
 
 ```fsharp
 let listRuleConditionPathPatternArgs = ListenerRuleConditionPathPatternArgs(
@@ -1095,6 +1096,7 @@ You can find my instance at [social.simonschoof.com](https://social.simonschoof.
 [awssessetup]: https://docs.aws.amazon.com/ses/latest/DeveloperGuide/send-email-set-up.html
 [awssesrequestprodaccess]: https://docs.aws.amazon.com/ses/latest/DeveloperGuide/request-production-access.html
 [awsrds]: https://docs.aws.amazon.com/rds/index.html
+[awstargetgroups]: https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-target-groups.html
 [mastodonweb]: https://docs.joinmastodon.org/dev/overview/
 [mastodonstreaming]: https://docs.joinmastodon.org/methods/streaming/
 [rubyonrails]: https://rubyonrails.org/
@@ -1105,6 +1107,8 @@ You can find my instance at [social.simonschoof.com](https://social.simonschoof.
 [pulumi]: https://www.pulumi.com/
 [pulumidefaultvpc]: https://www.pulumi.com/registry/packages/aws/api-docs/ec2/defaultvpc/
 [pulumidefaultsubnets]: https://www.pulumi.com/registry/packages/aws/api-docs/ec2/defaultsubnet/
+[pulumiawsclassic]: https://www.pulumi.com/registry/packages/aws/
+[pulumiawscrosswalk]: https://www.pulumi.com/docs/clouds/aws/guides/
 [iac]: {{< ref "/tags/infrastructure-as-code/" >}}
 [githubcode]: https://github.com/simonschoof/mastodon-aws/tree/main/infrastructure/aws-services
 [mastodonrunownserver]: https://docs.joinmastodon.org/user/run-your-own/#so-you-want-to-run-your-own-mastodon-server
