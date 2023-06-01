@@ -678,13 +678,13 @@ Awsx.Ecs.FargateService(prefixMastodonResource "fargate-service", serviceArgs) |
 
 ### S3 and CloudFront 
 
-An optional piece, as to the Mastodon documentation, is an Object storage provider. As we will run Mastodon in Docker containers we need to use an external object storage provider for which we will use AWS S3. In addition to the bucket itself we will also create a CloudFront distribution to serve the user-uploaded files from the S3 bucket. With the CloudFront distribution we also can use a custom domain name to serve the user-uploaded files. With the custom domain  we also don't have to worry about breaking links to the user-uploaded files when we change the object storage provider. Another advantage of using CloudFront is that we don't have to make the S3 bucket being publicly accessible as we can restrict the access to the S3 bucket to the CloudFront distribution. 
+An optional element, as described in the Mastodon documentation, is an object storage provider. Since we will be running Mastodon in Docker containers, we will need to use an external object storage provider, for which we will use AWS S3. In addition to the bucket itself, we will also create a CloudFront distribution to serve user-uploaded files from the S3 bucket. With the CloudFront distribution, we can also use a custom domain name to serve the files uploaded by the user. With the custom domain, we also don't have to worry about breaking the links to the user uploaded files if we change the object storage provider. Another advantage of using CloudFront is that we don't have to make the S3 bucket publicly available because we can restrict access to the S3 bucket to the CloudFront distribution.
 
 ##### S3 bucket
 
-For Mastodon to acccess the S3 bucket we have to provide Mastodon with an AWS access key id and an AWS access key id secret. As it is not quite clear from the Mastodon documentation which permissions are needed by Mastodon to access the S3 bucket I followed the approach of Daniel Snider which he describes in [this GitHub gist][githubmastodons3permission]. Part of this I also configure manually in the AWS console. The parts which I configured manually in the AWS console are creating the user `mastodon-s3-user` and adding this user to the group `mastodon-s3-access-group` which we will create in the Pulumi deployment. I also created the access key and secret key for the user `mastodon-s3-user` and stored them in the AWS Secrets Manager.
+In order for Mastodon to access the S3 bucket, we need to give Mastodon an AWS access key ID and an AWS access key ID secret. Since it's not entirely clear from the Mastodon documentation what permissions Mastodon needs to access the S3 bucket, I followed Daniel Snider's approach, which he describes in [this GitHub gist][githubmastodons3permission]. I also manually configured part of it in the AWS console. The parts I manually configured in the AWS console are creating the user `mastodon-s3-user` and adding that user to the `mastodon-s3-access-group` that we will create in the Pulumi deployment. I also created the access key and secret key for the `mastodon-s3-user` user and stored it in the AWS Secrets Manager.
 
-First we will create the bucket and  we will block the all public access to it:
+First, we create the bucket and block public access to it:
 
 ```fsharp
 let bucket =
@@ -707,7 +707,7 @@ let bucketPublicAccessBlock =
     BucketPublicAccessBlock(prefixMastodonResource "s3-storage-public-access-block", bucketPublicAccessBlockArgs)
 ```
 
-After this we can create the S3 access group, a policy document, a policy and the policy attachment for this group:
+After that, we can create the S3 access group, a policy document, a policy and the policy attachment for this group:
 
 ```fsharp
 let limitedPermissionsToOneBucketStatement =
@@ -754,12 +754,11 @@ let policyAttachmentArgs = PolicyAttachmentArgs(Groups = group.Name, PolicyArn =
 PolicyAttachment(prefixMastodonResource "access-group-policiy-attachment", policyAttachmentArgs)
 ```
 
-We can now add the user `mastodon-s3-user` to the group `mastodon-s3-access-group` we created above. Again, this step is done manually in the AWS console.
-From here we only have to provide the access key id and the access key id secret to Mastodon and we are able to store the user-uploaded files in the S3 bucket.
+Now we can add the user `mastodon-s3-user` to the group `mastodon-s3-access-group` that we created above. This step is also done manually in the AWS console. From here, we just need to tell Mastodon the access key ID and the secret access key ID and we can store the files uploaded by the user in the S3 bucket.
 
 ##### CloudFront distribution
 
-For the CloudFront distribution we first define the origin acccess identity and a bucket policy for the S3 bucket so that we allow CloudFront to retrieve objects from the S3 bucket:
+For the CloudFront distribution, we first define the origin access identity and a bucket policy for the S3 bucket so that we allow CloudFront to retrieve objects from the S3 bucket:
 
 ```fsharp
 let originAccessIdentity =
@@ -799,7 +798,7 @@ let imageBucketPolicy =
     BucketPolicy(prefixMastodonResource "image-bucket-policy", bucketPolicyArgs)
 ```
 
-To support HTTPS we also need to retrieve the certificate for the S3 alias host domain we created with the AWS Certificate Manager.For CloudFront this certificate has to be stored in the us-east-1 region:
+To support HTTPS, we also need to retrieve the certificate for the S3 alias host domain that we created using AWS Certificate Manager. For CloudFront, this certificate must be stored in the us-east-1 region:
 
 ```fsharp
 let cert =
@@ -819,7 +818,7 @@ let cert =
     GetCertificate.Invoke(getCertificateInvokeArgs, certInvokeOptions)
 ```
 
-In the end we can create the CloudFront distribution with the certificate, the S3 alias host domain and the S3 bucket as origin:
+Finally, we can create the CloudFront distribution with the certificate, the S3 alias host domain, and the S3 bucket as the origin:
 
 ```fsharp
 let cloudFrontDistribution = 
