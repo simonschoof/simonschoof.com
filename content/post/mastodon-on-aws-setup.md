@@ -1076,7 +1076,9 @@ You can find my instance at [social.simonschoof.com](https://social.simonschoof.
 [^3]: To be able to test and debug the application I added a configuration type with three states: ```    type RunMode =
         | Production
         | Maintenance
-        | Debug```. When `the `RunMode` is set to `Maintenace` or `Debug` an additional PostgreSQL container is created. To be able to connect to the containers from the command line I 
+        | Debug```. When the `RunMode` is set to `Maintenace` or `Debug` an additional PostgreSQL container is created. From the PostgreSQL container we can acces the PostgreSQL database. To get access to the PostgreSQL and the other containers directly from my shell I use [AWS ECS Exec][awsecsexec]. For AWS ECS Exec to work I needed to add the following parts to my code:
+        *          added a task role with a policy to the ESC task, which allows the connection to the containers via the `aws ecs execute-command`. Furthermore for the connection to work the `ExecuteCommmand` flag has to be set in ESC service definition.
+        You can check if everything for acccesing the containers is configured correctly by using the [AWS ECS Exec Checker][awsecsexecchecker]
 
 
 [mastodondocs]: https://docs.joinmastodon.org/
@@ -1105,6 +1107,8 @@ You can find my instance at [social.simonschoof.com](https://social.simonschoof.
 [awstargetgroups]: https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-target-groups.html
 [awsecstaskdefinitions]:https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definitions.html
 [awsecscontainerdefinitions]: https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_ContainerDefinition.html
+[awsecsexec]: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-exec.html
+[awsecsexecchecker]: https://github.com/aws-containers/amazon-ecs-exec-checker
 [mastodonweb]: https://docs.joinmastodon.org/dev/overview/
 [mastodonstreaming]: https://docs.joinmastodon.org/methods/streaming/
 [rubyonrails]: https://rubyonrails.org/
