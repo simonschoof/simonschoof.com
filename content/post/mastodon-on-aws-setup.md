@@ -520,7 +520,7 @@ let postgresContainer =
 
 The PostgreSQL container is based on the `postgres:latest` image and runs a bash script that sleeps for 3600 seconds. This is done to keep the container running. The PostgreSQL container is not essential and will not be restarted if it fails. This is done to prevent the PostgreSQL container from restarting when the database is unavailable.
 
-Next, we define the Mastodon web application container. For the web application, we define a container port mapping for port `3000`, where we map the port to the `webTargetGroup` defined earlier. We also define a container command that starts the Mastodon web application. The container command is different depending on the `runMode`. For `Maintenance` and `Debug`, we start a bash script that sleeps for 3600 seconds so we can connect to the container and debug the application. For `Production` we start the Mastodon web application. The container is configured using environment variables that are required for Mastodon. How these environment variables are defined is explained in the section [Configuration and secrets](#configuration-and-secrets):
+Next, we define the Mastodon web application container. For the web application, we define a container port mapping for port 3000, where we map the port to the web target group defined earlier. We also define a container command that starts the Mastodon web application. The container command is different depending on the `runMode`. For `Maintenance` and `Debug`, we start a bash script that sleeps for 3600 seconds so we can connect to the container and debug the application. For `Production` we start the Mastodon web application. The container is configured using environment variables that are required for Mastodon. How these environment variables are defined is explained in the section [Configuration and secrets](#configuration-and-secrets):
 
 ```fsharp
 let webContainerportMappingArgs =
@@ -544,7 +544,7 @@ let webContainer =
 containerDefinitionsList.Add(prefixMastodonResource "web", webContainer)
 ```
 
-In analogy to the web application container we define the Mastodon streaming application container. Again we define a port mapping which maps port `4000` to the `streamingTargetGroup`. The container command starts the Mastodon streaming application as a Node.js application. The container is also configured with the environment variables that are required for Mastodon:
+In analogy to the web application container, we define the Mastodon Streaming Application Container. Again, we define a port mapping that maps port 4000 to the streaming target. The container command launches the Mastodon streaming application as a Node.js application. The container is also configured with the environment variables that are required for Mastodon:
 
 ```fsharp
 let streamingContainerportMappingArgs =
@@ -565,7 +565,7 @@ let streamingContainer = Awsx.Ecs.Inputs.TaskDefinitionContainerDefinitionArgs(
 containerDefinitionsList.Add(prefixMastodonResource "streaming",streamingContainer)
 ```
 
-The last container we define is the Mastodon Sidekiq application container. The Sidekiq application is used for background processing. The Sidekiq application is also configured with the environment variables that are required for Mastodon. For the Sidekiq application we don't define a port mapping as the Sidekiq application is not reachable from the outside and only communicates with the Mastodon web application over the internal network of the Fargate service:
+The last container we define is the Mastodon [Sidekiq][rubysidekiq] container. The Sidekiq framework is used for background job processing in combination with Ruby on Rails applications. The Sidekiq application is also configured with the environment variables that are required for Mastodon. For the Sidekiq container we don't define a port mapping as the Sidekiq container is not reachable from the outside and only communicates with the Mastodon web application over the internal network of the Fargate service:
 
 ```fsharp
 let sidekiqContainer = Awsx.Ecs.Inputs.TaskDefinitionContainerDefinitionArgs(
@@ -1112,6 +1112,7 @@ You can find my instance at [social.simonschoof.com](https://social.simonschoof.
 [mastodonweb]: https://docs.joinmastodon.org/dev/overview/
 [mastodonstreaming]: https://docs.joinmastodon.org/methods/streaming/
 [rubyonrails]: https://rubyonrails.org/
+[rubysidekiq]: https://sidekiq.org/
 [reactjs]: https://reactjs.org/
 [nodejs]: https://nodejs.org/en/
 [postgresql]: https://www.postgresql.org/
