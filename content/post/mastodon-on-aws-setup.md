@@ -1073,12 +1073,12 @@ You can find my instance at [social.simonschoof.com](https://social.simonschoof.
 
 [^2]: The security group for the PostgreSQL database is called `rdsSecurityGroup` because we use the [RDS service][awsrds] from AWS with the Aurora Serverless v2 engine, which is compatible with PostgreSQL.
 
-[^3]: To be able to test and debug the application I added a configuration type with three states: ```    type RunMode =
+[^3]: To be able to test and debug the application, I added a configuration type with three states: ```type RunMode =
         | Production
         | Maintenance
-        | Debug```. When the `RunMode` is set to `Maintenace` or `Debug` an additional PostgreSQL container is created. From the PostgreSQL container we can acces the PostgreSQL database. To get access to the PostgreSQL and the other containers directly from my shell I use [AWS ECS Exec][awsecsexec]. For AWS ECS Exec to work I needed to add the following parts to my code:
-        *          added a task role with a policy to the ESC task, which allows the connection to the containers via the `aws ecs execute-command`. Furthermore for the connection to work the `ExecuteCommmand` flag has to be set in ESC service definition.
-        You can check if everything for acccesing the containers is configured correctly by using the [AWS ECS Exec Checker][awsecsexecchecker]
+        | Debug```. When the `RunMode` is set to `Maintenace` or `Debug`, an additional PostgreSQL container is created. From the PostgreSQL container the PostgreSQL database can be accessed. To get access to PostgreSQL and the other containers directly from my shell, I use [AWS ECS Exec][awsecsexec]. In order for AWS ECS Exec to work, I had to install the AWS CLI and the AWS Session Manager plugin on my machine. I also had to [add an IAM role](#container-task-definitions) to allow communication between the containers and the managed SSM agent. As a final step, I had to set the `ExecuteCommmand` flag in the [ESC service definition](#ecs-with-fargate). After that, you can execute commands on your containers using `aws ecs execute-command`. You can use the [AWS ECS Exec Checker][awsecsexecchecker] to check if everything is configured correctly to access the containers.
+
+
 
 
 [mastodondocs]: https://docs.joinmastodon.org/
