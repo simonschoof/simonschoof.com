@@ -1,7 +1,7 @@
 +++
 author = "Simon Schoof"
 title = "Mastodon on AWS: Running locally"
-date = "2023-03-11"
+date = "2023-05-31"
 description = "Running Mastodon locally using Docker and Docker Compose"
 tags = [
     "mastodon",
@@ -9,7 +9,7 @@ tags = [
     "docker-compose"
 ]
 series = "Running Mastodon on AWS"
-draft = true
+draft = false
 +++
 This post is the first part of a series of two articles about running a [Mastodon](https://joinmastodon.org/) instance on AWS with ECS and Fargate. To familiarize myself with Mastodon and its configuration, I decided to first run Mastodon locally using [Docker Compose](https://docs.docker.com/compose/). This post will describe the steps to run Mastodon locally with Docker Compose. The second part will cover the steps to run Mastodon on AWS using ECS and Fargate.
 The code for this part can be found [here](https://github.com/simonschoof/mastodon-aws).

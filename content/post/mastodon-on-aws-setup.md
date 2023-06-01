@@ -1,7 +1,7 @@
 +++
 author = "Simon Schoof"
 title = "Mastodon on AWS: Running on AWS"
-date = "2023-03-12"
+date = "2023-06-01"
 description = "Running Mastodon on AWS using Pulumi"
 tags = [
     "mastodon",
@@ -11,7 +11,7 @@ tags = [
     "fsharp"
 ]
 series = "Running Mastodon on AWS"
-draft = true
+draft = false
 +++
 This post is the second part of a series of two articles on deploying and running a [Mastodon][mastodondocs] instance on [AWS][aws]. The code for this part can be found [here][githubcode]. In this second part we will cover the steps to run Mastodon on AWS with ECS and Fargate.
 
