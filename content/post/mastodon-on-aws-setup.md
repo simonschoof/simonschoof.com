@@ -885,13 +885,13 @@ let cloudFrontDistribution =
 
 ### Configuration and secrets
 
-In the previous section we created a lot of resources that need to be configured in the Mastodon configuration. I created the namespace `MastodonAwsServices.Configuration` that contains the following modules:
+In the previous section, we created a lot of resources that need to be configured in the Mastodon configuration. I created the namespace `MastodonAwsServices.Configuration` which contains the following modules:
 
-* Secrets -> provides a function to retrieve secrets from AWS Secrets Manager
-* Configuration -> provides a function to retrieve configuration values from AWS Systems Manager Parameter Store
-* Values -> provides all the configuration values for the Mastodon instance and AWS resources
+* Secrets -> provides a function to retrieve secrets from the AWS Secrets Manager.
+* Configuration -> provides a function to retrieve configuration values from the AWS Systems Manager Parameter Store
+* Values -> provides all configuration values for the Mastodon instance and AWS resources.
 
-The Secrets and the Configuration modules are very similar. They both provide a function that retrieves a value from AWS. The only difference is that the Secrets module retrieves the value from AWS Secrets Manager and the Configuration module retrieves the value from AWS Systems Manager Parameter Store. 
+The Secrets and Configuration modules are very similar. They both provide a function that retrieves a value from AWS. The only difference is that the Secrets module retrieves the value from the AWS Secrets Manager and the Configuration module retrieves the value from the AWS Systems Manager Parameter Store.
 
 ```fsharp
 module Secrets =
@@ -941,7 +941,7 @@ module Params =
         parameterResponse.Parameter.Value
 ```
 
-The Values module contains all the configuration values for the Mastodon instance and AWS resources. The values are retrieved from AWS Secrets Manager and AWS Systems Manager Parameter Store. 
+The Values module contains all the configuration values for the Mastodon instance and AWS resources. The values are retrieved from AWS Secrets Manager and AWS Systems Manager Parameter Store.
 
 ```fsharp
 module Values = 
@@ -1018,7 +1018,7 @@ module Values =
     let skipPostDeploymentMigrations = "true"
 ```
 
-Lastly we need a list of TaskDefinitionKeyValuePairArgs that we can use to configure the Mastodon container. We can use the `input` function to create a TaskDefinitionKeyValuePairArgs that is not a secret and the `io` function to create a TaskDefinitionKeyValuePairArgs that is a secret.
+Finally, we need a list of `TaskDefinitionKeyValuePairArgs` that we can use to configure the Mastodon containers. For the secret values, we use Pulumi`s `Output.CreateSecret` function so that the secret is not logged during deplyment and masked in the Pulumi state file. By using the `Output.CreateSecret` function once in the definition of the list, the entire list will be classified as secret in the Pulumi status file.
 
 ```fsharp
 let mastodonContainerEnvVariables  = inputList [
