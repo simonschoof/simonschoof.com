@@ -489,16 +489,16 @@ ListenerRule(prefixMastodonResource "streaming-api-path-rule",listenerRuleArgs) 
 
 ##### Container task definitions
 
-With the ALB in place we can start to define the container task definitions. The task definitions are used to define the containers that are running in the ECS cluster. In our case we define four task definitions, one for the Mastodon web application, one for the Mastodon streaming application, one for the Mastodon Sidekiq application and one optional task definition for PostgreSQL for maintenance and debugging purposes.
+Once the ALB is set up, we can start defining the [ESC task][awsecstaskdefinitions] and the [container definitions][awsecscontainerdefinitions] that will be launched as part of the task. In our case, we define a task with four containers, one for the Mastodon web application, one for the Mastodon streaming application, one for the Mastodon Sidekiq application, and an optional container definition for a PostgreSQL container for maintenance and debugging purposes<cite>[^3]<cite>.
 
-All task definitions are stored in a list which is later provided to the Fargate service:
+All container definitions are stored in a list that is later made available to the Fargate service:
 
 ```fsharp
 let containerDefinitionsList =
     System.Collections.Generic.Dictionary<string, Awsx.Ecs.Inputs.TaskDefinitionContainerDefinitionArgs>()
 ```
 
-We start with defining the PostgreSQL task definition. The PostgreSQL task definition is optional and can be used for maintenance and debugging purposes. We will only spin up the PostgreSQL task definition if the `runMode` is set to `Debug` or `Maintenance`:
+We start with the PostgreSQL container definition. The PostgreSQL container definition is optional and can be used for maintenance and debugging purposes. The PostgreSQL task definition is started only when the `RunMode` is set to `Debug` or `Maintenance`:
 
 ```fsharp
 let postgresContainer = 
@@ -518,9 +518,9 @@ let postgresContainer =
         | Production -> ()
 ```
 
-The PostgreSQL container is based on the `postgres:latest` image and runs a bash script that sleeps for 3600 seconds. This is done to keep the container running. The PostgreSQL container is not essential and will not be restarted if it fails. This is done to prevent the PostgreSQL container from restarting if the database is not available.
+The PostgreSQL container is based on the `postgres:latest` image and runs a bash script that sleeps for 3600 seconds. This is done to keep the container running. The PostgreSQL container is not essential and will not be restarted if it fails. This is done to prevent the PostgreSQL container from restarting when the database is unavailable.
 
-Next we define the Mastodon web application container. For the web application we define a container port mapping for port `3000` in which we map the port to the `webTargetGroup` we defined earlier. We also define a container command that starts the Mastodon web application. The container command is different depending on the `runMode`. For `Maintenance` and `Debug` we start a bash script that sleeps for 3600 seconds so that we can connect to the container and debug the application. For `Production` we start the Mastodon web application. The container is configured via environment variables that are required for Mastodon. How these environment variables are defined is explained in the section [Configuration and secrets](#configuration-and-secrets):
+Next, we define the Mastodon web application container. For the web application, we define a container port mapping for port `3000`, where we map the port to the `webTargetGroup` defined earlier. We also define a container command that starts the Mastodon web application. The container command is different depending on the `runMode`. For `Maintenance` and `Debug`, we start a bash script that sleeps for 3600 seconds so we can connect to the container and debug the application. For `Production` we start the Mastodon web application. The container is configured using environment variables that are required for Mastodon. How these environment variables are defined is explained in the section [Configuration and secrets](#configuration-and-secrets):
 
 ```fsharp
 let webContainerportMappingArgs =
@@ -1073,6 +1073,12 @@ You can find my instance at [social.simonschoof.com](https://social.simonschoof.
 
 [^2]: The security group for the PostgreSQL database is called `rdsSecurityGroup` because we use the [RDS service][awsrds] from AWS with the Aurora Serverless v2 engine, which is compatible with PostgreSQL.
 
+[^3]: To be able to test and debug the application I added a configuration type with three states: ```    type RunMode =
+        | Production
+        | Maintenance
+        | Debug```. When `the `RunMode` is set to `Maintenace` or `Debug` an additional PostgreSQL container is created. To be able to connect to the containers from the command line I 
+
+
 [mastodondocs]: https://docs.joinmastodon.org/
 [aws]: https://aws.amazon.com/
 [awsecs]: https://aws.amazon.com/ecs/
@@ -1097,6 +1103,8 @@ You can find my instance at [social.simonschoof.com](https://social.simonschoof.
 [awssesrequestprodaccess]: https://docs.aws.amazon.com/ses/latest/DeveloperGuide/request-production-access.html
 [awsrds]: https://docs.aws.amazon.com/rds/index.html
 [awstargetgroups]: https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-target-groups.html
+[awsecstaskdefinitions]:https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definitions.html
+[awsecscontainerdefinitions]: https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_ContainerDefinition.html
 [mastodonweb]: https://docs.joinmastodon.org/dev/overview/
 [mastodonstreaming]: https://docs.joinmastodon.org/methods/streaming/
 [rubyonrails]: https://rubyonrails.org/
