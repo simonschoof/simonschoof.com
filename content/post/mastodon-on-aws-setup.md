@@ -25,7 +25,6 @@ For the previous part, the goal was to try out Mastodon and get familiar with it
 
 {{<table tableWidth="95%">}}
 Component | Solution
-Component | Solution
 --------|------
 A domain name | [social.simonschoof.com](https://social.simonschoof.com): Not hosted on AWS, just a subdomain on my existing domain registrar. 
 A VPS | We will use ECS and Fargate to run Mastodon, Aurora Serverless V2 for the database and Elasticache for Redis.
@@ -584,9 +583,9 @@ containerDefinitionsList.Add(prefixMastodonResource "sidekiq",sidekiqContainer)
 
 ##### ECS with Fargate
 
-After finishing the container task definitions we can start to define ECS cluster using Fargate as the compute engine.
+After completing the container task definition, we can start defining the ECS cluster using Fargate as the compute engine.
 
-First we define the ECS cluster to logically group the containers that are running in the ECS cluster. Here we also set the capicity provider to `FARGATE_SPOT` in the hope that it will save us some money:
+First we define the ECS cluster to logically group the containers running in the ECS cluster. Here we also set the capacity provider to `FARGATE_SPOT`, hoping that this will save us some money<cite>[^4]:
 
 ```fsharp
 let clusterArgs = ClusterArgs(
@@ -597,7 +596,7 @@ let cluster =
     Cluster(prefixMastodonResource "ecs-cluster", clusterArgs)
 ```
 
-In the second step we prepare a task role which allows us to connect to the containers in the ECS cluster. To do this we need an assume role policiy and a task policy which allows us to connect to the containers in the ECS cluster:
+In the second step, we prepare a task role that allows us to connect to the containers in the ECS cluster. For this, we need an assume role policy and a task policy that enables communication between the containers and the managed SSM agent. This is required to connect to the containers via AWS ECS Exec. The task role is defined as follows:
 
 ```fsharp
 let assumeRolePolicy =
@@ -643,7 +642,7 @@ let defaultTaskRoleWithPolicy =
     Awsx.Awsx.Inputs.DefaultRoleWithPolicyArgs(RoleArn = taskRole.Arn)
 ```
 
-The third step comprises the Fargate service definition leveraging the task definitions and the ECS cluster we defined in the previous steps using the the simplified Fargate service definition provided by the `Awsx` library. We also see that we only add the task role with the policy to the Fargate service definition if we are in maintenance or debug mode. In production mode we don't need the task role with the policy as we don't want to connect to the containers in production mode. We also define the network configuration for the Fargate service. Here we set the `AssignPublicIp` property to `true` to make the containers reachable from the outside. To prevent the containers from being reachable from the outside we set the ecs security group which we defined earlier in the section about the [VPC and security groups](#vpc-and-security-groups). Another property which is only set in maintenance and debug mode is the `EnableExecuteCommand` property which is also needed to connect to the containers in the ECS cluster using the AWS Systems Manager Session Manager:
+The third step includes the Fargate service definition that uses the task definitions and ECS cluster that we defined in the previous steps using the simplified Fargate service definition from the `Awsx` package. We also see that we add the task role with the policy to the Fargate service definition only when the `RunMode` is set to `Maintenance` or `Debug`. We also define the network configuration for the Fargate service. Here we set the `AssignPublicIp` property to `true` so that the containers can be accessed from outside. To prevent the containers from being reachable from the outside, we set the ECS security group that we defined earlier in the section about the [VPC and security groups](#vpc-and-security-groups). Another property that is only set when `runMode` is set to `Maintenance` or `Debug` is the `EnableExecuteCommand` property, which is also needed to connect to the containers in the ECS cluster via the AWS Systems Manager Session Manager:
 
 ```fsharp
 let fargateServiceTaskDefinitionArgs =
@@ -1078,8 +1077,7 @@ You can find my instance at [social.simonschoof.com](https://social.simonschoof.
         | Maintenance
         | Debug```. When the `RunMode` is set to `Maintenace` or `Debug`, an additional PostgreSQL container is created. From the PostgreSQL container the PostgreSQL database can be accessed. To get access to PostgreSQL and the other containers directly from my shell, I use [AWS ECS Exec][awsecsexec]. In order for AWS ECS Exec to work, I had to install the AWS CLI and the AWS Session Manager plugin on my machine. I also had to [add an IAM role](#container-task-definitions) to allow communication between the containers and the managed SSM agent. As a final step, I had to set the `ExecuteCommmand` flag in the [ESC service definition](#ecs-with-fargate). After that, you can execute commands on your containers using `aws ecs execute-command`. You can use the [AWS ECS Exec Checker][awsecsexecchecker] to check if everything is configured correctly to access the containers.
 
-
-
+[^4]: While it does indeed save some money, it also reduces the availability of the service since I only run one instance of each container in the ECS task. 
 
 [mastodondocs]: https://docs.joinmastodon.org/
 [aws]: https://aws.amazon.com/
