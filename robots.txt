@@ -2,25 +2,37 @@ User-agent: *
 
 Disallow: /tags/aws/
 
-Disallow: /series/cloudfront-and-lambda@edge-with-pulumi/
-
 Disallow: /tags/fsharp/
 
-Disallow: /tags/github-actions/
-
 Disallow: /tags/infrastructure-as-code/
+
+Disallow: /tags/mastodon/
+
+Disallow: /post/mastodon-on-aws-setup/
 
 Disallow: /post/
 
 Disallow: /tags/pulumi/
 
-Disallow: /post/cloudfront-lambda-edge-deployment/
+Disallow: /series/running-mastodon-on-aws/
 
 Disallow: /series/
 
 Disallow: /
 
 Disallow: /tags/
+
+Disallow: /tags/docker/
+
+Disallow: /tags/docker-compose/
+
+Disallow: /post/mastodon-on-aws-local-docker/
+
+Disallow: /series/cloudfront-and-lambda@edge-with-pulumi/
+
+Disallow: /tags/github-actions/
+
+Disallow: /post/cloudfront-lambda-edge-deployment/
 
 Disallow: /post/cloudfront-lambda-edge-lambda-functions/
 
