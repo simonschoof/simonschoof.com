@@ -1018,7 +1018,7 @@ module Values =
     let skipPostDeploymentMigrations = "true"
 ```
 
-Finally, we need a list of `TaskDefinitionKeyValuePairArgs` that we can use to configure the Mastodon containers. For the secret values, we use Pulumi's `Output.CreateSecret` function so that the secret is not logged during deployment and masked in the Pulumi state file. By using the `Output.CreateSecret` function once in the definition of the list, the entire list will be classified as secret in the Pulumi state file.
+Finally, we need a list of `TaskDefinitionKeyValuePairArgs` that we can use to configure the Mastodon containers. For the secret values, we use [Pulumi's `Output.CreateSecret`][pulumisecrets] function so that the secret is not logged during deployment and masked in the Pulumi state file. By using the `Output.CreateSecret` function once in the definition of the list, the entire list will be classified as secret in the Pulumi state file.
 
 ```fsharp
 let mastodonContainerEnvVariables  = inputList [
@@ -1119,6 +1119,7 @@ You can find my instance at [social.simonschoof.com](https://social.simonschoof.
 [pulumidefaultsubnets]: https://www.pulumi.com/registry/packages/aws/api-docs/ec2/defaultsubnet/
 [pulumiawsclassic]: https://www.pulumi.com/registry/packages/aws/
 [pulumiawscrosswalk]: https://www.pulumi.com/docs/clouds/aws/guides/
+[pulumisecrets]: https://www.pulumi.com/docs/concepts/secrets/
 [iac]: {{< ref "/tags/infrastructure-as-code/" >}}
 [githubcode]: https://github.com/simonschoof/mastodon-aws/tree/main/infrastructure/aws-services
 [mastodonrunownserver]: https://docs.joinmastodon.org/user/run-your-own/#so-you-want-to-run-your-own-mastodon-server
