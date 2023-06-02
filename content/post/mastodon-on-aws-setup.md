@@ -1018,7 +1018,7 @@ module Values =
     let skipPostDeploymentMigrations = "true"
 ```
 
-Finally, we need a list of `TaskDefinitionKeyValuePairArgs` that we can use to configure the Mastodon containers. For the secret values, we use Pulumi`s `Output.CreateSecret` function so that the secret is not logged during deplyment and masked in the Pulumi state file. By using the `Output.CreateSecret` function once in the definition of the list, the entire list will be classified as secret in the Pulumi status file.
+Finally, we need a list of `TaskDefinitionKeyValuePairArgs` that we can use to configure the Mastodon containers. For the secret values, we use Pulumi's `Output.CreateSecret` function so that the secret is not logged during deplyment and masked in the Pulumi state file. By using the `Output.CreateSecret` function once in the definition of the list, the entire list will be classified as secret in the Pulumi status file.
 
 ```fsharp
 let mastodonContainerEnvVariables  = inputList [
