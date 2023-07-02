@@ -38,21 +38,26 @@ headertext =  "Home"
 [menu]
     [[menu.nav]]
         name    = "about"
-        pre = "<i class='fas fa-user'></i>"
+        pre     = "<i class='fas fa-user'></i>"
         url     = "about"
         weight  = -1
     [[menu.nav]]
         name    = "blog"
-        pre = "<i class='fas fa-list'></i>"
+        pre     = "<i class='fas fa-list'></i>"
         url     = "post"
         weight  = -2
     [[menu.nav]]
         name    = "github"
-        pre = "<i class='fab fa-github'></i>"
+        pre     = "<i class='fab fa-github'></i>"
         url     = "https://github.com/simonschoof"
         weight  = -3
     [[menu.nav]]
         name    = "mastodon"
-        pre = "<i class='fab fa-mastodon'></i>"
+        pre     = "<i class='fab fa-mastodon'></i>"
         url     = "https://social.simonschoof.com/@connect"
         weight  = -4
+    [[menu.nav]]
+        name    = "rss"
+        pre     = "<i class='fa-solid fa-rss'></i>"
+        url     = "post/index.xml"
+        weight  = -5
