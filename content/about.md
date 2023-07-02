@@ -37,6 +37,8 @@ You can reach me here:
 
 {{< awesome far fa-envelope >}} {{< cloakemail address="moin@simonschoof.com" display="Email" >}} {{< awesome fas fa-key >}} [PGP](https://keys.openpgp.org/vks/v1/by-fingerprint/98E54342ACAF35E6F5C29693898AC44ECFEE0279)
 
+{{< awesome fab fa-mastodon >}} [Mastodon](https://social.simonschoof.com/@connect)
+
 {{< awesome fab fa-xing >}} [Xing](https://www.xing.com/profile/Simon_Schoof/cv)
 
 {{< awesome fab fa-linkedin >}} [LinkedIn](https://www.linkedin.com/in/simon-schoof-761373222)

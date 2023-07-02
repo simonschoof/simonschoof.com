@@ -46,3 +46,13 @@ headertext =  "Home"
         pre = "<i class='fas fa-list'></i>"
         url     = "post"
         weight  = -2
+    [[menu.nav]]
+        name    = "github"
+        pre = "<i class='fab fa-github'></i>"
+        url     = "https://github.com/simonschoof"
+        weight  = -3
+    [[menu.nav]]
+        name    = "mastodon"
+        pre = "<i class='fab fa-mastodon'></i>"
+        url     = "https://social.simonschoof.com/@connect"
+        weight  = -4
