@@ -13,9 +13,12 @@ tags = [
 series = "Running Mastodon on AWS"
 draft = false
 +++
+
 This post is the second part of a series of two articles on deploying and running a [Mastodon][mastodondocs] instance on [AWS][aws]. The code for this part can be found [here][githubcode]. In this second part we will cover the steps to run Mastodon on AWS with ECS and Fargate.
 
 {{< series "Running Mastodon on AWS" >}} 
+
+*Update 2023-07-06: As expected, running Mastodon on AWS is way too expensive. Especially for a single user instance. The cost of running the instance on AWS was about $4.82 per day. To reduce costs, I moved the compute (ECS), storage (RDS, Elasticache), and load balancing (ALB) parts of the AWS setup to a hosted solution from [Weingärtner-IT][weingaertner], keeping S3 Bucket, CloudFront, and SES because they cost almost nothing in my scenario. Nonetheless, I had a lot of fun setting it up and getting more insights into creating an AWS infrastructure with Pulumi and F#.*
 
 ### Introduction 
 
@@ -1125,3 +1128,4 @@ You can find my instance at [social.simonschoof.com](https://social.simonschoof.
 [mastodonrunownserver]: https://docs.joinmastodon.org/user/run-your-own/#so-you-want-to-run-your-own-mastodon-server
 [awsaurorav2userguide]: https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2.html
 [githubmastodons3permission]: https://gist.github.com/ftpmorph/299c00907c827fbca883eeb45e6a7dc4?permalink_comment_id=4374053#gistcomment-4374053
+[weingaertner]: https://weingaertner-it.de/
