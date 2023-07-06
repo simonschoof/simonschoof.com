@@ -1,2 +1,3 @@
 User-agent: *
+Allow: /
 Sitemap: https://simonschoof.com/sitemap.xml
