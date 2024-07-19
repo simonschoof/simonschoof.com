@@ -26,25 +26,33 @@ In the following section we will explain the flow and structure of the applicati
 
 As mentioned before, the application is not production ready and lacks many features. But there are production ready frameworks avaible for CQRS/ES like Axon Framework and Marten. In addition to that you can find more implementations of CQRS/ES in Kotlin or .NET on the internet. The ones I found are also based on the SimpleCQRS project but are using a different implementation to the one I used in my project. 
 
-We will start with the brief introduction of the underlying concepts in the next section.
-
 ## Concepts
 
-### Layered Architecture
-### Domain Driven Design (DDD)
-### Command Query Responsibility Segregation (CQRS)
-### Event Sourcing (ES)
+In this section we will give a brief introduction to the underlying concepts used in the implementation of the project. We will only scratch the surface of each concept and give a brief overview. 
+
+##### Domain Driven Design (DDD)
+* General description of DDD
+* Tactical DDD used in the project
+  * Aggregates and Aggregate Roots
+  * Repositories
+  * Factories
+  * Domain Events
+
+##### Hexagonal Architecture and Dependency Inversion Principle (DIP)
+##### Dependency Injection (DI)
+##### Command Query Responsibility Segregation (CQRS)
+##### Event Sourcing (ES)
 
 ## Flow and application structure
 
 ## Technologies used
 
-### Kotlin
-### Spring Boot
-### Spring events
-### Embedded PostgreSQL database (embedded PostgreSQL database from zonky.io)
-### Kotlin Multiplatform Compose
-### Ktorm (Kotlin ORM)
+##### Kotlin
+##### Spring Boot
+##### Spring events
+##### Embedded PostgreSQL database (embedded PostgreSQL database from zonky.io)
+##### Kotlin Multiplatform Compose
+##### Ktorm (Kotlin ORM)
 
 ## Codebase structure
 
