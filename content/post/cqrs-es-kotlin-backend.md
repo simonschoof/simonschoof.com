@@ -81,6 +81,45 @@ The next pattern we will have a closer look at in the implementation of the proj
 
 ## Flow and application structure
 
+So as we have seen in the previous section we have a lot of concepts and patters that we are using to structure the application. Before we go into the details of the implementation we will give a more coarse grained overview of the overall flow and the structure of the application. 
+
+The application lets the user manage inventory items. The user can create an inventory item, change the name of the inventory item, check in and check out items from the inventory item, set the maximum quantity of the inventory item, and deactivate the inventory item. The user can also query the read side of the application to get the current state of the inventory item. This is the same as in the original SimpleCQRS project. A extended domain example in Kotlin can be found here from ... 
+
+To give an overview of what is happening in the application we will go through the flow of the application. 
+Starting with the user sending a command to the application. The command is handled by a CommandHandler, which is responsible for handling the command and changing the state of the application. The CommandHandler uses the AggregateRepository to load the Aggregate, which is the InventoryItem in our case, and to save the events that lead to the current state of the Aggregate. The events are stored in the EventStore. The CommandHandler then publishes the events to the EventBus. The EventBus is responsible for publishing the events to the EventListeners. The EventListeners are responsible for updating the ReadModel of the application. The ReadModel is the read side of the application and is used to query the current state of the application. The ReadModel is updated via Projections. The Projections are responsible for updating the ReadModel with the events that are published by the EventBus. The ReadModel is then used to query the current state of the application.
+
+<!-- Image here -->
+
+As mentioned above in the Dependency Inversion Principle (DIP) compliant architecture section, we are using the DIP to isolate the domain from the infrastructure. We are using packages to structure the application in a way that the domain is separated from the infrastructure. This means, that there are no dependencies from other packages to the domain package. 
+
+The domain is the core of the application and contains the building blocks as abstractions. The building blocks are: 
+
+- AggregateRoot
+- AggregateRepository
+- EventBus
+- EventStore
+- Command
+- Event
+
+In addition to the building blocks we have the domain logic in the InventoryItem class and the events and commands in the domain package.
+
+The infrastructure package contains the implementations of the building blocks for the persistence, the event store and the event bus. You can also find the InventoryItemController in the infrastructure package, which is responsible for handling the API calls from the frontend application.
+
+The application package contains the CommandHandler.
+The ReadModels and the Projections are locatet in the readmodel package.
+
+```
+cqrs-es
+├── application
+├── config
+├── domain
+│   ├── buildingblocks
+├── infrastructure
+│   ├── persistence
+│   ├── web
+└── readmodels
+```
+
 ## Technologies used
 
 ##### Kotlin
