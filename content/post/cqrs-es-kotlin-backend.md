@@ -12,7 +12,10 @@ tags = [
     "spring-boot",
     "embedded-database"
 ]
-references = { simplestpossiblething = "https://github.com/gregoryyoung/m-r/tree/master" }
+references = [
+    { name = "simplestpossiblething", url = "https://github.com/gregoryyoung/m-r/tree/master" },
+    { name = "cqrs-task-based-uis-event-sourcing", url = "https://gist.github.com/simonschoof/74e155447fbc2ac47b0f7c0bb5a5f778" }
+]
 +++
 
 # The slightly more complex thingy: A CQRS/ES backend in Kotlin
@@ -67,7 +70,14 @@ This will also help us with the testing of the application where we can test the
 
 ##### Command Query Responsibility Segregation (CQRS)
 
+CQRS is one of the two main architectural patterns we want to demonstrate in the implementation of the project. CQRS is an extension of the Command Query Separation (CQS) principle, which was introduced by Bertrand Meyer in his book Object-Oriented Software Construction. CQS states that a method should either change the state of an object or return a result, but not both. CQRS takes this principle further and segregates the read and write operations of an application into two different parts of the application. In its simplest form, CQRS 
+> is simply the creation of two objects where there was previously only one. 
+
+Whereas one object is responsible for handling the commands and changing the state of the application, the so called write side of the application. The other object is responsible for handling the queries and returning the state of the application, the so called read side of the application. For the beginning there is nothing more to CQRS than that, as also described by Greg Young in his blog post {{< linkForRef "cqrs-task-based-uis-event-sourcing" "CQRS, Task Based UIs, Event Sourcing agh!" >}}[<sup>[3](#ref-3)</sup>]. Nevertheless CQRS enables us to optimize the read and write operations of an application independently and to introduce other interesting patterns like Event Sourcing, Task Based UIs and Eventual Consistency, even though these are not part of CQRS itself.
+
 ##### Event Sourcing (ES)
+
+The next pattern we will have a closer look at in the implementation of the project is Event Sourcing. Event Sourcing is a pattern where the state of an application is determined by a sequence of events. Instead of storing the current state of an object, we store the events that lead to the current state of the object. This has the advantage that we can rebuild the state of the object at any point in time by replaying the events. Combined with CQRS, we can use the events to update the read side of the application via Projections. We are following the definition from Marten for Projections as any strategy for generating "read side" views from the raw events.  
 
 ## Flow and application structure
 
@@ -137,4 +147,6 @@ To include:
 
 {{< reference "1" "Young, Gregory" "Simple CQRS example" "simplestpossiblething" >}}<br>
 
-{{< reference "2" "Evans, Eric" "2003. Domain-Driven Design: Tacking Complexity In the Heart of Software. Addison-Wesley Longman Publishing Co., Inc., USA." >}}
+{{< reference "2" "Evans, Eric" "2003. Domain-Driven Design: Tacking Complexity In the Heart of Software. Addison-Wesley Longman Publishing Co., Inc., USA." >}}<br>
+
+{{< reference "3" "Young, Gregory" "CQRS, Task Based UIs, Event Sourcing agh!" "cqrs-task-based-uis-event-sourcing" >}}
