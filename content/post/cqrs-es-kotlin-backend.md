@@ -122,6 +122,15 @@ cqrs-es
 
 ## Technologies used
 
+In adddition to the structure and flow of the aplplication we want to give a short overview of the technologies used in the project. First to mention is that the whole project uses Kotlin as the main programming language, means the backend and the frontend are written in Kotlin. As we are writing a web application we are using Spring Boot as the backend framework. From Spring we are using Spring MVC for the REST API, Spring events for the event bus and parts of Spring Data for the transaction management. 
+
+For the persistence we are using Ktorm, which is a Kotlin ORM and has an integration with Spring Boot. For the migration of the database we are using Flyway. For the database itself we are using PostgreSQL, for debugging and testing we are using an embedded PostgreSQL database from zonky.io. 
+
+We choose Jackson for the serialization and deserialization of the JSON objects. 
+
+To test the application we are using Kotest, which is a te
+
+
 ##### Kotlin
 ##### Spring Boot
 ##### Spring events

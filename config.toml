@@ -3,7 +3,7 @@ baseURL = "https://simonschoof.com"
 languageCode = "en-us"
 title = "Simon Schoof"
 summaryLength = 20
-paginate = 5
+pagination.pagerSize = 5
 enableEmoji = "true"
 enableRobotsTXT = true
 
