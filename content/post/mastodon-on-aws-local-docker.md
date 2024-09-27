@@ -8,13 +8,14 @@ tags = [
     "docker",
     "docker-compose"
 ]
-series = "Running Mastodon on AWS"
+series = "running mastodon on aws"
 draft = false
 +++
-This post is the first part of a series of two articles about running a [Mastodon](https://joinmastodon.org/) instance on AWS with ECS and Fargate. To familiarize myself with Mastodon and its configuration, I decided to first run Mastodon locally using [Docker Compose](https://docs.docker.com/compose/). This post will describe the steps to run Mastodon locally with Docker Compose. The second part will cover the steps to run Mastodon on AWS using ECS and Fargate.
+This post is the first part of a series of two articles about running a [Mastodon](https://joinmastodon.org/) instance on AWS with ECS and Fargate. To familiarize myself with Mastodon and its configuration, I decided to first run Mastodon locally using [Docker Compose](https://docs.docker.com/compose/). 
+This post will describe the steps to run Mastodon locally with Docker Compose. The second part will cover the steps to run Mastodon on AWS using ECS and Fargate.
 The code for this part can be found [here](https://github.com/simonschoof/mastodon-aws).
 
-{{< series "Running Mastodon on AWS" >}} 
+{{< series "running mastodon on aws" >}} 
 
 ### Introduction
 

@@ -9,11 +9,12 @@ tags = [
     "aws",
     "fsharp"
 ]
-series = "CloudFront and Lambda@Edge with Pulumi"
+series = "cloudfront and lambda@edge with pulumi"
 draft = false
 +++
-This post is part of a small series of articles on using Pulumi to leverage CloudFront and Lambda@Edge for on the fly image resizing. The code for this part can be found [here](https://github.com/simonschoof/lambda-at-edge-example/tree/main/pulumi). 
-{{< series "CloudFront and Lambda@Edge with Pulumi" >}}  
+This post is part of a small series of articles on using Pulumi to leverage CloudFront and Lambda@Edge for on the fly image resizing. The code for this part can be found [here](https://github.com/simonschoof/lambda-at-edge-example/tree/main/pulumi).
+
+{{< series "cloudfront and lambda@edge with pulumi" >}}  
 
 In this part, we will define the necessary AWS infrastructure using [Pulumi with F#](https://www.pulumi.com/docs/intro/languages/dotnet/). How to set up [Pulumi](https://www.pulumi.com/docs/get-started/) is not part of this article. Neither is explaining [Pulumi`s architecture and concepts](https://www.pulumi.com/docs/intro/concepts/). One important concept of Pulumi that should be mentioned is [inputs and outputs of resources](https://www.pulumi.com/docs/intro/concepts/inputs-outputs/). It is important to understand this concept in order to define an infrastructure with Pulumi. Unfortunately, F#'s type system is more rigid than C#'s and requires explicit type conversions for Pulumi's input and output types. To accomplish this in a more idiomatic way in F#, there are [helper functions](https://github.com/pulumi/pulumi/blob/master/sdk/dotnet/Pulumi.FSharp/Library.fs), [libraries](https://github.com/UnoSD/Pulumi.FSharp.Extensions), and [discussions](https://github.com/pulumi/pulumi/issues/3644) on how to get to a more idiomatic experience with Pulumi and F#. In this article we will use only the helper functions.
 As for setting up Pulumi for this small project, we will use the default Pulumi configuration for a single developer and also use the [Pulumi Service as a backend](https://www.pulumi.com/docs/intro/concepts/state/) to store the state of the infrastructure. 

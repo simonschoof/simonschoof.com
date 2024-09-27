@@ -9,16 +9,18 @@ tags = [
     "aws",
     "fsharp"
 ]
-series = "CloudFront and Lambda@Edge with Pulumi"
+series = "cloudfront and lambda@edge with pulumi"
 draft = false
 +++
 
 After writing my [first article about my first steps in F#]({{< relref "/post/first-steps-fsharp.md" >}}
-), I thought about what project I would like to tackle next. I decided to continue with [F#](https://fsharp.org/), but in a different environment. I want to use F# with [Pulumi](https://www.pulumi.com/) to set up [CloudFront and Lambda@Edge to resize images on the fly](https://aws.amazon.com/blogs/networking-and-content-delivery/resizing-images-with-amazon-cloudfront-lambdaedge-aws-cdn-blog/). So I followed [Amazon`s blog post](https://aws.amazon.com/blogs/networking-and-content-delivery/resizing-images-with-amazon-cloudfront-lambdaedge-aws-cdn-blog/) where they set up a simple service to resize images with CloudFront and Lambda@Edge, but used CloudFormation instead of Pulumi. I also simplified the Lambda@Edge functions by reducing the functionality. Finally, I also use TypeScript to write the Lambda@Edge functions instead of JavaScript.
+), I thought about what project I would like to tackle next. I decided to continue with [F#](https://fsharp.org/), but in a different environment. I want to use F# with [Pulumi](https://www.pulumi.com/) to set up [CloudFront and Lambda@Edge to resize images on the fly](https://aws.amazon.com/blogs/networking-and-content-delivery/resizing-images-with-amazon-cloudfront-lambdaedge-aws-cdn-blog/). 
+
+So I followed [Amazon`s blog post](https://aws.amazon.com/blogs/networking-and-content-delivery/resizing-images-with-amazon-cloudfront-lambdaedge-aws-cdn-blog/) where they set up a simple service to resize images with CloudFront and Lambda@Edge, but used CloudFormation instead of Pulumi. I also simplified the Lambda@Edge functions by reducing the functionality. Finally, I also use TypeScript to write the Lambda@Edge functions instead of JavaScript.
 
 Since the original blog post from Amazon is quite long, I decided to write a small series of articles on setting up CloudFront and Lambda@Edge with Pulumi.
 
-{{< series "CloudFront and Lambda@Edge with Pulumi" >}} 
+{{< series "cloudfront and lambda@edge with pulumi" >}} 
 
 
 In this article we give a brief introduction to CloudFront and Lambda@Edge. In the second part, we will show how to set up the infrastructure with Pulumi. In the third part, we will implement the resizing features using TypeScript. Last but not least, we will show how to deploy the resizing service on AWS using Pulumi and GitHub Actions.

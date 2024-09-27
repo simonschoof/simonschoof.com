@@ -11,12 +11,12 @@ tags = [
     "ci/cd",
     "github actions"
 ]
-series = "CloudFront and Lambda@Edge with Pulumi"
+series = "cloudfront and lambda@edge with pulumi"
 draft = false
 +++
 This post is part of a small series of articles on using Pulumi to leverage CloudFront and Lambda@Edge for on the fly image resizing. The code for this part can be found [here](https://github.com/simonschoof/lambda-at-edge-example/tree/main/pulumi-identity-federation) and [here](https://github.com/simonschoof/lambda-at-edge-example/tree/main/.github/workflows).
 
-{{< series "CloudFront and lambda@edge with Pulumi" >}} 
+{{< series "cloudfront and lambda@edge with pulumi" >}} 
 
 In this part, we will set up a deployment pipeline using GitHub Actions so that we can automate the deployment of the infrastructure defined in the previous articles. To enable secure deployments in AWS, we first set up an OpenID Connect provider in AWS. After enabling GitHub Actions for deployment in AWS with OIDC, we will define the GitHub Actions workflows to set up the AWS infrastructure and create and deploy the AWS Lambda functions. At the end, we will discuss options to improve the pipeline.     
 
