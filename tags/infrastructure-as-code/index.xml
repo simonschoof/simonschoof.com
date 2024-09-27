@@ -1,1 +1,34 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Infrastructure as Code on Simon Schoof</title><link>https://simonschoof.com/tags/infrastructure-as-code/</link><description>Recent content in Infrastructure as Code on Simon Schoof</description><generator>Hugo</generator><language>en-us</language><lastBuildDate>Thu, 01 Jun 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://simonschoof.com/tags/infrastructure-as-code/index.xml" rel="self" type="application/rss+xml"/><item><title>Mastodon on AWS: Running on AWS</title><link>https://simonschoof.com/post/mastodon-on-aws-setup/</link><pubDate>Thu, 01 Jun 2023 00:00:00 +0000</pubDate><guid>https://simonschoof.com/post/mastodon-on-aws-setup/</guid><description>This post is the second part of a series of two articles on deploying and running a Mastodon instance on AWS.</description></item><item><title>Pulumi, CloudFront &amp; Lambda@Edge: Deployment</title><link>https://simonschoof.com/post/cloudfront-lambda-edge-deployment/</link><pubDate>Fri, 28 Oct 2022 00:00:00 +0000</pubDate><guid>https://simonschoof.com/post/cloudfront-lambda-edge-deployment/</guid><description>This post is part of a small series of articles on using Pulumi to leverage CloudFront and Lambda@Edge for on the fly image resizing.</description></item><item><title>Pulumi, CloudFront &amp; Lambda@Edge: Lambda</title><link>https://simonschoof.com/post/cloudfront-lambda-edge-lambda-functions/</link><pubDate>Thu, 30 Jun 2022 00:00:00 +0000</pubDate><guid>https://simonschoof.com/post/cloudfront-lambda-edge-lambda-functions/</guid><description>This post is part of a small series of articles on using Pulumi to leverage CloudFront and Lambda@Edge for on the fly image resizing.</description></item><item><title>Pulumi, CloudFront &amp; Lambda@Edge: Infrastructure</title><link>https://simonschoof.com/post/cloudfront-lambda-edge-infrastructure/</link><pubDate>Wed, 29 Jun 2022 00:00:00 +0000</pubDate><guid>https://simonschoof.com/post/cloudfront-lambda-edge-infrastructure/</guid><description>This post is part of a small series of articles on using Pulumi to leverage CloudFront and Lambda@Edge for on the fly image resizing.</description></item><item><title>Pulumi, CloudFront &amp; Lambda@Edge: Introduction</title><link>https://simonschoof.com/post/cloudfront-lambda-edge-intro/</link><pubDate>Tue, 28 Jun 2022 00:00:00 +0000</pubDate><guid>https://simonschoof.com/post/cloudfront-lambda-edge-intro/</guid><description>After writing my first article about my first steps in F#, I thought about what project I would like to tackle next.</description></item></channel></rss>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Infrastructure as Code on Simon Schoof</title><link>https://simonschoof.com/tags/infrastructure-as-code/</link><description>Recent content in Infrastructure as Code on Simon Schoof</description><generator>Hugo</generator><language>en-us</language><lastBuildDate>Thu, 01 Jun 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://simonschoof.com/tags/infrastructure-as-code/index.xml" rel="self" type="application/rss+xml"/><item><title>Mastodon on AWS: Running on AWS</title><link>https://simonschoof.com/post/mastodon-on-aws-setup/</link><pubDate>Thu, 01 Jun 2023 00:00:00 +0000</pubDate><guid>https://simonschoof.com/post/mastodon-on-aws-setup/</guid><description>&lt;p>This post is the second part of a series of two articles on deploying and running a &lt;a href=https://docs.joinmastodon.org/
+ 
+ rel="noopener noreferrer"
+>Mastodon&lt;/a> instance on &lt;a href=https://aws.amazon.com/
+ 
+ rel="noopener noreferrer"
+>AWS&lt;/a>. The code for this part can be found &lt;a href=https://github.com/simonschoof/mastodon-aws/tree/main/infrastructure/aws-services
+ 
+ rel="noopener noreferrer"
+>here&lt;/a>. In this second part we will cover the steps to run Mastodon on AWS with ECS and Fargate.&lt;/p></description></item><item><title>Pulumi, CloudFront &amp; Lambda@Edge: Deployment</title><link>https://simonschoof.com/post/cloudfront-lambda-edge-deployment/</link><pubDate>Fri, 28 Oct 2022 00:00:00 +0000</pubDate><guid>https://simonschoof.com/post/cloudfront-lambda-edge-deployment/</guid><description>&lt;p>This post is part of a small series of articles on using Pulumi to leverage CloudFront and Lambda@Edge for on the fly image resizing. The code for this part can be found &lt;a href=https://github.com/simonschoof/lambda-at-edge-example/tree/main/pulumi-identity-federation
+ 
+ rel="noopener noreferrer"
+>here&lt;/a> and &lt;a href=https://github.com/simonschoof/lambda-at-edge-example/tree/main/.github/workflows
+ 
+ rel="noopener noreferrer"
+>here&lt;/a>.&lt;/p></description></item><item><title>Pulumi, CloudFront &amp; Lambda@Edge: Lambda</title><link>https://simonschoof.com/post/cloudfront-lambda-edge-lambda-functions/</link><pubDate>Thu, 30 Jun 2022 00:00:00 +0000</pubDate><guid>https://simonschoof.com/post/cloudfront-lambda-edge-lambda-functions/</guid><description>&lt;p>This post is part of a small series of articles on using Pulumi to leverage CloudFront and Lambda@Edge for on the fly image resizing. The code for this part can be found &lt;a href=https://github.com/simonschoof/lambda-at-edge-example/tree/main/lambda
+ 
+ rel="noopener noreferrer"
+>here&lt;/a>.&lt;/p></description></item><item><title>Pulumi, CloudFront &amp; Lambda@Edge: Infrastructure</title><link>https://simonschoof.com/post/cloudfront-lambda-edge-infrastructure/</link><pubDate>Wed, 29 Jun 2022 00:00:00 +0000</pubDate><guid>https://simonschoof.com/post/cloudfront-lambda-edge-infrastructure/</guid><description>&lt;p>This post is part of a small series of articles on using Pulumi to leverage CloudFront and Lambda@Edge for on the fly image resizing. The code for this part can be found &lt;a href=https://github.com/simonschoof/lambda-at-edge-example/tree/main/pulumi
+ 
+ rel="noopener noreferrer"
+>here&lt;/a>.&lt;/p></description></item><item><title>Pulumi, CloudFront &amp; Lambda@Edge: Introduction</title><link>https://simonschoof.com/post/cloudfront-lambda-edge-intro/</link><pubDate>Tue, 28 Jun 2022 00:00:00 +0000</pubDate><guid>https://simonschoof.com/post/cloudfront-lambda-edge-intro/</guid><description>&lt;p>After writing my &lt;a href=https://simonschoof.com/post/first-steps-fsharp/
+ 
+ 
+>first article about my first steps in F#&lt;/a>, I thought about what project I would like to tackle next. I decided to continue with &lt;a href=https://fsharp.org/
+ 
+ rel="noopener noreferrer"
+>F#&lt;/a>, but in a different environment. I want to use F# with &lt;a href=https://www.pulumi.com/
+ 
+ rel="noopener noreferrer"
+>Pulumi&lt;/a> to set up &lt;a href=https://aws.amazon.com/blogs/networking-and-content-delivery/resizing-images-with-amazon-cloudfront-lambdaedge-aws-cdn-blog/
+ 
+ rel="noopener noreferrer"
+>CloudFront and Lambda@Edge to resize images on the fly&lt;/a>.&lt;/p></description></item></channel></rss>

@@ -1,1 +1,12 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Docker on Simon Schoof</title><link>https://simonschoof.com/tags/docker/</link><description>Recent content in Docker on Simon Schoof</description><generator>Hugo</generator><language>en-us</language><lastBuildDate>Wed, 31 May 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://simonschoof.com/tags/docker/index.xml" rel="self" type="application/rss+xml"/><item><title>Mastodon on AWS: Running locally</title><link>https://simonschoof.com/post/mastodon-on-aws-local-docker/</link><pubDate>Wed, 31 May 2023 00:00:00 +0000</pubDate><guid>https://simonschoof.com/post/mastodon-on-aws-local-docker/</guid><description>This post is the first part of a series of two articles about running a Mastodon instance on AWS with ECS and Fargate.</description></item></channel></rss>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Docker on Simon Schoof</title><link>https://simonschoof.com/tags/docker/</link><description>Recent content in Docker on Simon Schoof</description><generator>Hugo</generator><language>en-us</language><lastBuildDate>Wed, 31 May 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://simonschoof.com/tags/docker/index.xml" rel="self" type="application/rss+xml"/><item><title>Mastodon on AWS: Running locally</title><link>https://simonschoof.com/post/mastodon-on-aws-local-docker/</link><pubDate>Wed, 31 May 2023 00:00:00 +0000</pubDate><guid>https://simonschoof.com/post/mastodon-on-aws-local-docker/</guid><description>&lt;p>This post is the first part of a series of two articles about running a &lt;a href=https://joinmastodon.org/
+ 
+ rel="noopener noreferrer"
+>Mastodon&lt;/a> instance on AWS with ECS and Fargate. To familiarize myself with Mastodon and its configuration, I decided to first run Mastodon locally using &lt;a href=https://docs.docker.com/compose/
+ 
+ rel="noopener noreferrer"
+>Docker Compose&lt;/a>.
+This post will describe the steps to run Mastodon locally with Docker Compose. The second part will cover the steps to run Mastodon on AWS using ECS and Fargate.
+The code for this part can be found &lt;a href=https://github.com/simonschoof/mastodon-aws
+ 
+ rel="noopener noreferrer"
+>here&lt;/a>.&lt;/p></description></item></channel></rss>
