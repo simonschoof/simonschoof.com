@@ -78,30 +78,9 @@ Whereas one object is responsible for handling the commands and changing the sta
 
 The next pattern we will have a closer look at in the implementation of the project is Event Sourcing. Event Sourcing is a pattern where the state of an application is determined by a sequence of events. Instead of storing the current state of an object, we store the events that lead to the current state of the object. This has the advantage that we can rebuild the state of the object at any point in time by replaying the events. Combined with CQRS, we can use the events to update the read side of the application via Projections. We are following the definition from Marten for Projections as any strategy for generating "read side" views from the raw events.  
 
-## Flow and application structure
+## Flow and application/package structure
 
-So as we have seen in the previous section we have a lot of concepts and patters that we are using to structure the application. Before we go into the details of the implementation we will give a more coarse grained overview of the overall flow and the structure of the application. 
-
-The application lets the user manage inventory items. The user can create an inventory item, change the name of the inventory item, check in and check out items from the inventory item, set the maximum quantity of the inventory item, and deactivate the inventory item. The user can also query the read side of the application to get the current state of the inventory item. This is the same as in the original SimpleCQRS project. A extended domain example in Kotlin can be found here from ... 
-
-To give an overview of what is happening in the application we will go through the flow of the application. 
-Starting with the user sending a command to the application. The command is handled by a CommandHandler, which is responsible for handling the command and changing the state of the application. The CommandHandler uses the AggregateRepository to load the Aggregate, which is the InventoryItem in our case, and to save the events that lead to the current state of the Aggregate. The events are stored in the EventStore. The CommandHandler then publishes the events to the EventBus. The EventBus is responsible for publishing the events to the EventListeners. The EventListeners are responsible for updating the ReadModel of the application. The ReadModel is the read side of the application and is used to query the current state of the application. The ReadModel is updated via Projections. The Projections are responsible for updating the ReadModel with the events that are published by the EventBus. The ReadModel is then used to query the current state of the application.
-
-<!-- Image here -->
-
-```mermaid
-sequenceDiagram
-    participant Alice
-    participant Bob
-    Alice->>John: Hello John, how are you?
-    loop Healthcheck
-        John->>John: Fight against hypochondria
-    end
-    Note right of John: Rational thoughts <br/>prevail!
-    John-->>Alice: Great!
-    John->>Bob: How about you?
-    Bob-->>John: Jolly good!
-```
+##### Package structure
 
 As mentioned above in the Dependency Inversion Principle (DIP) compliant architecture section, we are using the DIP to isolate the domain from the infrastructure. We are using packages to structure the application in a way that the domain is separated from the infrastructure. This means, that there are no dependencies from other packages to the domain package. 
 
@@ -132,6 +111,329 @@ cqrs-es
 │   ├── web
 └── readmodels
 ```
+
+##### Flow of the application
+
+So as we have seen in the previous section we have a lot of concepts and patters that we are using to structure the application. Before we go into the details of the implementation we will give a more coarse grained overview of the overall flow and the structure of the application. 
+
+The application lets the user manage inventory items. The user can create an inventory item, change the name of the inventory item, check in and check out items from the inventory item, set the maximum quantity of the inventory item, and deactivate the inventory item. The user can also query the read side of the application to get the current state of the inventory item. This is the same as in the original SimpleCQRS project. A extended domain example in Kotlin can be found here from ... 
+
+To give an overview of what is happening in the application we will go through the flow of the application. 
+Starting with the user sending a command to the application. The command is handled by a CommandHandler, which is responsible for handling the command and changing the state of the application. The CommandHandler uses the AggregateRepository to load the Aggregate, which is the InventoryItem in our case, and to save the events that lead to the current state of the Aggregate. The events are stored in the EventStore. The CommandHandler then publishes the events to the EventBus. The EventBus is responsible for publishing the events to the EventListeners. The EventListeners are responsible for updating the ReadModel of the application. The ReadModel is the read side of the application and is used to query the current state of the application. The ReadModel is updated via Projections. The Projections are responsible for updating the ReadModel with the events that are published by the EventBus. The ReadModel is then used to query the current state of the application.
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant UI
+    participant InventoryItemController
+    participant EventBus
+    participant CommandHandler
+    participant AggregateRepository#60;InventoryItem#62;
+    participant AggregateRoot#60;InventoryItem#62;
+    participant EventStore
+    participant EventBus
+    participant InventoryItemProjection
+    participant ReadModel
+
+    User->>UI: Clicks change (inventory) item name  button
+    UI->>InventoryItemController: Call action changeInventoryItemName
+    InventoryItemController->>EventBus: Emit command ChangeInventoryItemName
+    EventBus->>CommandHandler: Dispatch command
+    CommandHandler->>AggregateRepository#60;InventoryItem#62;: Get inventory item by aggregate ID
+    AggregateRepository#60;InventoryItem#62;->>CommandHandler: Return inventory item
+    CommandHandler->>AggregateRoot#60;InventoryItem#62;: Call command method changeName
+    AggregateRoot#60;InventoryItem#62;->>CommandHandler: Return aggregate root inventory item with list of unsaved event(s)
+    CommandHandler->>EventStore: Save event(s)
+    EventStore->>EventBus: Publish event
+    EventBus->>InventoryItemProjection: Handle event
+    InventoryItemProjection->>ReadModel: Update read model
+    UI->>ReadModel: Fetch updated read model
+    UI->>User: Display updated read model
+```
+
+##### Walkthtrough the code
+
+As we have seen sequence diagram above there are multiple components involved to handle a command and update the read model. We will now go through the code of the components following the flow of the sequence diagram. We will not show the UI part and start directly with the InventoryItemController. The first thing is to send a POST request to the InventoryItemController with the command to change the name of the InventoryItem. 
+
+```kotlin
+@PostMapping(
+    value = ["/api/changeInventoryItemName"],
+    consumes = [MediaType.APPLICATION_JSON_VALUE],
+    produces = [MediaType.APPLICATION_JSON_VALUE]
+)
+fun changeInventoryItemName(@RequestBody changeInventoryItemNameRequest: ChangeInventoryItemNameRequest) {
+    val changeInventoryItemName = ChangeInventoryItemName(
+        UUID.fromString(changeInventoryItemNameRequest.aggregateId),
+        changeInventoryItemNameRequest.newInventoryItemName
+    )
+    eventBus.send(changeInventoryItemName)
+}
+```
+
+Here we can see that we have the event bus injected into the InventoryItemController and that we construct the command ChangeInventoryItemName from the request body. We then send the command to the event bus via the send method.
+
+The event bus itself is defined as an interface in the domain package of the application and has only two methods, one for publishing events and one for sending commands. 
+
+```kotlin
+interface EventBus {
+    fun publish(event: Event)
+    fun send(command: Command)
+}
+```
+The implementation of the event bus is in the infrastructure package and is using Spring events for sending commands and publishing events. 
+
+```kotlin
+@Component
+class SpringEventBus(val publisher: ApplicationEventPublisher): EventBus {
+
+    override fun publish(event: Event) {
+        publisher.publishEvent(event)
+    }
+
+    override fun send(command: Command) {
+        publisher.publishEvent(command)
+    }
+
+}
+```
+
+The command is then dispatched to the InventoryItemCommandHandlers class<cite>[^1]<cite>. In the InventoryItemCommandHandlers class the command is handled and the state of the application is changed when the command is valid and the state of the Aggregate is consistent otherwise the command is rejected. The handling of a command generally follows the same pattern:
+
+1. Load the Aggregate from the AggregateRepository
+2. Call the command method on the AggregateRoot
+3. Save the events to the EventStore
+4. Publish the events to the EventBus
+
+For the ChangeInventoryItemName command the InventoryItemCommandHandlers class looks like this:
+
+```kotlin 
+@Component
+@Transactional
+class InventoryItemCommandHandlers(private val aggregateRepository: AggregateRepository<InventoryItem>) {
+
+    @EventListener
+    fun handle(command: ChangeInventoryItemName) {
+        aggregateRepository.getById(command.aggregateId).ifPresent {
+            it.changeName(command.newName).hasChanges().apply { 
+                aggregateRepository.save(it) 
+            }
+        }
+    }
+
+    // other command handlers
+}
+```
+
+The changeName method is defined in the InventoryItem class and is responsible for changing the name of the InventoryItem. The changeName method is also responsible for creating the ChangeInventoryItemName event and returning the InventoryItem with the unsaved event. The InventoryItem class is the AggregateRoot and is responsible for maintaining the consistency of the Aggregate. 
+
+```kotlin
+fun changeName(newName: String): InventoryItem = applyChange(
+    InventoryItemNameChanged(
+        this.baseEventInfo(),
+        newName = newName
+    )
+)
+```
+
+As we can see in the code above the changeName method is creating the InventoryItemNameChanged event and is calling the applyChange method. The applyChange method is defined in the AggregateRoot interface and is responsible for applying the event, which defines the changes made to the Aggregate, to the Aggregate implementation. The applyChange method also stores the event in the Aggregates changes list which is tracking the unsaved changes made to the Aggregate. The AggregateRoot interface is the core abstraction in the simplest possible thing project and is defined as follows:
+
+```kotlin
+interface AggregateRoot<T> where T : AggregateRoot<T> {
+
+    // properties
+
+    fun applyChange(event: Event, isNew: Boolean = true): T =
+        applyEvent(event).apply { if (isNew) changes += event }
+
+    fun applyEvent(event: Event): T
+
+    fun hasChanges() = changes.isNotEmpty()
+
+    // more functions
+}
+```
+As we can the in AggregateRoot interface in the applyChange method the applyEvent method is called to apply the event to the Aggregate implementation. The applyEvent method is defined in the implementation of the AggregateRoot, which is the InventoryItem in our case. In the implementation of the applyEvent method in the InventoryItem class all events that can be applied to the InventoryItem are handled. The applyEvent method in the InventoryItem class is responsible for changing the state of the InventoryItem based on the event that is applied to the InventoryItem and returning the InventoryItem with the new state, that means the the properties of the InventoryItem are updated to their new values. 
+
+```kotlin
+data class InventoryItem(
+    override val id: Optional<AggregateId> = Optional.empty(),
+    override val changes: MutableList<Event> = mutableListOf(),
+    override val clock: Clock = Clock.systemUTC(),
+    private val name: Optional<String> = Optional.empty(),
+    private val isActivated: Boolean = false,
+    private val availableQuantity: Int = 0,
+    private val maxQuantity: Int = Int.MAX_VALUE,
+) : AggregateRoot<InventoryItem> {
+
+    override fun applyEvent(event: Event): InventoryItem = when (event) {
+        is InventoryItemCreated -> copy(
+            id = Optional.of(event.aggregateId),
+            name = Optional.of(event.name),
+            availableQuantity = event.availableQuantity,
+            maxQuantity = event.maxQuantity,
+            isActivated = true
+        )
+        is InventoryItemNameChanged -> copy(name = Optional.of(event.newName))
+        is InventoryItemsRemoved -> copy(availableQuantity = event.newAvailableQuantity)
+        is InventoryItemsCheckedIn -> copy(availableQuantity = event.newAvailableQuantity)
+        is InventoryItemDeactivated -> copy(isActivated = false)
+        else -> this
+    }
+
+    fun changeName(newName: String): InventoryItem = applyChange(
+        InventoryItemNameChanged(
+            this.baseEventInfo(),
+            newName = newName
+        )
+    )
+
+    // other methods
+}
+```
+
+The InventoryItem class is a Kotlin data class and is treated as immutable so that we always return a copy of the class from the applyEvent method. This is discussed more in detail in the conventions and workarounds part of this section.
+
+After we have applied the event to the Aggregate implementation and returned the Aggregate with the new state, we save the Aggregate to the EventStore. This is done in the InventoryItemCommandHandlers class in the handle method as we have seen above in the InventoryItemCommandHandlers class code snippet. 
+
+For the persistence we have to abstractions in the domain package, the EventStore and the AggregateRepository. As abstractions these two interfaces are not dependent on the infrastructure and each other but this is different in the implementation where the AggregateRepository has a dependency to the EventStore and the EventStore has a dependency to the EventBus. We can the see the dependencies in the class diagram below.
+
+```mermaid
+classDiagram
+    class AggregateRepository~T~ {
+        #60;#60;interface#62;#62;
+    }
+
+    class EventStore {
+        #60;#60;interface#62;#62;
+    }
+
+    class EventBus {
+        #60;#60;interface#62;#62;
+    }
+
+    class EventStoreAggregateRepository~T~ {
+        -EventStore eventStore
+    }
+
+    class KtormEventStore {
+        -EventBus eventBus
+    }
+
+    class SpringEventBus
+
+    AggregateRepository <|-- EventStoreAggregateRepository
+    EventStoreAggregateRepository --> EventStore
+    EventStore <|-- KtormEventStore
+    KtormEventStore --> EventBus
+    EventBus <|-- SpringEventBus
+```
+
+The code needed to save and publish an event is shown in the following code snippets.
+
+For the abstractions we have the following interfaces:
+
+```kotlin
+interface AggregateRepository<T: AggregateRoot<T>> {
+
+    fun save(aggregate: T)
+    fun getById(id: AggregateId): Optional<T>
+}
+
+interface EventStore {
+    fun saveEvents(aggregateId: AggregateId, aggregateType: String, events: List<Event>)
+    fun getEventsForAggregate(aggregateId: AggregateId): List<Event>
+}
+
+interface EventBus {
+    fun publish(event: Event)
+    fun send(command: Command)
+}
+```
+
+And the corresponding implementations are the EventStoreAggregateRepository and the KtormEventStore:
+
+```kotlin
+@Component
+class EventStoreAggregateRepository<T : AggregateRoot<T>>(
+    private val eventStore: EventStore,
+    private val aggregateQualifiedNameProvider: AggregateQualifiedNameProvider
+) : AggregateRepository<T> {
+
+    override fun save(aggregate: T) {
+        aggregate.id.ifPresent {
+            eventStore.saveEvents(
+                aggregateId = it,
+                aggregateType = aggregate.aggregateType(),
+                events = aggregate.changes
+            )
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override fun getById(id: AggregateId): Optional<T> {
+
+        val events = eventStore.getEventsForAggregate(id)
+
+        events.ifEmpty { return Optional.empty()}
+
+        val emptyAggregate =
+            Class.forName(aggregateQualifiedNameProvider.getQualifiedNameBySimpleName(events.first().aggregateType))
+                .kotlin.java.getDeclaredConstructor().newInstance() as T
+
+        val aggregate = emptyAggregate.loadFromHistory(events)
+
+        return Optional.of(aggregate)
+    }
+
+}
+
+@Component
+class KtormEventStore(
+    private val database: Database,
+    private val e: EventTable = EventTable.aliased("e"),
+    private val clock: Clock,
+    private val objectMapper: ObjectMapper,
+    private val eventBus: EventBus,
+    private val eventQualifiedNameProvider: EventQualifiedNameProvider
+) : EventStore {
+
+    override fun saveEvents(aggregateId: AggregateId, aggregateType: String, events: List<Event>) {
+        events.forEach { event: Event ->
+            saveEvent(aggregateId, aggregateType, event)
+            eventBus.publish(event)
+        }
+    }
+
+    override fun getEventsForAggregate(aggregateId: AggregateId): List<Event> =
+        database.from(e)
+            .select()
+            .where { e.aggregateId eq aggregateId }
+            .orderBy(e.timestamp.asc())
+            .map {
+                val eventTypeClass =
+                    Class.forName(eventQualifiedNameProvider.getQualifiedNameBySimpleName(it[e.eventType]!!))
+                        .kotlin
+                        .javaObjectType
+
+                objectMapper.convertValue(it[e.data]!! as LinkedHashMap<*, *> , eventTypeClass) as Event
+            }
+
+    private fun saveEvent(aggregateId: AggregateId, aggregateType: String, event: Event) {
+        database.insert(e) {
+            set(e.eventType, event::class.simpleName)
+            set(e.aggregateId, aggregateId)
+            set(e.aggregateType, aggregateType)
+            set(e.timestamp, event.timestamp)
+            set(e.data, event)
+        }
+    }
+}
+```
+
+
+##### Conventions and workarounds in the code
+
+
 
 ## Technologies used
 
@@ -210,3 +512,5 @@ To include:
 {{< reference "2" "Evans, Eric" "2003. Domain-Driven Design: Tacking Complexity In the Heart of Software. Addison-Wesley Longman Publishing Co., Inc., USA." >}}<br>
 
 {{< reference "3" "Young, Gregory" "CQRS, Task Based UIs, Event Sourcing agh!" "cqrs-task-based-uis-event-sourcing" >}}
+
+[^1]: The implementation of command handlers for the inventory item are grouped together in the InventoryItemCommandHandlers class which handles multiple commands instead of using on handler class per commmand 
