@@ -326,7 +326,9 @@ classDiagram
     EventStore <|-- KtormEventStore
     KtormEventStore --> EventBus
     EventBus <|-- SpringEventBus
+
 ```
+
 
 The code needed to save and publish an event is shown in the following code snippets.
 
@@ -445,23 +447,78 @@ We choose Jackson for the serialization and deserialization of the JSON objects.
 
 To test the application we are using Kotest, which is a testing framework for Kotlin, which supports multiple testing styles and comes with an assertion library and the possibility to write property based tests.
 
-##### Kotlin
-##### Spring Boot
-##### Spring events
-##### Embedded PostgreSQL database (embedded PostgreSQL database from zonky.io)
-##### Kotlin Multiplatform Compose
-##### Ktorm (Kotlin ORM)
-
-## Codebase structure
-
-## Components of the codebase
+* Kotlin 
+* Spring Boot with Spring MVC, Spring events, and parts of Spring Data
+* Ktorm
+* Flyway
+* PostgreSQL
+* Embedded PostgreSQL database from zonky.io
+* Jackson
+* Kotest
+* Kotlin Multiplatform Compose
 
 ## How to run the application
 
-### Prerequisites
-### Running the application
-#### Running from the IDE 
-#### Running with Docker
+#### Prerequisites
+
+To run the application locally from the command line or from the IDE(I am using IntelliJ for Kotlin development) you need to have the following software installed on your machine:
+
+For the backend:
+
+* Java 21 or higher 
+
+For the frontend:
+
+* Android Studio
+* Kotlin Multiplatform Compose plugin
+
+Alternatively you can run the application with Docker. 
+
+#### Running the application
+
+The application is separated into two parts, the backend and the UI. The backend resides in the `cqrs-es` directory and the UI in the `cqrs-es-ui` directory. The given commands below have to be executed in the corresponding directory.
+
+The tests for the backend can be run with
+
+```shell
+./gradlew test
+```
+
+You can then start the backend with
+
+```shell
+./gradlew bootRun
+```
+
+The UI can be started with
+
+```shell
+./gradlew desktopRun -DmainClass=MainKt --quiet
+```
+
+for the desktop application or with
+
+```shell
+./gradlew wasmJsBrowserRun -t --quiet
+```
+
+for the web application.
+
+I only started the Android application from Android Studio and I have not tried to start it from the command line.
+
+There is also an option to run the whole application with Docker and Docker Compose. The docker-compose file is located in the root directory of the project and the Dockerfiles for the backend and the UI are located in the corresponding directories. To run the application with Docker and Docker Compose you can use the following command:
+
+```shell
+docker compose up -d
+```
+
+This will start the backend, the UI, and the database in separate containers in the background. You can then access the UI at `http://localhost:8081` and the backend at `http://localhost:8080`. The database will be available on `localhost:5432`.
+
+The Dockerfile for the frontend starts the frontend with `gradle wasmJsBrowserRun -t --quiet` which seems to start a development server. Starting it in this way takes a few minutes. You can see when the frontend is ready when you see the following message in the logs of the Docker container:
+
+```
+Waiting for changes to input files...
+```
 
 ## Conclusion and outlook
 
