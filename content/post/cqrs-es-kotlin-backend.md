@@ -135,23 +135,29 @@ sequenceDiagram
     participant InventoryItemProjection
     participant ReadModel
 
-    User->>UI: Clicks change (inventory) item name  button
-    UI->>InventoryItemController: Call action changeInventoryItemName
-    InventoryItemController->>EventBus: Emit command ChangeInventoryItemName
-    EventBus->>CommandHandler: Dispatch command
-    CommandHandler->>AggregateRepository#60;InventoryItem#62;: Get inventory item by aggregate ID
-    AggregateRepository#60;InventoryItem#62;->>CommandHandler: Return inventory item
-    CommandHandler->>AggregateRoot#60;InventoryItem#62;: Call command method changeName
-    AggregateRoot#60;InventoryItem#62;->>CommandHandler: Return aggregate root inventory item with list of unsaved event(s)
-    CommandHandler->>EventStore: Save event(s)
-    EventStore->>EventBus: Publish event
-    EventBus->>InventoryItemProjection: Handle event
-    InventoryItemProjection->>ReadModel: Update read model
-    UI->>ReadModel: Fetch updated read model
-    UI->>User: Display updated read model
+    User->>UI: 1. Clicks change (inventory) item name  button
+    UI->>InventoryItemController: 2. Call action changeInventoryItemName
+    InventoryItemController->>EventBus: 3. Emit command ChangeInventoryItemName
+    EventBus->>CommandHandler: 4. Dispatch command
+    CommandHandler->>AggregateRepository#60;InventoryItem#62;: 5. Get inventory item by aggregate ID
+    AggregateRepository#60;InventoryItem#62;->>CommandHandler: 6. Return inventory item
+    CommandHandler->>AggregateRoot#60;InventoryItem#62;: 7. Call command method changeName
+    AggregateRoot#60;InventoryItem#62;->>CommandHandler: 8. Return aggregate root inventory item with list of unsaved event(s)
+    CommandHandler->>EventStore: 9. Save event(s)
+    EventStore->>EventBus: 10. Publish event
+    EventBus->>InventoryItemProjection: 11. Handle event
+    InventoryItemProjection->>ReadModel: 12. Update read model
+    UI->>InventoryItemController: 13. Request list or detail view of inventory item
+    InventoryItemController->>ReadModel: 14. Fetch list or detail view of inventory item
+    ReadModel->>InventoryItemController: 15. Return list or detail view of inventory item
+    InventoryItemController->>UI: 16. Return list or detail view of inventory item
+    UI->>User: 17. Display updated list or detail view of inventory item
 ```
 
 ##### Walkthtrough the code
+
+* Combine the flow and and the Walkthtrough the code section
+* Put numbers in the sequence diagram and refer to the code snippets in the Walkthtrough the code section
 
 As we have seen sequence diagram above there are multiple components involved to handle a command and update the read model. We will now go through the code of the components following the flow of the sequence diagram. We will not show the UI part and start directly with the InventoryItemController. The first thing is to send a POST request to the InventoryItemController with the command to change the name of the InventoryItem. 
 
@@ -329,6 +335,40 @@ classDiagram
 
 ```
 
+```goat
++-------------------------+    +-------------------------+
+| <<interface>>           |    | <<interface>>           |
+| AggregateRepository~T~  |    | EventStore              |
++-------------------------+    +-------------------------+
+            ^                         ^
+            |                         |
+            |                         |
+            |                         |
++-------------------------+    +-------------------------+
+| EventStoreAggregateRepo |    | KtormEventStore         |
+| ~T~                     |    +-------------------------+
+| - EventStore eventStore |              ^
++-------------------------+              |
+            |                            |
+            |                            |
+            |                            |
+            +--------------------------->|
+                                         |
+                                         |
+                                         |
+                               +-------------------------+
+                               | <<interface>>           |
+                               | EventBus                |
+                               +-------------------------+
+                                         ^
+                                         |
+                                         |
+                                         |
+                               +-------------------------+
+                               | SpringEventBus          |
+                               +-------------------------+
+```
+
 
 The code needed to save and publish an event is shown in the following code snippets.
 
@@ -388,7 +428,9 @@ class EventStoreAggregateRepository<T : AggregateRoot<T>>(
     }
 
 }
+```
 
+```kotlin
 @Component
 class KtormEventStore(
     private val database: Database,
@@ -431,6 +473,83 @@ class KtormEventStore(
     }
 }
 ```
+
+So as we can see in the code snippets and the class diagram above the implementation of the EventStoreAggregateRepository 
+has a dependency to the EventStore and the EventStore has a dependency to the EventBus. This means, when we save an Aggregate we save and publish 
+the events to the event table in the database and publish the events after they are saved. 
+Hence we are using event sourcing we do not save the state of the Aggregate itself but the events that lead to the current state of the Aggregate.
+
+As we also have seen in the AggregateRepository interface we have the getById function to load the Aggregate from the EventStore. 
+When we load the Aggregate in the CommandHandler we reconstitute the Aggregate from the events that are stored in the EventStore. 
+This is done by loading all the events for the Aggregate in the EventStore and aftwards applying the events to the Aggregate implementation. 
+This is done in loadFromHistory function in the AggregateRoot interface, where the applyChange function is called for each event in the list of events but false is passed to the applyChange function 
+to not store the event in the changes list of the Aggregate.  
+
+
+* Updating the ReadModel via Inline Projections
+* Explain more on Event Sourcing and CQRS which parts belong to which concept
+* Split the code snippets in smaller parts and explain them in more detail
+
+
+```kotlin
+@Component
+@Transactional
+class InventoryItemListView(
+    private val database: Database,
+    private val rmiit: ReadModelInventoryItemTable = ReadModelInventoryItemTable.aliased("rmiit")
+) {
+
+    val Database.inventoryItems get() = this.sequenceOf(rmiit)
+
+    @EventListener
+    fun handle(event: InventoryItemNameChanged) {
+        logger.info { "changed name of inventory item to name ${event.newName}" }
+        val readModelInventoryItemEntity = ReadModelInventoryItemEntity {
+            aggregateId = event.aggregateId
+            name = event.newName
+        }
+        database.inventoryItems.find { it.aggregateId eq event.aggregateId }?.let {
+            it.name = event.newName
+            it.flushChanges()
+        } ?: throw IllegalStateException("Inventory item with id ${event.aggregateId} not found")
+    }
+
+    // other event listeners for the InventoryItemListView
+}
+```
+
+```kotlin
+@Component
+@Transactional
+class InventoryItemDetailView(
+    private val database: Database,
+    private val rmiidt: ReadModelInventoryItemDetailsTable = ReadModelInventoryItemDetailsTable.aliased("rmiidt")
+) {
+
+    val Database.inventoryItemDetails get() = this.sequenceOf(rmiidt)
+
+    @EventListener
+    fun handle(event: InventoryItemNameChanged) {
+        logger.info { "changed name of inventory item to name ${event.newName}" }
+        database.inventoryItemDetails.find { it.aggregateId eq event.aggregateId }?.let {
+            it.name = event.newName
+            it.flushChanges()
+        } ?: throw IllegalStateException("Inventory item with id ${event.aggregateId} not found")
+    }
+
+    // other event listeners for the InventoryItemDetailView
+}
+```
+
+## Read Side of the application
+
+* ReadModelFacade 
+* Tables for the ReadModel 
+  * List and detail view
+  * Easy example but can be extend to more complex views combining multiple aggregates 
+  * Inline Projections instead of async Projections
+  * Querying the ReadModel via the Controller 
+
 
 
 ##### Conventions and workarounds in the code
