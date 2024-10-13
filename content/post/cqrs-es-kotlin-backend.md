@@ -430,11 +430,80 @@ are persited to the event store and published afterwards.
 
 **(3) Save the events to the event store and publish the events to the event bus**
 
+The next step is to save the events to the event store and publish the events to the event bus. 
+To save and publish the events we need to look at the aggregate repository and the event store again. 
+In analogy to the getById function we have a save function in the AggregateRepository interface that takes an aggregate as a parameter. 
 
+```kotlin
+interface AggregateRepository<T: AggregateRoot<T>> {
+    fun save(aggregate: T)
+    fun getById(id: AggregateId): Optional<T>
+}
+
+We can find the EventStoreAggregateRepository class again.
+
+```kotlin
+@Component
+class EventStoreAggregateRepository<T : AggregateRoot<T>>(
+    private val eventStore: EventStore,
+    private val aggregateQualifiedNameProvider: AggregateQualifiedNameProvider
+) : AggregateRepository<T> {
+
+    override fun save(aggregate: T) {
+        aggregate.id.ifPresent {
+            eventStore.saveEvents(
+                aggregateId = it,
+                aggregateType = aggregate.aggregateType(),
+                events = aggregate.changes
+            )
+        }
+    }
+```
+
+Also when we save the events we use the injected event store collaborator to do so. 
+The implementation of the saveEvents function in the KtormEventStore class is shown in the following code snippet.
+
+```kotlin
+@Component
+class KtormEventStore(
+    private val database: Database,
+    private val e: EventTable = EventTable.aliased("e"),
+    private val clock: Clock,
+    private val objectMapper: ObjectMapper,
+    private val eventBus: EventBus,
+    private val eventQualifiedNameProvider: EventQualifiedNameProvider
+) : EventStore {
+
+    override fun saveEvents(aggregateId: AggregateId, aggregateType: String, events: List<Event>) {
+        events.forEach { event: Event ->
+            saveEvent(aggregateId, aggregateType, event)
+            eventBus.publish(event)
+        }
+    }
+
+    private fun saveEvent(aggregateId: AggregateId, aggregateType: String, event: Event) {
+        database.insert(e) {
+            set(e.eventType, event::class.simpleName)
+            set(e.aggregateId, aggregateId)
+            set(e.aggregateType, aggregateType)
+            set(e.timestamp, event.timestamp)
+            set(e.data, event)
+        }
+    }
+}
+```
+
+As we can see in the code above the saveEvents function saves the events to the database with Ktorms insert function 
+and publishes the events to the event bus afterwards. With this we have completed the write side of the application and
+can continue with the read side.
+
+
+<!-- TODO:
 * Updating the ReadModel via Inline Projections
 * Explain more on Event Sourcing and CQRS which parts belong to which concept
-* Split the code snippets in smaller parts and explain them in more detail
+* Split the code snippets in smaller parts and explain them in more detail -->
 
+##### Read Side of the application
 
 ```kotlin
 @Component
