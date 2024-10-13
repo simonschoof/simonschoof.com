@@ -261,18 +261,19 @@ class InventoryItemCommandHandlers(private val aggregateRepository: AggregateRep
 
     @EventListener
     fun handle(command: ChangeInventoryItemName) {
-        aggregateRepository.getById(command.aggregateId).ifPresent {
-            it.changeName(command.newName).hasChanges().apply { 
-                aggregateRepository.save(it) 
+        aggregateRepository.getById(command.aggregateId)        // (1) load aggregate from the database with event sourcing
+            .ifPresent {                                        //     if the aggregate is found
+                it.changeName(command.newName)                  // (2) try to execute the command on the aggregate 
+                    .hasChanges()                               //     check if the command resulted in changes
+                        .apply { aggregateRepository.save(it) } // (3) if changes, save the aggregate and publish the events
             }
-        }
     }
 
     // other command handlers
 }
 ```
 
-**Load the aggregate from the database via the aggregate repository**
+**(1) Load the aggregate from the database via the aggregate repository**
 
 The first step when handling a command is, unless you are creating a new aggregate, to load the aggregate from the database via the aggregate repository.
 To be able to find the aggregate the command has to contain the aggregate ID. In our case the aggregate ID is only a UUID. 
@@ -325,7 +326,14 @@ class EventStoreAggregateRepository<T : AggregateRoot<T>>(
 }
 ```
 
-As we can see from the constructor in the EventStoreAggregateRepository class the EventStoreAggregateRepository has to collaborators as dependencies, the EventStore and the AggregateQualifiedNameProvider. We will have a closer look at the QualifiedNameProvider later in the Conventions and workarounds section. The implementation of the EventStore can be found in the KtormEventStore class. As in the name of the class the KtormEventStore is using Ktorm as the ORM to interact with the database. We will not go into the details of Ktorm here but can see that it provides us with a type safe query DSL to interact with the database. To get the events for an aggregate we have to query the event table in the database, filter the events by the aggregate ID and order the events by the timestamp. The events are then mapped to the corresponding event class and returned as a list of events. We also find the QualifiedNameProvider in the KtormEventStore class, which we will discuss later in the Conventions and workarounds section.   
+As we can see from the constructor in the EventStoreAggregateRepository class the EventStoreAggregateRepository has to collaborators as dependencies, 
+the EventStore and the AggregateQualifiedNameProvider. We will have a closer look at the QualifiedNameProvider later in the Conventions and workarounds section. 
+The implementation of the EventStore can be found in the KtormEventStore class. 
+As in the name of the class the KtormEventStore is using Ktorm as the ORM to interact with the database. 
+We will not go into the details of Ktorm here but can see that it provides us with a type safe query DSL to interact with the database. 
+To get the events for an aggregate we have to query the event table in the database, filter the events by the aggregate ID and order the events by the timestamp. 
+The events are then mapped to the corresponding event class and returned as a list of events. 
+We also find the QualifiedNameProvider in the KtormEventStore class, which we will discuss later in the Conventions and workarounds section.   
 
 ```kotlin
 @Component
@@ -356,18 +364,16 @@ class KtormEventStore(
 }
 ```
 
-The changeName method is defined in the InventoryItem class and is responsible for changing the name of the InventoryItem. The changeName method is also responsible for creating the ChangeInventoryItemName event and returning the InventoryItem with the unsaved event. The InventoryItem class is the AggregateRoot and is responsible for maintaining the consistency of the Aggregate. 
+This is nearly all we need to load the aggregate from the database using event sourcing. Only one part is missing, we did not discuss the 
+loadFromHistory function in the AggregateRoot interface. We will have a closer look at this function in the next step when we are calling the 
+domain function of the loaded aggregate. We will then see, that the we need to distinguish between new events and existing events when
+applying the events to the aggregate.
 
-```kotlin
-fun changeName(newName: String): InventoryItem = applyChange(
-    InventoryItemNameChanged(
-        this.baseEventInfo(),
-        newName = newName
-    )
-)
-```
+**(2) Call the domain function of the loaded aggregate**
 
-As we can see in the code above the changeName method is creating the InventoryItemNameChanged event and is calling the applyChange method. The applyChange method is defined in the AggregateRoot interface and is responsible for applying the event, which defines the changes made to the Aggregate, to the Aggregate implementation. The applyChange method also stores the event in the Aggregates changes list which is tracking the unsaved changes made to the Aggregate. The AggregateRoot interface is the core abstraction in the simplest possible thing project and is defined as follows:
+The next step is trying to execute the command on the aggregate and changing its state. Therefore we need to look 
+at the AggregateRoot interface and the InventoryItem class, which is our only aggregate in the project. The following code snippet shows the
+InventoryItem class and the AggregateRoot interface. 
 
 ```kotlin
 interface AggregateRoot<T> where T : AggregateRoot<T> {
@@ -381,34 +387,20 @@ interface AggregateRoot<T> where T : AggregateRoot<T> {
 
     fun hasChanges() = changes.isNotEmpty()
 
+    @Suppress("UNCHECKED_CAST")
+    fun loadFromHistory(history: List<Event>): T =
+        history.fold(this as T) { acc: T, event: Event ->
+            acc.applyChange(event, false)
+    }
+
     // more functions
 }
-```
-As we can the in AggregateRoot interface in the applyChange method the applyEvent method is called to apply the event to the Aggregate implementation. The applyEvent method is defined in the implementation of the AggregateRoot, which is the InventoryItem in our case. In the implementation of the applyEvent method in the InventoryItem class all events that can be applied to the InventoryItem are handled. The applyEvent method in the InventoryItem class is responsible for changing the state of the InventoryItem based on the event that is applied to the InventoryItem and returning the InventoryItem with the new state, that means the the properties of the InventoryItem are updated to their new values. 
 
-```kotlin
-data class InventoryItem(
-    override val id: Optional<AggregateId> = Optional.empty(),
-    override val changes: MutableList<Event> = mutableListOf(),
-    override val clock: Clock = Clock.systemUTC(),
-    private val name: Optional<String> = Optional.empty(),
-    private val isActivated: Boolean = false,
-    private val availableQuantity: Int = 0,
-    private val maxQuantity: Int = Int.MAX_VALUE,
-) : AggregateRoot<InventoryItem> {
+data class InventoryItem(/* constructor parameters */) : AggregateRoot<InventoryItem> {
 
     override fun applyEvent(event: Event): InventoryItem = when (event) {
-        is InventoryItemCreated -> copy(
-            id = Optional.of(event.aggregateId),
-            name = Optional.of(event.name),
-            availableQuantity = event.availableQuantity,
-            maxQuantity = event.maxQuantity,
-            isActivated = true
-        )
         is InventoryItemNameChanged -> copy(name = Optional.of(event.newName))
-        is InventoryItemsRemoved -> copy(availableQuantity = event.newAvailableQuantity)
-        is InventoryItemsCheckedIn -> copy(availableQuantity = event.newAvailableQuantity)
-        is InventoryItemDeactivated -> copy(isActivated = false)
+        // other events
         else -> this
     }
 
@@ -423,128 +415,20 @@ data class InventoryItem(
 }
 ```
 
-The InventoryItem class is a Kotlin data class and is treated as immutable so that we always return a copy of the class from the applyEvent method. This is discussed more in detail in the conventions and workarounds part of this section.
+As we have seen in the command handler we call the changeName funtion on the InventoryItem class. 
+In the changeName function we create a new InventoryItemNameChanged event and call the applyChange function on the AggregateRoot interface.
+The applyChange function then calld the applyEvent function on the InventoryItem class and adds the event to the changes list of the aggregate. This is
+because of the Boolean flag isNew, which is true by default. The applyEvent takes an event and uses pattern matching to 
+match the event to the corresponding event class and updates the state of the aggregate accordingly. The updated aggregate is then returned, following
+the pattern of immutability of the aggregate. 
 
-After we have applied the event to the Aggregate implementation and returned the Aggregate with the new state, we save the Aggregate to the EventStore. This is done in the InventoryItemCommandHandlers class in the handle method as we have seen above in the InventoryItemCommandHandlers class code snippet. 
+As we have mentioned before we need to distinguish between new events and existing events when applying the events to the aggregate. As we can see in the 
+loadFromHistory function of the AggregateRoot interface we are using the applyChange function with the isNew flag set to false. 
+This is because we do not want to add the existing events to the changes list of the aggregate when loading the aggregate from history and applying the events.
+The changes list is only used to keep track of the new events that are added to the aggregate. In the next step we will have a look at how the events
+are persited to the event store and published afterwards.
 
-For the persistence we have to abstractions in the domain package, the EventStore and the AggregateRepository. As abstractions these two interfaces are not dependent on the infrastructure and each other but this is different in the implementation where the AggregateRepository has a dependency to the EventStore and the EventStore has a dependency to the EventBus. We can the see the dependencies in the class diagram below.
-
-
-
-The code needed to save and publish an event is shown in the following code snippets.
-
-For the abstractions we have the following interfaces:
-
-```kotlin
-interface AggregateRepository<T: AggregateRoot<T>> {
-
-    fun save(aggregate: T)
-    fun getById(id: AggregateId): Optional<T>
-}
-
-interface EventStore {
-    fun saveEvents(aggregateId: AggregateId, aggregateType: String, events: List<Event>)
-    fun getEventsForAggregate(aggregateId: AggregateId): List<Event>
-}
-
-interface EventBus {
-    fun publish(event: Event)
-    fun send(command: Command)
-}
-```
-
-And the corresponding implementations are the EventStoreAggregateRepository and the KtormEventStore:
-
-```kotlin
-@Component
-class EventStoreAggregateRepository<T : AggregateRoot<T>>(
-    private val eventStore: EventStore,
-    private val aggregateQualifiedNameProvider: AggregateQualifiedNameProvider
-) : AggregateRepository<T> {
-
-    override fun save(aggregate: T) {
-        aggregate.id.ifPresent {
-            eventStore.saveEvents(
-                aggregateId = it,
-                aggregateType = aggregate.aggregateType(),
-                events = aggregate.changes
-            )
-        }
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    override fun getById(id: AggregateId): Optional<T> {
-
-        val events = eventStore.getEventsForAggregate(id)
-
-        events.ifEmpty { return Optional.empty()}
-
-        val emptyAggregate =
-            Class.forName(aggregateQualifiedNameProvider.getQualifiedNameBySimpleName(events.first().aggregateType))
-                .kotlin.java.getDeclaredConstructor().newInstance() as T
-
-        val aggregate = emptyAggregate.loadFromHistory(events)
-
-        return Optional.of(aggregate)
-    }
-
-}
-```
-
-```kotlin
-@Component
-class KtormEventStore(
-    private val database: Database,
-    private val e: EventTable = EventTable.aliased("e"),
-    private val clock: Clock,
-    private val objectMapper: ObjectMapper,
-    private val eventBus: EventBus,
-    private val eventQualifiedNameProvider: EventQualifiedNameProvider
-) : EventStore {
-
-    override fun saveEvents(aggregateId: AggregateId, aggregateType: String, events: List<Event>) {
-        events.forEach { event: Event ->
-            saveEvent(aggregateId, aggregateType, event)
-            eventBus.publish(event)
-        }
-    }
-
-    override fun getEventsForAggregate(aggregateId: AggregateId): List<Event> =
-        database.from(e)
-            .select()
-            .where { e.aggregateId eq aggregateId }
-            .orderBy(e.timestamp.asc())
-            .map {
-                val eventTypeClass =
-                    Class.forName(eventQualifiedNameProvider.getQualifiedNameBySimpleName(it[e.eventType]!!))
-                        .kotlin
-                        .javaObjectType
-
-                objectMapper.convertValue(it[e.data]!! as LinkedHashMap<*, *> , eventTypeClass) as Event
-            }
-
-    private fun saveEvent(aggregateId: AggregateId, aggregateType: String, event: Event) {
-        database.insert(e) {
-            set(e.eventType, event::class.simpleName)
-            set(e.aggregateId, aggregateId)
-            set(e.aggregateType, aggregateType)
-            set(e.timestamp, event.timestamp)
-            set(e.data, event)
-        }
-    }
-}
-```
-
-So as we can see in the code snippets and the class diagram above the implementation of the EventStoreAggregateRepository 
-has a dependency to the EventStore and the EventStore has a dependency to the EventBus. This means, when we save an Aggregate we save and publish 
-the events to the event table in the database and publish the events after they are saved. 
-Hence we are using event sourcing we do not save the state of the Aggregate itself but the events that lead to the current state of the Aggregate.
-
-As we also have seen in the AggregateRepository interface we have the getById function to load the Aggregate from the EventStore. 
-When we load the Aggregate in the CommandHandler we reconstitute the Aggregate from the events that are stored in the EventStore. 
-This is done by loading all the events for the Aggregate in the EventStore and aftwards applying the events to the Aggregate implementation. 
-This is done in loadFromHistory function in the AggregateRoot interface, where the applyChange function is called for each event in the list of events but false is passed to the applyChange function 
-to not store the event in the changes list of the Aggregate.  
+**(3) Save the events to the event store and publish the events to the event bus**
 
 
 * Updating the ReadModel via Inline Projections
