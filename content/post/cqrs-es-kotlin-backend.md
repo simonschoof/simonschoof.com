@@ -501,9 +501,22 @@ can continue with the read side.
 <!-- TODO:
 * Updating the ReadModel via Inline Projections
 * Explain more on Event Sourcing and CQRS which parts belong to which concept
-* Split the code snippets in smaller parts and explain them in more detail -->
+* Split the code snippets in smaller parts and explain them in more detail 
+* ReadModelFacade 
+* Tables for the ReadModel 
+  * List and detail view
+  * Easy example but can be extend to more complex views combining multiple aggregates 
+  * Inline Projections instead of async Projections
+  * Querying the ReadModel via the Controller 
+-->
 
 ##### Read Side of the application
+
+With publishing the events to the event bus we have completed the write side of the application and changed the application state. 
+We now want to have that reflected on the read side of the application, update the read model and show the changes to the user when the user queries a 
+read model. For that we are using inline projections, which means, that we are  listening to the in memory event bus and update the read model directly 
+when an event is published. So let's have a look at the InventoryItemProjection file, which is doing exactly that. In the file we can find two classes, 
+one is holding the event listeners for a list view of the inventory items and the other one is holding the event listeners for a detail view of the inventory items. Again we are only showing the listeners for the InventoryItemChanged event, as we have chosen this for our walk through example.   
 
 ```kotlin
 @Component
@@ -518,10 +531,6 @@ class InventoryItemListView(
     @EventListener
     fun handle(event: InventoryItemNameChanged) {
         logger.info { "changed name of inventory item to name ${event.newName}" }
-        val readModelInventoryItemEntity = ReadModelInventoryItemEntity {
-            aggregateId = event.aggregateId
-            name = event.newName
-        }
         database.inventoryItems.find { it.aggregateId eq event.aggregateId }?.let {
             it.name = event.newName
             it.flushChanges()
@@ -530,9 +539,7 @@ class InventoryItemListView(
 
     // other event listeners for the InventoryItemListView
 }
-```
 
-```kotlin
 @Component
 @Transactional
 class InventoryItemDetailView(
@@ -555,16 +562,77 @@ class InventoryItemDetailView(
 }
 ```
 
-## Read Side of the application
+The read models for the list and detail view are implemented as relational tables in the database. In the code snippet above we can see
+that for both views we have the same workflow with different tables. First we find the find the inventory item in the database by its aggregate ID,
+then we update the name of the inventory item and flush the changes to the database. Again we are using Ktorm to interact with the database. 
+Here we are using the full ORM capabilities of Ktorm and using its entity feature to map the tables to Kotlin classes. We will also not go into the details
+of Ktom here but should be able to see that the code is quite readable and one can easily understand what is happening.
+After updating the read model we can query the read model via the InventoryItemController and return the list or detail view of the inventory item to the user.
+One last point to show is that we have implemented a ReadModelFacade to have a central place to query the read model. 
+The ReadModelFacade is injected into the InventoryItemController and is used to query the read model. 
 
-* ReadModelFacade 
-* Tables for the ReadModel 
-  * List and detail view
-  * Easy example but can be extend to more complex views combining multiple aggregates 
-  * Inline Projections instead of async Projections
-  * Querying the ReadModel via the Controller 
+```kotlin
+interface ReadModelFacade {
+    fun getInventoryItems(): List<InventoryItemDto>
+    fun getInventoryItemDetails(aggregateId: AggregateId): Optional<InventoryItemDetailsDto>
+}
 
+@Component
+class KtormReadModelFacade(
+    private val database: Database,
+    private val rmiit: ReadModelInventoryItemTable = ReadModelInventoryItemTable.aliased("rmiit"),
+    private val rmiidt: ReadModelInventoryItemDetailsTable = ReadModelInventoryItemDetailsTable.aliased("rmiidt")
+) : ReadModelFacade {
 
+    override fun getInventoryItems(): List<InventoryItemDto> {
+        return database.from(rmiit)
+            .select()
+            .map {
+                InventoryItemDto(
+                    aggregateId = it[rmiit.aggregateId]!!,
+                    name = it[rmiit.name]!!
+                )
+            }
+    }
+
+    // implementation of getInventoryItemDetails
+
+}
+
+@RestController
+//@CrossOrigin(origins = ["http://localhost:8081"])
+class InventoryItemController(
+    private val eventBus: EventBus,
+    private val readModelFacade: ReadModelFacade
+) {
+
+    // other endpoints
+
+    @GetMapping(
+        value = ["/api/inventoryItems"],
+        produces = [MediaType.APPLICATION_JSON_VALUE]
+    )
+    fun getInventoryItems() : List<InventoryItemDto> {
+        return readModelFacade.getInventoryItems()
+    }
+
+    @GetMapping(
+        value = ["/api/inventoryItemDetails/{aggregateId}"],
+        produces = [MediaType.APPLICATION_JSON_VALUE]
+    )
+    fun getInventoryItemDetails(@PathVariable aggregateId: String): Optional<InventoryItemDetailsDto> {
+        return readModelFacade.getInventoryItemDetails(UUID.fromString(aggregateId))
+    }
+}
+```
+
+With this we have completed the read side of the application. The updated read models can be queried and displayed to the user.
+The exaple of the bussiness domain is fairly simple but can be extended to more complex views combining multiple aggregates.
+The read models also must not necessarily be relational tables in the database but can be implemented in different ways. 
+In adddition we only used inline projections to update the read models instead of async projections, which would lead to an eventuals consistent system.
+
+In the next section we will look at some conventions and workarounds in the code which were chosen as solutions for some problems 
+that arose during the implementation of the project.
 
 ##### Conventions and workarounds in the code
 
@@ -667,6 +735,8 @@ Waiting for changes to input files...
 ## Conclusion and outlook
 
 
+<!-- 
+TODO:
 To include:
 - Other implentations of CQRS/ES in Kotlin and production ready frameworks like Axon Framework and Marten
 - Links to Domain Driven Design especially the blue book, the red book and patterns, principles and practices of domain driven design. Explaining aggregates, repositories, factories and domain events.
@@ -700,7 +770,7 @@ To include:
   ** ReadModel
     ** Projections
     ** Querying the read model
-  ** ReadModelFacade
+  ** ReadModelFacade -->
 
 
 
