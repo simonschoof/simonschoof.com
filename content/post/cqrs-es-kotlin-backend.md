@@ -497,19 +497,6 @@ As we can see in the code above the saveEvents function saves the events to the 
 and publishes the events to the event bus afterwards. With this we have completed the write side of the application and
 can continue with the read side.
 
-
-<!-- TODO:
-* Updating the ReadModel via Inline Projections
-* Explain more on Event Sourcing and CQRS which parts belong to which concept
-* Split the code snippets in smaller parts and explain them in more detail 
-* ReadModelFacade 
-* Tables for the ReadModel 
-  * List and detail view
-  * Easy example but can be extend to more complex views combining multiple aggregates 
-  * Inline Projections instead of async Projections
-  * Querying the ReadModel via the Controller 
--->
-
 ##### Read Side of the application
 
 With publishing the events to the event bus we have completed the write side of the application and changed the application state. 
@@ -636,6 +623,202 @@ that arose during the implementation of the project.
 
 ##### Conventions and workarounds in the code
 
+During the walk through the code we have seen some implementation details which look a bit different from the original SimpleCQRS project and also
+to a solution which would have been written in Java, as we are using some concepts of Kotlin for the implementation. I am not sure if these solutions 
+are good or if they are even leading to more problems in the future.
+
+**Creation of an Aggregate and Immutability**
+
+The first thing we will look at is the creation of an aggregate and the choice of 
+making the aggregate immutable. As we have seen before we have the AggregateRoot interface and the InventoryItem class as its implementation.
+
+```kotlin
+interface AggregateRoot<T> where T : AggregateRoot<T> {
+
+    val id: Optional<AggregateId>
+    val changes: MutableList<Event>
+    val clock: Clock
+
+    fun applyChange(event: Event, isNew: Boolean = true): T =
+        applyEvent(event).apply { if (isNew) changes += event }
+
+    fun applyEvent(event: Event): T
+
+    // other functions
+}
+
+data class InventoryItem(
+    override val id: Optional<AggregateId> = Optional.empty(),
+    override val changes: MutableList<Event> = mutableListOf(),
+    override val clock: Clock = Clock.systemUTC(),
+    private val name: Optional<String> = Optional.empty(),
+    private val isActivated: Boolean = false,
+    private val availableQuantity: Int = 0,
+    private val maxQuantity: Int = Int.MAX_VALUE,
+) : AggregateRoot<InventoryItem> {
+
+    override fun applyEvent(event: Event): InventoryItem = when (event) {
+        is InventoryItemCreated -> copy(
+            id = Optional.of(event.aggregateId),
+            name = Optional.of(event.name),
+            availableQuantity = event.availableQuantity,
+            maxQuantity = event.maxQuantity,
+            isActivated = true
+        )
+        is InventoryItemNameChanged -> copy(name = Optional.of(event.newName))
+        is InventoryItemsRemoved -> copy(availableQuantity = event.newAvailableQuantity)
+        is InventoryItemsCheckedIn -> copy(availableQuantity = event.newAvailableQuantity)
+        is InventoryItemDeactivated -> copy(isActivated = false)
+        else -> this
+    }
+
+    companion object {
+        operator fun invoke(
+            inventoryItemName: String,
+            availableQuantity: Int,
+            maxQuantity: Int,
+            clock: Clock = Clock.systemUTC()): InventoryItem {
+            val inventoryItem = InventoryItem(clock = clock)
+            val event = InventoryItemCreated(
+                inventoryItem.baseEventInfo(isNew = true),
+                name = inventoryItemName,
+                availableQuantity = availableQuantity,
+                maxQuantity = maxQuantity
+            )
+            return inventoryItem.applyChange(event)
+        }
+    }
+
+    fun changeName(newName: String): InventoryItem = applyChange(
+        InventoryItemNameChanged(
+            this.baseEventInfo(),
+            newName = newName
+        )
+    )
+
+    // other functions
+}
+```
+
+In the AggregateRoot interface we have defined three properties, the id, the changes list and a clock, which must be overriden in the constructor 
+of the aggregate implementation. Additional properties can then be defined in the aggregate itself. I have chosen to make the aggregate immutable by 
+defining all of the properties with the val keyword and using Kotlins data class feature. The additional properties of the aggregate are then defined 
+in the consructor of the data class and need to have a default value. This way we can instantiate an empty aggregate with the default values via the constructor.
+As we have seen we need and empty instance of the aggregate to apply the events to the aggregate when loading the aggregate from the database. When we want to
+create a new aggregate we need to provide and use an invoke function in a companion object of the aggregate. 
+The invoke function is then used to create a new instance of the aggregate and apply an initial creation event to the aggregate. Whith the constructor with
+the properties with default values and the invoke function we can distinguish between creating a new aggregate and creating an empty instance of the aggregate for
+using event sourcing to reconstitute the current state of the aggregate. 
+
+Another point we have seen is that the aggregate is immutable and we are returning a copy of the aggregate with the new state 
+when calling the applyEvent function of the aggregate. Immutability is a common pattern in functional programming and is also recommended for
+domain modelling in DDD by the Arrow-kt library and other thought leaders in the domain driven design community.
+
+In summary we need to follow the following conventions to create an aggregate and to make it immutable:
+
+* Override the id, changes and clock properties in the constructor of the data class
+* Define the properties of the aggregate in the constructor of the data class with the val keyword and default values
+* Define an invoke function in a companion object of the data class to create a new instance of the aggregate and apply an initial creation event to the aggregate
+* Define the applyEvent function in the data class to apply the events to the aggregate and return a copy of the aggregate with the new state
+
+**Loading events from the EventStore and creating the events and an empty aggregate via reflection**
+
+Above we have seen that we need to distinguish between creating a new aggregate and loading the aggregate from the database.
+To get the current state of the aggregate we need to create an empty instance of the aggregate, load all the events for the aggregate from the database
+and apply all the events to the aggregate. The problem here is the we do not know the type of the aggregate during runtime even 
+though the type is a generic type parameter of the AggregateRoot interface. This is because of type erasure in Java and Kotlin. 
+To overcome this shortcoming I store the aggregate type, which is the short name of the class, in the event table for each event.
+In addition I also use the short name of the event classes to define the type of the event in the event table. 
+
+Now when loading the events for an aggregate from the database I use the event type to create an instance of the event via reflection. I had to 
+add an additional cast to the event class here because the return type of the objectMapper.convertValue function is Any and I want to return a list of events.
+
+From the list of events we can get the aggregate type and create an empty instance of the aggregate also via reflection. 
+Afterwards we can apply all the events to the aggregate and return the aggregate. 
+
+
+```kotlin
+override fun getEventsForAggregate(aggregateId: AggregateId): List<Event> =
+    database.from(e)
+        .select()
+        .where { e.aggregateId eq aggregateId }
+        .orderBy(e.timestamp.asc())
+        .map {
+            val eventTypeClass =
+                Class.forName(eventQualifiedNameProvider.getQualifiedNameBySimpleName(it[e.eventType]!!))
+                    .kotlin
+                    .javaObjectType
+
+            objectMapper.convertValue(it[e.data]!! as LinkedHashMap<*, *> , eventTypeClass) as Event
+        }
+```
+
+```kotlin
+@Suppress("UNCHECKED_CAST")
+override fun getById(id: AggregateId): Optional<T> {
+
+    val events = eventStore.getEventsForAggregate(id)
+
+    events.ifEmpty { return Optional.empty()}
+
+    val emptyAggregate =
+        Class.forName(aggregateQualifiedNameProvider.getQualifiedNameBySimpleName(events.first().aggregateType))
+            .kotlin.java.getDeclaredConstructor().newInstance() as T
+
+    val aggregate = emptyAggregate.loadFromHistory(events)
+
+    return Optional.of(aggregate)
+}
+```
+
+Looking at the code snippets above we can see that the simple name is not enough to be able to create an instance of a class via reflection. 
+Herefore we need to get the fully qualified name of the class, which is the package name and the simple name of the class. For refactoring reasons
+I do not wanted to store the package name for the event and aggregate types in the event table. As as workaround I have created a domain class configuration
+with two beans, the AggregateQualifiedNameProvider and the EventQualifiedNameProvider. The AggregateQualifiedNameProvider is used to get the fully qualified name
+of all classes implementing the AggregateRoot interface and the EventQualifiedNameProvider is used to get the fully qualified name of all classes implementing the Event interface.
+The fully qualified name can then be retrieved by the simple name of the class. 
+
+```kotlin
+@Configuration
+class DomainClassNamesConfig() {
+    @Bean("AggregateRootClassNames")
+    fun aggregateRootClassNames(): Set<String> {
+        val provider = ClassPathScanningCandidateComponentProvider(false);
+        provider.addIncludeFilter(AssignableTypeFilter(AggregateRoot::class.java));
+        val beans = provider.findCandidateComponents(BASE_PACKAGE)
+        val beansNamesList = beans.mapNotNull { it.beanClassName }
+        val beansNamesSet = beansNamesList.toSet()
+        if (beansNamesList.count() != beansNamesSet.count()) {
+            throw Error("Domain contains aggregates with the same name!")
+        }
+        return beansNamesSet
+
+    }
+
+    @Bean("EventClassNames")
+    fun eventClassNames(): Set<String> {
+        val provider = ClassPathScanningCandidateComponentProvider(false);
+        provider.addIncludeFilter(AssignableTypeFilter(Event::class.java));
+        val beans = provider.findCandidateComponents(BASE_PACKAGE)
+        val beansNamesList = beans.mapNotNull { it.beanClassName }
+        val beansNamesSet = beansNamesList.toSet()
+        if (beansNamesList.count() != beansNamesSet.count()) {
+            throw Error("Domain contains events with the same name! Follow the convention and " +
+                    "prefix the event with the aggregate name")
+        }
+        return beansNamesSet
+    }
+}
+```
+This construct lead to two more conventions to follow when working with the code:
+* The name of an aggregate has to be unique
+* The name of an event has to be unique but should be prefixed with the aggregate name to avoid conflicts
+
+When these conventions are not followed the application will not start and an error will be thrown.
+
+
+
+<!-- TODO:
 * Creation of an Aggregate
   * all default values are set to the Aggregate
 * Immutability of the Aggregate
@@ -646,7 +829,7 @@ that arose during the implementation of the project.
   * Aggregate names have to be unique 
   * Event names have to be unique but should be prefixed with the aggregate name to avoid conflicts
   * The AggregateQualifiedNameProvider and the EventQualifiedNameProvider are used to get the fully qualified name of the class
-  * Application cannot start if an aggregate or event name is not unique
+  * Application cannot start if an aggregate or event name is not unique -->
 
 
 ## Technologies used
