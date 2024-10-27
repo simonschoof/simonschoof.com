@@ -78,6 +78,27 @@ Whereas one object is responsible for handling the commands and changing the sta
 
 The next pattern we will have a closer look at in the implementation of the project is Event Sourcing. Event Sourcing is a pattern where the state of an application is determined by a sequence of events. Instead of storing the current state of an object, we store the events that lead to the current state of the object. This has the advantage that we can rebuild the state of the object at any point in time by replaying the events. Combined with CQRS, we can use the events to update the read side of the application via Projections. We are following the definition from Marten for Projections as any strategy for generating "read side" views from the raw events.  
 
+
+## Technologies used
+
+In adddition to the structure and flow of the application we want to give a short overview of the technologies used in the project. First to mention is that the whole project uses Kotlin as the main programming language, means the backend and the frontend are written in Kotlin. As we are writing a web application we are using Spring Boot as the backend framework. From Spring we are using Spring MVC for the REST API, Spring events for the event bus and parts of Spring Data for the transaction management. 
+
+For the persistence we are using Ktorm, which is a Kotlin ORM and has an integration with Spring Boot. For the migration of the database we are using Flyway. For the database itself we are using PostgreSQL, for debugging and testing we are using an embedded PostgreSQL database from zonky.io. 
+
+We choose Jackson for the serialization and deserialization of the JSON objects. 
+
+To test the application we are using Kotest, which is a testing framework for Kotlin, which supports multiple testing styles and comes with an assertion library and the possibility to write property based tests.
+
+* Kotlin 
+* Spring Boot with Spring MVC, Spring events, and parts of Spring Data
+* Ktorm
+* Flyway
+* PostgreSQL
+* Embedded PostgreSQL database from zonky.io
+* Jackson
+* Kotest
+* Kotlin Multiplatform Compose
+
 ## Package structure and application flow
 
 #### Package structure
@@ -173,11 +194,6 @@ We will follow the steps of the sequence diagram and explain the code of the inv
 We will further split the code Walkthtrough into the write side of the application and the read side of the application, even though we use inline projections
 to update the read model. Thus we will not deal with eventual consistency due to async projections. 
 Again I want to mention that eventual consistency is not part of CQRS itself but can be used in combination with CQRS.
-
-<!-- TODO: 
-* Combine the flow and and the Walkthtrough the code section
-* Put numbers in the sequence diagram and refer to the code snippets in the Walkthtrough the code section
--->
 
 ##### Write Side of the application
 
@@ -817,41 +833,6 @@ This construct lead to two more conventions to follow when working with the code
 When these conventions are not followed the application will not start and an error will be thrown.
 
 
-
-<!-- TODO:
-* Creation of an Aggregate
-  * all default values are set to the Aggregate
-* Immutability of the Aggregate
-* loading events from the EventStore and creating them via reflection
-* storing the type of the aggregate in the event table to create an empty instance of the aggregate where the events can be applied to
-  * using the simple name of the class to store the type of the aggregate
-* ClassNameProvider to get the fully qualified name of the class for the aggregates and events to be able to create instances of the classes via reflection
-  * Aggregate names have to be unique 
-  * Event names have to be unique but should be prefixed with the aggregate name to avoid conflicts
-  * The AggregateQualifiedNameProvider and the EventQualifiedNameProvider are used to get the fully qualified name of the class
-  * Application cannot start if an aggregate or event name is not unique -->
-
-
-## Technologies used
-
-In adddition to the structure and flow of the application we want to give a short overview of the technologies used in the project. First to mention is that the whole project uses Kotlin as the main programming language, means the backend and the frontend are written in Kotlin. As we are writing a web application we are using Spring Boot as the backend framework. From Spring we are using Spring MVC for the REST API, Spring events for the event bus and parts of Spring Data for the transaction management. 
-
-For the persistence we are using Ktorm, which is a Kotlin ORM and has an integration with Spring Boot. For the migration of the database we are using Flyway. For the database itself we are using PostgreSQL, for debugging and testing we are using an embedded PostgreSQL database from zonky.io. 
-
-We choose Jackson for the serialization and deserialization of the JSON objects. 
-
-To test the application we are using Kotest, which is a testing framework for Kotlin, which supports multiple testing styles and comes with an assertion library and the possibility to write property based tests.
-
-* Kotlin 
-* Spring Boot with Spring MVC, Spring events, and parts of Spring Data
-* Ktorm
-* Flyway
-* PostgreSQL
-* Embedded PostgreSQL database from zonky.io
-* Jackson
-* Kotest
-* Kotlin Multiplatform Compose
-
 ## How to run the application
 
 #### Prerequisites
@@ -915,8 +896,30 @@ The Dockerfile for the frontend starts the frontend with `gradle wasmJsBrowserRu
 Waiting for changes to input files...
 ```
 
-## Conclusion and outlook
+## Summary, out of scope and outlook
 
+Lastly I want to summarize the post, give a short overview of what is out scope and have a look at what is coming next.
+
+We started with the introduction of the underlying concepts used in the code base. This included CQRS and Event Sourcing but also
+expanded to Domain Driven Design, Dependency Injection and an architecture wich adheres to the dependency inversion principle.
+After that we had a look at the package structure and the schematic flow of the application. The next step was to walk through the code and 
+explain the write side and the read side of the application. This was followed by a closer look on the used conventions and workarounds in the code.
+In the end we showed how to run the application locally and with Docker.
+
+As this project should only serve as an example to showcase CQRS and Event Sourcing in Kotlin there are of course a lot of things 
+that are not included in the project, but should be considered when building a real world application, 
+this includes the obvious areas of error handling, security, logging, and monitoring. In adddition to that I removed the versioning of the events and the aggregates 
+which can be found in the original SimpleCQRS project. I need to have a closer look at this later on and add it to the project. Another point is that the 
+endpoints are not fully restful. With a fully restful API the frontend could only show the actions that are available for the user. 
+I also want to mention that the project does not need to be a web application nor does it has to be restful. 
+This works also for desktop applications, classic web applications or web applications with GraphQL.
+
+In general I think that the project can be used as a starting point to get familiar with CQRS and Event Sourcing in Kotlin. 
+Of course there exist a lot  more implementations of CQRS and Event Sourcing in Kotlin and other languages, as this is also only a rewrite of the original SimpleCQRS project of Gregory Young.
+In addition to that there are production ready frameworks like Axon Framework and Marten, which are ready to be used in production evironments.
+
+Another difference to the original SimpleCQRS project is that I included tests for the backend in the code base. 
+This is because I already had my next blog post in mind in which I want to show how to test the application.
 
 <!-- 
 TODO:
@@ -927,34 +930,7 @@ To include:
 - Links to the Kotlin Multiplatform Compose project
 - Links to Arrow-kt for further functional programming in Kotlin for domain side of the application
 - Explaining what is not included in the project like security, logging, monitoring, Rest API or GraphQL, etc.
-- Testing is described in the next blog post 
-
-
-* Concept and why of CQRS
-* Concept and why of Event Sourcing
-* Application structure and flow
-  ** schematic diagram
-* Technologies used
-    ** Kotlin
-    ** Spring Boot
-    ** Spring events
-    ** Embedded PostgreSQL database (embedded PostgreSQL database from zonky.io)
-    ** Kotlin Multiplatform Compose
-* Codebase structure
-* Components of the codebase
-  ** Command
-  ** CommandHandler
-  ** Event
-  ** EventStore
-  ** AggregateRepository
-  ** AggregateRoot
-  ** EventBus
-    ** Publishing events and sending commands
-  ** ReadModel
-    ** Projections
-    ** Querying the read model
-  ** ReadModelFacade -->
-
+- Testing is described in the next blog post -->
 
 
 ## References
