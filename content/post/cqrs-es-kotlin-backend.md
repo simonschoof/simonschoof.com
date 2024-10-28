@@ -18,17 +18,33 @@ references = [
 ]
 +++
 
-In this post, we will build an application using Kotlin, Spring Boot, Spring events, and an embedded database showcasing an Command Query Responsibility Segregation (CQRS) and Event Sourcing (ES) architecture. 
+In this post, we will build an application using Kotlin, Spring Boot, Spring Events and an embedded database that introduces 
+a Command Query Responsibility Segregation (CQRS) and Event Sourcing (ES) architecture. 
 
 
 ## Introduction
 
-We will implement a simple CQRS/ES architecture to demonstrate how to structure a backend application with these concepts. The application builds upon the C# implementation of {{< linkForRef "simplestpossiblething" "Greg Young's SimpleCQRS project" >}}[<sup>[1](#ref-1)</sup>], but uses Kotlin and Spring Boot instead of C# and .NET and adds a (embedded) PostgreSQL database and Spring events to the mix. A frontend application is also part of the codebase, but is not the focus of this post. The frontend application is build using Kotlin Multiplatform Compose and is more of a proof of concept. For the domain side of the application we also follow the original SimpleCQRS project, and implement a simple inventory management system with only one aggregate root, the `InventoryItem`. The application is structured in a way that it can be easily extended with more aggregate roots, commands, events, and projections. Nevertheless the application is not production ready and lacks many features like security, monitoring, proper error handling and logging, etc. The focus of the project is to demonstrate the concepts of CQRS and ES and how to implement them in Kotlin with Spring Boot. 
+We will implement a simple CQRS/ES architecture to demonstrate how to structure a backend application with these concepts. 
+The application builds upon the C# implementation of {{< linkForRef "simplestpossiblething" "Greg Young's SimpleCQRS project" >}}[<sup>[1](#ref-1)</sup>], 
+but uses Kotlin and Spring Boot instead of C# and .NET and adds an (embedded) PostgreSQL database and Spring events to the mix. 
+A frontend application is also part of the codebase, but is not the focus of this post. 
+The frontend application is build using Kotlin Multiplatform Compose and is more of a proof of concept. 
+For the domain side of the application we also follow the original SimpleCQRS project, and implement a simple inventory management system with only one aggregate root, 
+the `InventoryItem`. The application is structured in a way that it can be easily extended with more aggregate roots, commands, events, and projections. 
+Nevertheless the application is not production ready and lacks many features like security, monitoring, proper error handling and logging, etc. 
+The focus of the project is to demonstrate the concepts of CQRS and ES and how to implement them in Kotlin with Spring Boot. 
 
-In this post we we will give a brief introduction of the underlying concepts of Domain Driven Design (DDD), CQRS and ES. Please note, that each of the cocepts is very complex on its own and we will only scratch the surface of each of them.
-In the following section we will explain the flow and structure of the application. We will then introduce the technologies used in the project and give a brief overview of the codebase structure. We will then explain the components of the codebase and how they interact with each other. Finally, we will give a brief outlook on the next post in this series, which will focus on testing the application.
+In this post we we will give a brief introduction of the underlying concepts of Domain Driven Design (DDD), CQRS and ES. 
+Please note, that each of the cocepts is very complex on its own and we will only scratch the surface of each of them.
+In the following section we will explain the flow and structure of the application. 
+We will then introduce the technologies used in the project and give a brief overview of the codebase structure. 
+We will then explain the components of the codebase and how they interact with each other. 
+Finally, we will give a brief outlook on the next post in this series, which will focus on testing the application.
 
-As mentioned before, the application is not production ready and lacks many features. But there are production ready frameworks avaible for CQRS/ES like Axon Framework and Marten. In addition to that you can find more implementations of CQRS/ES in Kotlin or .NET on the internet. The ones I found are also based on the SimpleCQRS project but are using a different implementation to the one I used in my project. 
+As mentioned before, the application is not production ready and lacks many features. 
+But there are production ready frameworks avaible for CQRS/ES like Axon Framework and Marten. 
+In addition to that you can find more implementations of CQRS/ES in Kotlin or .NET on the internet. 
+The ones I found are also based on the SimpleCQRS project but are using a different implementation to the one I used in my project. 
 
 ## Concepts
 
