@@ -13,22 +13,172 @@ tags = [
     "embedded-database"
 ]
 references = [
-    { name = "simplestpossiblething", url = "https://github.com/gregoryyoung/m-r/tree/master" },
-    { name = "cqrs-task-based-uis-event-sourcing", url = "https://gist.github.com/simonschoof/74e155447fbc2ac47b0f7c0bb5a5f778" }
+    { name = "simplest-possible-thing", url = "https://github.com/gregoryyoung/m-r/tree/master" },
+    { name = "cqrs-task-based-uis-event-sourcing", url = "https://gist.github.com/simonschoof/74e155447fbc2ac47b0f7c0bb5a5f778" },
+    { name = "kotlin-multiplatform-compose", url = "https://www.jetbrains.com/compose-multiplatform/" },
+    { name = "csharp-lang", url = "https://dotnet.microsoft.com/en-us/languages/csharp" },
+    { name = "dotnet", url = "https://dotnet.microsoft.com/" },
+    { name = "kotlin-lang", url = "https://kotlinlang.org/" },
+    { name = "spring-boot", url = "https://spring.io/projects/spring-boot" },
+    { name = "spring-mvc", url = "https://docs.spring.io/spring-framework/docs/current/reference/html/web.html" },
+    { name = "spring-events", url = "https://www.baeldung.com/spring-events" },
+    { name = "spring-data", url = "https://spring.io/projects/spring-data" },
+    { name = "ktorm", url = "https://ktorm.liuwj.me/" },
+    { name = "flyway", url = "https://flywaydb.org/" },
+    { name = "postgresql", url = "https://www.postgresql.org/" },
+    { name = "embedded-postgresql", url = "https://github.com/zonkyio/embedded-postgres" },
+    { name = "gradle", url = "https://gradle.org/" },
+    { name = "jackson", url = "https://github.com/FasterXML/jackson" },
+    { name = "kotest", url = "https://kotest.io/" },
+    { name = "mockk", url = "https://mockk.io/" },
+    { name = "kotlin-logging", url = "https://github.com/oshai/kotlin-logging" },
+    { name = "kestrel", url = "https://github.com/cultureamp/kestrel" },
+    { name = "event-sourcing-with-kotlin", url = "https://tuhrig.de/event-sourcing-with-kotlin/" },
+    { name = "kotlin-event-sourcing-example", url = "https://github.com/nicusX/kotlin-event-sourcing-example" },
+    { name = "functional-event-sourcing-example", url = "https://dev.to/jakub_zalas/functional-event-sourcing-example-in-kotlin-3245" },
+    { name = "practical-guide-event-sourcing", url = "https://medium.com/ssense-tech/event-sourcing-a-practical-guide-to-actually-getting-it-done-27d23d81de04" },
+    { name = "marten-events", url = "https://martendb.io/events/" },
+    { name = "marten-github", url = "https://github.com/JasperFx/marten" },
+    { name = "marten-learning", url = "https://martendb.io/events/learning" },
+    { name = "event-sourcing-netcore", url = "https://github.com/oskardudycz/EventSourcing.NetCore?tab=readme-ov-file" },
+    { name = "projections-read-models", url = "https://event-driven.io/en/projections_and_read_models_in_event_driven_architecture/" },
+    { name = "esversioning", url = "https://leanpub.com/esversioning/read#leanpub-auto-immutability" },
+    { name = "ddd-read-models", url = "https://xebia.com/blog/domain-driven-design-part-3-read-models/" },
+    { name = "exposed", url = "https://github.com/JetBrains/Exposed" },
+    { name = "axon-framework", url = "https://www.axoniq.io/products/axon-framework" },
+    { name = "dependency-injection", url = "https://martinfowler.com/articles/injection.html" },
+    { name = "eaa-catalog", url = "https://martinfowler.com/eaaCatalog/" },
+    { name = "data-classes", url = "https://kotlinlang.org/docs/data-classes.html" },
+    { name = "arrow-kt", url = "https://arrow-kt.io/" },
+    { name = "immutable-data", url = "https://arrow-kt.io/learn/immutable-data/intro/" },
+    { name = "layers-onions-ports-adapters", url = "https://blog.ploeh.dk/2013/12/03/layers-onions-ports-adapters-its-all-the-same/" },
+    { name = "vertical-slice-architecture", url = "https://www.jimmybogard.com/vertical-slice-architecture/" },
+    { name = "dependencies-workflow-oriented-design", url = "https://fsharpforfunandprofit.com/posts/dependencies/#workflow-oriented-design" },
+    { name = "udi-dahan-if-domain-logic", url = "https://www.youtube.com/watch?v=fWU8ZK0Dmxs" }
 ]
 +++
+
+## References
+
+<!-- <a id="ref-1"></a>[1]: Gregory Young, "Simple CQRS example" [https://github.com/gregoryyoung/m-r/tree/master][simplest-possible-thing] -->
+
+{{< reference "SimpleCQRS" "Young, Gregory" "Simple CQRS example" "simplest-possible-thing" >}}<br>
+
+{{< reference "2" "Evans, Eric" "2003. Domain-Driven Design: Tacking Complexity In the Heart of Software. Addison-Wesley Longman Publishing Co., Inc., USA." >}}<br>
+
+{{< reference "3" "Young, Gregory" "CQRS, Task Based UIs, Event Sourcing agh!" "cqrs-task-based-uis-event-sourcing" >}}<br>
+
+{{< reference "4" "Steven van Deursen; Mark Seemann" "Dependency Injection Principles, Practices, and Patterns , Manning, 2019" >}}<br>
+
+{{< reference "5" "Scott Millet; Nick Tune" "2015. Patterns, Principles, and Practices of Domain-Driven Design (1st. ed.). Wrox Press Ltd., GBR." >}}<br>
+
+{{< reference "6" "Robert Cecil Martin" "2003. Agile Software Development: Principles, Patterns, and Practices. Prentice Hall PTR, USA." >}}<br>
+
+{{< reference "7" "Bertrand Meyer" "1988. Object-Oriented Software Construction (1st. ed.). Prentice-Hall, Inc., USA." >}}<br>
+
+{{< reference "9" "Wlaschin, Scott" "2018. Domain modeling made functional : tackle software complexity with domain-driven design and F#. Raleigh, North Carolina :The Pragmatic Bookshelf." >}}<br>
+
+{{< reference "10" "Vernon, Vaughn" "2013. Implementing Domain-Driven Design. Addison-Wesley Professional." >}}<br>
+
+{{< reference "KotlinMultiPlatformCompose" "Kotlin Multi Platform Compose" "" "kotlin-multiplatform-compose" >}}<br>
+
+{{< reference "CsharpLang" "C#" "" "csharp-lang" >}}<br>
+
+{{< reference "Dotnet" ".NET" "" "dotnet">}}<br>
+
+{{< reference "KotlinLang" "Kotlin Language" "" "kotlin-lang" >}}<br>
+
+{{< reference "SpringBoot" "Spring Boot" "" "spring-boot" >}}<br>
+
+{{< reference "SpringMvc" "Spring MVC" "" "spring-mvc" >}}<br>
+
+{{< reference "SpringEvents" "Spring Events" "" "spring-events" >}}<br>
+
+{{< reference "SpringData" "Spring Data" "" "spring-data" >}}<br>
+
+{{< reference "Ktorm" "Ktorm" "" "ktorm" >}}<br>
+
+{{< reference "Flyway" "Flyway" "" "flyway" >}}<br>
+
+{{< reference "Postgresql" "PostgreSQL" "" "postgresql" >}}<br>
+
+{{< reference "EmbeddedPostgresql" "Embedded PostgreSQL" "" "embedded-postgresql" >}}<br>
+
+{{< reference "Gradle" "Gradle" "" "gradle" >}}<br>
+
+{{< reference "Jackson" "Jackson" "" "jackson" >}}<br>
+
+{{< reference "Kotest" "Kotest" "" "kotest" >}}<br>
+
+{{< reference "Mockk" "Mockk" "" "mockk" >}}<br>
+
+{{< reference "KotlinLogging" "KotlinLogging" "" "KotlinLogging" >}}<br>
+
+{{< reference "Kestrel" "Kestrel" "" "kestrel" >}}<br>
+
+{{< reference "EventSourcingWithKotlin" "Event Sourcing with Kotlin" "" "event-sourcing-with-kotlin" >}}<br>
+
+{{< reference "KotlinEventSourcingExample" "Kotlin Event Sourcing Example" "" "kotlin-event-sourcing-example" >}}<br>
+
+{{< reference "FunctionalEventSourcingExample" "Functional Event Sourcing Example" "" "functional-event-sourcing-example" >}}<br>
+
+{{< reference "PracticalGuideEventSourcing" "Practical Guide to Event Sourcing" "" "practical-guide-event-sourcing" >}}<br>
+
+{{< reference "MartenEvents" "Marten Events" "" "marten-events" >}}<br>
+
+{{< reference "MartenGithub" "Marten Github" "" "marten-github" >}}<br>
+
+{{< reference "MartenLearning" "Marten Learning" "" "marten-learning" >}}<br>
+
+{{< reference "EventSourcingNetCore" "Event Sourcing .NET Core" "" "event-sourcing-netcore" >}}<br>
+
+{{< reference "ProjectionsReadModels" "Projections and Read Models in Event Driven Architecture" "" "projections-read-models" >}}<br>
+
+{{< reference "ESVersioning" "Event Sourcing Versioning" "" "esversioning" >}}<br>
+
+{{< reference "DDDReadModels" "DDD Read Models" "" "ddd-read-models" >}}<br>
+
+{{< reference "Exposed" "Exposed" "" "exposed" >}}<br>
+
+{{< reference "AxonFramework" "Axon Framework" "" "axon-framework" >}}<br>
+
+{{< reference "DependencyInjection" "Dependency Injection" "" "dependency-injection" >}}<br>
+
+{{< reference "EAACatalog" "EAA Catalog" "" "eaa-catalog" >}}<br>
+
+{{< reference "DataClasses" "Data Classes" "" "data-classes" >}}<br>
+
+{{< reference "ArrowKT" "Arrow KT" "" "arrow-kt" >}}<br>
+
+{{< reference "ImmutableData" "Immutable Data" "" "immutable-data" >}}<br>
+
+{{< reference "LayersOnionsPortsAdapters" "Layers Onions Ports Adapters" "" "layers-onions-ports-adapters" >}}<br>
+
+{{< reference "VerticalSliceArchitecture" "Vertical Slice Architecture" "" "vertical-slice-architecture" >}}<br>
+
+{{< reference "DependenciesWorkflowOrientedDesign" "Dependencies Workflow Oriented Design" "" "dependencies-workflow-oriented-design" >}}<br>
+
+{{< reference "UdiDahanIfDomainLogic" "Udi Dahan If Domain Logic" "" "udi-dahan-if-domain-logic" >}}<br>
+
+
+<!-- TODO:
+* Add all links and references
+* Move references to the bottom again
+* Go through all parts of the text and check if everything is correct and makes sense and reads well. Rewrite accordingly.
+* Proof read via Tool of choice
+* Add class diagram* 
+* publish post -->
 
 In this post, we will build an application using Kotlin, Spring Boot, Spring Events and an embedded database that introduces 
 a Command Query Responsibility Segregation (CQRS) and Event Sourcing (ES) architecture. 
 
-
 ## Introduction
 
 We will implement a simple CQRS/ES architecture to demonstrate how to structure a backend application with these concepts. 
-The application builds upon the C# implementation of {{< linkForRef "simplestpossiblething" "Greg Young's SimpleCQRS project" >}}[<sup>[1](#ref-1)</sup>], 
-but uses Kotlin and Spring Boot instead of C# and .NET and adds an (embedded) PostgreSQL database and Spring events to the mix. 
+The application builds upon the implementation of {{< linkForRef "simplest-possible-thing" "Greg Young's SimpleCQRS project" >}}[<sup>[SimpleCQRS](#ref-SimpleCQRS)</sup>], 
+but uses {{< linkForRef "kotlin-lang" "Kotlin" >}}[<sup>[KotlinLang](#ref-KotlinLang)</sup>] and {{< linkForRef "spring-boot" "Spring Boot" >}}[<sup>[SpringBoot](#ref-SpringBoot)</sup>] instead of {{< linkForRef "csharp-lang" "C#" >}}[<sup>[CsharpLang](#ref-CsharpLang)</sup>] on {{< linkForRef "dotnet" ".NET" >}}[<sup>[Dotnet](#ref-Dotnet)</sup>] and adds an {{< linkForRef "embedded-postgresql" "(embedded)" >}}[<sup>[EmbeddedPostgresql](#ref-)</sup>] {{< linkForRef "postgresql" "PotsgreSQL database" >}}[<sup>[Postgresql](#ref-Postgresql)</sup>]PostgreSQL database and {{< linkForRef "spring-events" "Spring events" >}}[<sup>[SpringEvents](#ref-SpringEvents)</sup>] to the mix. 
 A frontend application is also part of the codebase, but is not the focus of this post. 
-The frontend application is build using Kotlin Multiplatform Compose and is more of a proof of concept. 
+The frontend application is build using {{< linkForRef "kotlin-multiplatform-compose" "Kotlin Multiplatform Compose" >}}[<sup>[KotlinMultiPlatformCompose](#ref-KotlinMultiPlatformCompose)</sup>] and is more to show and simplify the interaction with the backend. 
 For the domain side of the application we also follow the original SimpleCQRS project, and implement a simple inventory management system with only one aggregate root, 
 the `InventoryItem`. The application is structured in a way that it can be easily extended with more aggregate roots, commands, events, and projections. 
 Nevertheless the application is not production ready and lacks many features like security, monitoring, proper error handling and logging, etc. 
@@ -59,8 +209,8 @@ Also note that the explanations are very simplified and lack strictness in the d
 The first time I heard about CQRS and Event Sourcing was in the context of Domain Driven Design (DDD). 
 DDD is an approach of developing software that focuses on the domain and the business logic of the application. 
 It was introduced 2003 by Eric Evans in his seminal book Domain-Driven Design: Tackling Complexity in the Heart of Software[<sup>[2](#ref-2)</sup>]. 
-Since the publication of the book, DDD has gained a lot of popularity and is now a widely used approach in software development, where a lot of other resources like books, blog posts, and videos are available. 
-The book from Eric Evans itself is thereby split into two part. The first part is about desinging and implementing the domain model with the so called tactical patterns like Aggregates, Repositories, Factories, and Domain Events. 
+Since the publication of the book, DDD has gained a lot of popularity and is now a widely used approach in software development, where a lot of other resources like books, eg. b1,b2,b2 and b4 and plethora of blog posts, and videos are available. 
+The book from Eric Evans itself is thereby split into two parts. The first part is about desinging and implementing the domain model with the so called tactical patterns like Aggregates, Repositories, Factories, and Domain Events. 
 The second part is about the strategic patterns like Bounded Contexts, Context Maps, and Shared Kernel. 
 Whereas the second part is regarded as the more important one by many people and Eric Evans himself. 
 As we are focussing on an implementation example we will only describe some of the pattersn used in the project. 
@@ -140,20 +290,11 @@ We are following the definition from Marten for Projections as any strategy for 
 
 ## Technologies used
 
-In adddition to the structure and flow of the application we want to give a short overview of the technologies used in the project. 
-First to mention is that the whole project uses Kotlin as the main programming language, means the backend and the frontend are written in Kotlin. 
-As we are writing a web application we are using Spring Boot as the backend framework. From Spring we are using Spring MVC for the REST API, Spring events for the event bus and parts of Spring Data for the transaction management. 
-
-For the persistence we are using Ktorm, which is a Kotlin ORM and has an integration with Spring Boot. 
-For the migration of the database we are using Flyway. For the database itself we are using PostgreSQL, 
-for debugging and testing we are using an embedded PostgreSQL database from zonky.io. 
-
-We choose Jackson for the serialization and deserialization of the JSON objects. 
-
-To test the application we are using Kotest, which is a testing framework for Kotlin, 
-which supports multiple testing styles and comes with an assertion library and the possibility to write property based tests.
+In adddition to the concepts described above, and before we go into the details of the implementation of the project,
+I shortly want to list the main technologies in the project:
 
 * Kotlin 
+* Gradle
 * Spring Boot with Spring MVC, Spring events, and parts of Spring Data
 * Ktorm
 * Flyway
@@ -161,6 +302,7 @@ which supports multiple testing styles and comes with an assertion library and t
 * Embedded PostgreSQL database from zonky.io
 * Jackson
 * Kotest
+* Mockk
 * Kotlin Multiplatform Compose
 
 ## Package structure and application flow
@@ -1000,27 +1142,8 @@ To include:
 - Testing is described in the next blog post -->
 
 
-## References
 
-<!-- <a id="ref-1"></a>[1]: Gregory Young, "Simple CQRS example" [https://github.com/gregoryyoung/m-r/tree/master][simplestpossiblething] -->
 
-{{< reference "1" "Young, Gregory" "Simple CQRS example" "simplestpossiblething" >}}<br>
-
-{{< reference "2" "Evans, Eric" "2003. Domain-Driven Design: Tacking Complexity In the Heart of Software. Addison-Wesley Longman Publishing Co., Inc., USA." >}}<br>
-
-{{< reference "3" "Young, Gregory" "CQRS, Task Based UIs, Event Sourcing agh!" "cqrs-task-based-uis-event-sourcing" >}}<br>
-
-{{< reference "4" "Steven van Deursen; Mark Seemann" "Dependency Injection Principles, Practices, and Patterns , Manning, 2019" >}}<br>
-
-{{< reference "5" "Scott Millet; Nick Tune" "2015. Patterns, Principles, and Practices of Domain-Driven Design (1st. ed.). Wrox Press Ltd., GBR." >}}<br>
-
-{{< reference "6" "Robert Cecil Martin" "2003. Agile Software Development: Principles, Patterns, and Practices. Prentice Hall PTR, USA." >}}<br>
-
-{{< reference "7" "Bertrand Meyer" "1988. Object-Oriented Software Construction (1st. ed.). Prentice-Hall, Inc., USA." >}}<br>
-
-{{< reference "9" "Wlaschin, Scott" "2018. Domain modeling made functional : tackle software complexity with domain-driven design and F#. Raleigh, North Carolina :The Pragmatic Bookshelf." >}}<br>
-
-{{< reference "10" "Vernon, Vaughn" "2013. Implementing Domain-Driven Design. Addison-Wesley Professional." >}}<br>
 
 
 
