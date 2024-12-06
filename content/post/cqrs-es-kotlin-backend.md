@@ -37,10 +37,11 @@ references = [
     { name = "kotlin-event-sourcing-example", url = "https://github.com/nicusX/kotlin-event-sourcing-example" },
     { name = "functional-event-sourcing-example", url = "https://dev.to/jakub_zalas/functional-event-sourcing-example-in-kotlin-3245" },
     { name = "practical-guide-event-sourcing", url = "https://medium.com/ssense-tech/event-sourcing-a-practical-guide-to-actually-getting-it-done-27d23d81de04" },
+    { name = "event-sourcing-netcore", url = "https://github.com/oskardudycz/EventSourcing.NetCore?tab=readme-ov-file" },
+    { name = "marten-events", url = "https://martendb.io/" },
     { name = "marten-events", url = "https://martendb.io/events/" },
     { name = "marten-github", url = "https://github.com/JasperFx/marten" },
     { name = "marten-learning", url = "https://martendb.io/events/learning" },
-    { name = "event-sourcing-netcore", url = "https://github.com/oskardudycz/EventSourcing.NetCore?tab=readme-ov-file" },
     { name = "projections-read-models", url = "https://event-driven.io/en/projections_and_read_models_in_event_driven_architecture/" },
     { name = "esversioning", url = "https://leanpub.com/esversioning/read#leanpub-auto-immutability" },
     { name = "ddd-read-models", url = "https://xebia.com/blog/domain-driven-design-part-3-read-models/" },
@@ -48,6 +49,8 @@ references = [
     { name = "axon-framework", url = "https://www.axoniq.io/products/axon-framework" },
     { name = "dependency-injection", url = "https://martinfowler.com/articles/injection.html" },
     { name = "eaa-catalog", url = "https://martinfowler.com/eaaCatalog/" },
+    { name = "domain-model", url = "https://martinfowler.com/eaaCatalog/domainModel.html" },
+    { name = "dependency-injection", url = "https://martinfowler.com/articles/injection.html" },
     { name = "data-classes", url = "https://kotlinlang.org/docs/data-classes.html" },
     { name = "arrow-kt", url = "https://arrow-kt.io/" },
     { name = "immutable-data", url = "https://arrow-kt.io/learn/immutable-data/intro/" },
@@ -124,13 +127,15 @@ references = [
 
 {{< reference "PracticalGuideEventSourcing" "Practical Guide to Event Sourcing" "" "practical-guide-event-sourcing" >}}<br>
 
+{{< reference "EventSourcingNetCore" "Event Sourcing .NET Core" "" "event-sourcing-netcore" >}}<br>
+
+{{< reference "Marten" "Marten" "" "marten" >}}<br>
+
 {{< reference "MartenEvents" "Marten Events" "" "marten-events" >}}<br>
 
 {{< reference "MartenGithub" "Marten Github" "" "marten-github" >}}<br>
 
 {{< reference "MartenLearning" "Marten Learning" "" "marten-learning" >}}<br>
-
-{{< reference "EventSourcingNetCore" "Event Sourcing .NET Core" "" "event-sourcing-netcore" >}}<br>
 
 {{< reference "ProjectionsReadModels" "Projections and Read Models in Event Driven Architecture" "" "projections-read-models" >}}<br>
 
@@ -142,9 +147,11 @@ references = [
 
 {{< reference "AxonFramework" "Axon Framework" "" "axon-framework" >}}<br>
 
-{{< reference "DependencyInjection" "Dependency Injection" "" "dependency-injection" >}}<br>
-
 {{< reference "EAACatalog" "EAA Catalog" "" "eaa-catalog" >}}<br>
+
+{{< reference "DomainModel" "Domain Model" "" "domain-model" >}}<br>
+
+{{< reference "DependecyInjection" "Dependency Injection" "" "dependency-injection" >}}<br>
 
 {{< reference "DataClasses" "Data Classes" "" "data-classes" >}}<br>
 
@@ -187,34 +194,39 @@ The focus of the project is to demonstrate the concepts of CQRS and ES and how t
 In this post we we will give a brief introduction of the underlying concepts of Domain Driven Design (DDD), CQRS and ES. 
 Please note, that each of the cocepts is very complex on its own and we will only scratch the surface of each of them.
 In the following section we will explain the flow and structure of the application. 
-We will then introduce the technologies used in the project and give a brief overview of the codebase structure. 
-We will then explain the components of the codebase and how they interact with each other. 
+Following we will introduce the technologies used in the project and give a brief overview of the codebase structure. 
+Afterwarde We will explain the components of the codebase and how they interact with each other. 
 Finally, we will give a brief outlook on the next post in this series, which will focus on testing the application.
 
-As mentioned before, the application is not production ready and lacks many features. 
-But there are production ready frameworks avaible for CQRS/ES like Axon Framework and Marten. 
-In addition to that you can find more implementations of CQRS/ES in Kotlin or .NET on the internet. 
-The ones I found are also based on the SimpleCQRS project but are using a different implementation to the one I used in my project. 
+As mentioned before, the application is not production ready and lacks many features, but there are production ready frameworks avaible for CQRS/ES like the {{< linkForRef "axon-framework" "Axon Framework" >}}[<sup>[AxonFramework](#ref-)</sup>] or {{< linkForRef "marten" "Marten" >}}[<sup>[Marten](#ref-)</sup>]. 
+In addition to that you can find a lot more implementations of CQRS/ES online. Here is a short an definitely non exhaustive list of projects which I found while working on the project:
+
+* {{< linkForRef "kestrel" "Kestrel" >}}[<sup>[Kestrel](#ref-Kestrel)</sup>] 
+* {{< linkForRef "event-sourcing-with-kotlin" "Event Sourcing with Kotlin by Thomas Uhrig" >}}[<sup>[EventSourcingWithKotlin](#ref-EventSourcingWithKotlin)</sup>]
+* {{< linkForRef "kotlin-event-sourcing-example" "Kotlin Event Sourcing Example by Lorenzo Nicora" >}}[<sup>[KotlinEventSourcingExample](#ref-KotlinEventSourcingExample)</sup>]
+* {{< linkForRef "functional-event-sourcing-example" "Functional Event Sourcing Example by Jakub Zalas" >}}[<sup>[FunctionalEventSourcingExample](#ref-FunctionalEventSourcingExample)</sup>]
+* {{< linkForRef "practical-guide-event-sourcing" "Practical Guide to Event Sourcing by Sam-Nicolai Johnston" >}}[<sup>[PracticalGuideEventSourcing](#ref-PracticalGuideEventSourcing)</sup>]
+* {{< linkForRef "event-sourcing-netcore" "Event Sourcing .NET Core by Oskar Dudycz" >}}[<sup>[EventSourcingNetCore](#ref-EventSourcingNetCore)</sup>]
+
+All of the examples are in Kotlin or C# but you can probaly find more expamples in the language of your choice.
+
 
 ## Concepts
 
 In this section we will give a brief introduction to the underlying concepts used in the implementation of the project. 
-We will only scratch the surface of each concept and give a short overview. 
-Every concept could probably fill a whole book or at least a blog post on its own. 
-So please be aware that further reading on each concept is highly recommended. 
-Also note that the explanations are very simplified and lack strictness in the definitions.
+We will only scratch the surface of each concept and give a short overview of the concept. 
+Every concept could fill a whole book or at least a blog post on its own. 
+So please be aware that further reading on each concept is necessary and highly recommended. 
+Also note that the explanations are simplified and probably lack strictness in their definitions.
 
 ##### Domain Driven Design (DDD)
 
 The first time I heard about CQRS and Event Sourcing was in the context of Domain Driven Design (DDD). 
 DDD is an approach of developing software that focuses on the domain and the business logic of the application. 
 It was introduced 2003 by Eric Evans in his seminal book Domain-Driven Design: Tackling Complexity in the Heart of Software[<sup>[2](#ref-2)</sup>]. 
-Since the publication of the book, DDD has gained a lot of popularity and is now a widely used approach in software development, where a lot of other resources like books, eg. b1,b2,b2 and b4 and plethora of blog posts, and videos are available. 
-The book from Eric Evans itself is thereby split into two parts. The first part is about desinging and implementing the domain model with the so called tactical patterns like Aggregates, Repositories, Factories, and Domain Events. 
-The second part is about the strategic patterns like Bounded Contexts, Context Maps, and Shared Kernel. 
-Whereas the second part is regarded as the more important one by many people and Eric Evans himself. 
-As we are focussing on an implementation example we will only describe some of the pattersn used in the project. 
-Going forward we will go through the small list of tactical patterns used in the project.
+Since the publication of the book, DDD has gained a lot of popularity and is now a widely used approach in software development, where a lot of other resources like books, e.g. Implementing Domain-Driven Design by Vaughn Vernon[<sup>[10](#ref-10)</sup>], Domain-Driven Design Principles, Patterns, and Practices by Scott Millet and Nick Tune[<sup>[5](#ref-5)</sup>] or Domain Modeling Made Functional by Scott Wlaschin[<sup>[9](#ref-9)</sup>], 
+and a plethora of blog posts, and videos are available. 
+The book from Eric Evans itself is thereby split into two parts. The first part is about desinging and implementing the domain model with the so called tactical patterns like Aggregates, Repositories, Factories, and Domain Events. The second part is about the strategic patterns like Bounded Contexts, Context Maps, and Shared Kernel. Whereas the second part is regarded as the more important one by many people and Eric Evans himself, we we are focussing on some of the tacatical patterns as we are implementing an example in this project. Going forward we will go through the small list of tactical patterns used in the project.
 
 
 **Aggregates and Aggregate Roots**
@@ -227,43 +239,41 @@ InventoryItem, which is at the same time the Aggregate Root.
 
 **Factories**
 
-A Factory in DDD is ressponsible for creating an Aggregate in a consistent state. The Factory of DDD is not the same as the Factory pattern from the Gang of Four. 
-Of course the Factory pattern can be used to implement a Factory in DDD, but the Factory in DDD is more about the concept of creating an Aggregate in a consistent state. 
+A Factory in DDD is ressponsible for creating an Aggregate in a consistent state. The Factory of DDD is not the same as the Factory pattern from the Gang of Four, but the Factory pattern could be used to implement a Factory in DDD. A Factory in DDD is about creating an Aggregate in a consistent state. 
 In the project we simply have the constructor of the InventoryItem and an companion object invoke function as a Factory.
 
 **Repositories** 
 
-A Repository in DDD is responsible for loading and saving Aggregates. It is also an abstraction that hides the details of the underlying data store from the domain, when working with an dependency inversion principle (DIP) compliant architecture (see below). 
+A Repository in DDD is responsible for loading and saving Aggregates. It is also an abstraction that hides the details of the underlying data store from the domain, when working with an Dependency Inversion Principle (DIP) compliant architecture. 
 Also here it is important to note, that when loading and saving an Aggregate the whole Aggregate is loaded and saved in a consistent state. 
 In this project we have the AggregateRepository, which has a dependency to the EventStore and is responsible for loading and saving the events of the InventoryItem Aggregate. 
 As we are using Event Sourcing the Repository is not responsible for loading and saving the state of the Aggregate, but the events that lead to the current state of the Aggregate. 
 
 **Domain Events**
 
-A core concept in our implementation of the project are Domain Events. Domain Events are events that are published when there was a change in the Aggregate. 
+A core concept in our implementation of the project are Domain Events. Domain Events are events that are published when there was a change in the Aggregate, which means a change in the state of the application. 
 The event names are denoted in the past tense and describe what happened in the Aggregate. The events are stored in the EventStore and are used to rebuild the state of the Aggregate, hence the name Event Sourcing. 
-The events are also used to update the Read Side of the application via Projections. We are going with the definintion of Marten for Projections as any strategy for generating "read side" views from the raw events. 
+The events are also used to update the Read Side of the application via Projections. We are going with the definintion of Marten for Projections as 
+> any strategy for generating "read side" views from the raw events. 
+
 Domain Events are not used to integrate with other systems or services, therefore so called Integration Events are used. 
 
 
 ##### Dependency Inversion Principle (DIP) compliant architecture
 
-To isolate the domain from the infrastructure and to make the domain independent of the infrastructure, we are using the Dependency Inversion Principle (DIP). 
-This is the underlying principle for many architectures like the Hexagonal Architecture, Onion Architecture, or Clean Architecture. 
-The DIP states that high-level modules should not depend on low-level modules. Both should depend on abstractions. 
-We will see how this is implemented in the project later on in this post. If isolating the domain from the infrastructure is a good practice is still a matter of debate, as the isolation comes with a cost of higher complexity in architecture and code. 
-There are voices with pleding for beeing one with the layers and not to isolate the domain from the infrastructure. To use an implementation with a rich domain model is also a choice that has to be made as this depends on the complexity of the domain and the business logic. 
-There are other architectural patterns like Transaction Script or Table Module that can be more suitable for simple domains and business logic. 
-Nevertheless, we are going with the DIP compliant architecture in this project.
+To isolate the domain from the infrastructure and to make the domain independent of the infrastructure, we are using the Dependency Inversion Principle (DIP)[<sup> [6](#ref-6)</sup>]. This is the underlying principle for many architectures like the {< linkForRef "layers-onions-ports-adapters" "Hexagonal Architecture, Onion Architecture, or Clean Architecture. " >}[<sup>[LayersOnionsPortsAdapters](#ref-LayersOnionsPortsAdapters)</sup>] 
+The DIP states that 
+
+> high-level modules should not depend on low-level modules. Both should depend on abstractions. 
+
+We will see how this is implemented in the project later on in this post. If isolating the domain from the infrastructure is a good practice is still a matter of debate, see {{< linkForRef "dependencies-workflow-oriented-design" "here" >}}[<sup>[DependenciesWorkflowOrientedDesign](#ref-DependenciesWorkflowOrientedDesign)</sup>], {{< linkForRef "udi-dahan-if-domain-logic" "here" >}}[<sup>[UdiDahanIfDomainLogic](#ref-UdiDahanIfDomainLogic)</sup>] or {{< linkForRef "vertical-slice-architecture" "here" >}}[<sup>[VerticalSliceArchitecture](#ref-VerticalSliceArchitecture)</sup>], as the isolation comes with a cost of higher complexity in architecture and code. Choosing an implementation with a {{< linkForRef "domain-model" "rich domain model" >}}[<sup>[DomainModel](#ref-DomainModel)</sup>] also depends on the complexity of the domain and the business logic. Other {{< linkForRef "eaa-catalog" "architecture patterns" >}}[<sup>[EAACatalog](#ref-EAACatalog)</sup>] like Transaction Script or Table Module might be more suitable for simple domains. Nevertheless, we are going with a DIP compliant architecture in this project.
 
 ##### Dependency Injection (DI)
 
 In the previous section we talked about the DIP compliant architecture and how high and low level modules should depend on abstractions. 
-We will leverage Dependency Injection (DI) to fulfill this principle and decouple the domain from the infrastructure. 
-DI is a technique where one object supplies the dependencies of another object instead of the object creating the dependencies itself. 
-This is done by injecting the dependencies into the object that needs them. This can be done by constructor injection, setter injection, or interface injection, but we are only using constructor injection in the project. 
-This will also help us with the testing of the application where we can test the domain logic in isolation and provide mock implementations for the infrastructure dependencies. 
-We will talk more about testing in the next post of this blog. 
+We will leverage {{< linkForRef "dependency-injection" "Dependency Injection (DI)" >}}[<sup>[DependencyInjection](#ref-DependencyInjection)</sup>] to fulfill this principle and decouple the domain from the infrastructure.
+Dependency Injection[<sup> [4](#ref-4)</sup>] is a technique where one object supplies the dependencies of another object instead of the object creating the dependencies itself. This is done by injecting the dependencies into the object that needs them. This can be done by constructor injection, setter injection, or interface injection, but we are only using constructor injection in the project. 
+This will also help us with the testing of the application where we can test the domain logic in isolation and provide mock implementations for the infrastructure dependencies. We will talk more about testing in the next post of this blog. 
 
 ##### Command Query Responsibility Segregation (CQRS)
 
