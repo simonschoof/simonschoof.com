@@ -61,111 +61,7 @@ references = [
 ]
 +++
 
-## References
 
-<!-- <a id="ref-1"></a>[1]: Gregory Young, "Simple CQRS example" [https://github.com/gregoryyoung/m-r/tree/master][simplest-possible-thing] -->
-
-{{< reference "SimpleCQRS" "Young, Gregory" "Simple CQRS example" "simplest-possible-thing" >}}<br>
-
-{{< reference "2" "Evans, Eric" "2003. Domain-Driven Design: Tacking Complexity In the Heart of Software. Addison-Wesley Longman Publishing Co., Inc., USA." >}}<br>
-
-{{< reference "3" "Young, Gregory" "CQRS, Task Based UIs, Event Sourcing agh!" "cqrs-task-based-uis-event-sourcing" >}}<br>
-
-{{< reference "4" "Steven van Deursen; Mark Seemann" "Dependency Injection Principles, Practices, and Patterns , Manning, 2019" >}}<br>
-
-{{< reference "5" "Scott Millet; Nick Tune" "2015. Patterns, Principles, and Practices of Domain-Driven Design (1st. ed.). Wrox Press Ltd., GBR." >}}<br>
-
-{{< reference "6" "Robert Cecil Martin" "2003. Agile Software Development: Principles, Patterns, and Practices. Prentice Hall PTR, USA." >}}<br>
-
-{{< reference "7" "Bertrand Meyer" "1988. Object-Oriented Software Construction (1st. ed.). Prentice-Hall, Inc., USA." >}}<br>
-
-{{< reference "9" "Wlaschin, Scott" "2018. Domain modeling made functional : tackle software complexity with domain-driven design and F#. Raleigh, North Carolina :The Pragmatic Bookshelf." >}}<br>
-
-{{< reference "10" "Vernon, Vaughn" "2013. Implementing Domain-Driven Design. Addison-Wesley Professional." >}}<br>
-
-{{< reference "KotlinMultiPlatformCompose" "Kotlin Multi Platform Compose" "" "kotlin-multiplatform-compose" >}}<br>
-
-{{< reference "CsharpLang" "C#" "" "csharp-lang" >}}<br>
-
-{{< reference "Dotnet" ".NET" "" "dotnet">}}<br>
-
-{{< reference "KotlinLang" "Kotlin Language" "" "kotlin-lang" >}}<br>
-
-{{< reference "SpringBoot" "Spring Boot" "" "spring-boot" >}}<br>
-
-{{< reference "SpringMvc" "Spring MVC" "" "spring-mvc" >}}<br>
-
-{{< reference "SpringEvents" "Spring Events" "" "spring-events" >}}<br>
-
-{{< reference "SpringData" "Spring Data" "" "spring-data" >}}<br>
-
-{{< reference "Ktorm" "Ktorm" "" "ktorm" >}}<br>
-
-{{< reference "Flyway" "Flyway" "" "flyway" >}}<br>
-
-{{< reference "Postgresql" "PostgreSQL" "" "postgresql" >}}<br>
-
-{{< reference "EmbeddedPostgresql" "Embedded PostgreSQL" "" "embedded-postgresql" >}}<br>
-
-{{< reference "Gradle" "Gradle" "" "gradle" >}}<br>
-
-{{< reference "Jackson" "Jackson" "" "jackson" >}}<br>
-
-{{< reference "Kotest" "Kotest" "" "kotest" >}}<br>
-
-{{< reference "Mockk" "Mockk" "" "mockk" >}}<br>
-
-{{< reference "KotlinLogging" "KotlinLogging" "" "KotlinLogging" >}}<br>
-
-{{< reference "Kestrel" "Kestrel" "" "kestrel" >}}<br>
-
-{{< reference "EventSourcingWithKotlin" "Event Sourcing with Kotlin" "" "event-sourcing-with-kotlin" >}}<br>
-
-{{< reference "KotlinEventSourcingExample" "Kotlin Event Sourcing Example" "" "kotlin-event-sourcing-example" >}}<br>
-
-{{< reference "FunctionalEventSourcingExample" "Functional Event Sourcing Example" "" "functional-event-sourcing-example" >}}<br>
-
-{{< reference "PracticalGuideEventSourcing" "Practical Guide to Event Sourcing" "" "practical-guide-event-sourcing" >}}<br>
-
-{{< reference "EventSourcingNetCore" "Event Sourcing .NET Core" "" "event-sourcing-netcore" >}}<br>
-
-{{< reference "Marten" "Marten" "" "marten" >}}<br>
-
-{{< reference "MartenEvents" "Marten Events" "" "marten-events" >}}<br>
-
-{{< reference "MartenGithub" "Marten Github" "" "marten-github" >}}<br>
-
-{{< reference "MartenLearning" "Marten Learning" "" "marten-learning" >}}<br>
-
-{{< reference "ProjectionsReadModels" "Projections and Read Models in Event Driven Architecture" "" "projections-read-models" >}}<br>
-
-{{< reference "ESVersioning" "Event Sourcing Versioning" "" "esversioning" >}}<br>
-
-{{< reference "DDDReadModels" "DDD Read Models" "" "ddd-read-models" >}}<br>
-
-{{< reference "Exposed" "Exposed" "" "exposed" >}}<br>
-
-{{< reference "AxonFramework" "Axon Framework" "" "axon-framework" >}}<br>
-
-{{< reference "EAACatalog" "EAA Catalog" "" "eaa-catalog" >}}<br>
-
-{{< reference "DomainModel" "Domain Model" "" "domain-model" >}}<br>
-
-{{< reference "DependecyInjection" "Dependency Injection" "" "dependency-injection" >}}<br>
-
-{{< reference "DataClasses" "Data Classes" "" "data-classes" >}}<br>
-
-{{< reference "ArrowKT" "Arrow KT" "" "arrow-kt" >}}<br>
-
-{{< reference "ImmutableData" "Immutable Data" "" "immutable-data" >}}<br>
-
-{{< reference "LayersOnionsPortsAdapters" "Layers Onions Ports Adapters" "" "layers-onions-ports-adapters" >}}<br>
-
-{{< reference "VerticalSliceArchitecture" "Vertical Slice Architecture" "" "vertical-slice-architecture" >}}<br>
-
-{{< reference "DependenciesWorkflowOrientedDesign" "Dependencies Workflow Oriented Design" "" "dependencies-workflow-oriented-design" >}}<br>
-
-{{< reference "UdiDahanIfDomainLogic" "Udi Dahan If Domain Logic" "" "udi-dahan-if-domain-logic" >}}<br>
 
 
 <!-- TODO:
@@ -277,7 +173,7 @@ This will also help us with the testing of the application where we can test the
 
 ##### Command Query Responsibility Segregation (CQRS)
 
-CQRS is one of the two main architectural patterns we want to demonstrate in the implementation of the project. CQRS is an extension of the Command Query Separation (CQS) principle, which was introduced by Bertrand Meyer in his book Object-Oriented Software Construction. 
+CQRS is one of the two main architectural patterns we want to demonstrate in the implementation of the project. CQRS is an extension of the Command Query Separation (CQS) principle, which was introduced by Bertrand Meyer in his book Object-Oriented Software Construction[<sup> [7](#ref-7) </sup>]. 
 CQS states that a method should either change the state of an object or return a result, but not both. CQRS takes this principle further and segregates the read and write operations of an application into two different parts of the application. 
 In its simplest form, CQRS 
 > is simply the creation of two objects where there was previously only one. 
@@ -291,29 +187,28 @@ even though these are not part of CQRS itself.
 ##### Event Sourcing (ES)
 
 The next pattern we will have a closer look at in the implementation of the project is Event Sourcing. 
-Event Sourcing is a pattern where the state of an application is determined by a sequence of events. 
-Instead of storing the current state of an object, we store the events that lead to the current state of the object. 
-This has the advantage that we can rebuild the state of the object at any point in time by replaying the events. 
-Combined with CQRS, we can use the events to update the read side of the application via Projections. 
-We are following the definition from Marten for Projections as any strategy for generating "read side" views from the raw events.  
-
+Event Sourcing is a pattern where the state of an application is determined by a sequence of events instead of storing the current state of the oject directly.
+The events are an excellent way to capture the changes in the state of the domain and also provide an audit log of the changes. 
+Event sourcing is a quiet different approach compared to the traditional way of persisting the state of the application and comes with its
+own set of challenges, e.g. versioning or snap shots. Solutions on how to address these challenges can be found in the (unfinished) book 
+{{< linkForRef "esversioning" "Versioning in an Event Sourced System" >}}[<sup>[ESVersioning](#ref-ESVersioning)</sup>] by Greg Young.
 
 ## Technologies used
 
 In adddition to the concepts described above, and before we go into the details of the implementation of the project,
 I shortly want to list the main technologies in the project:
 
-* Kotlin 
-* Gradle
-* Spring Boot with Spring MVC, Spring events, and parts of Spring Data
-* Ktorm
-* Flyway
-* PostgreSQL
-* Embedded PostgreSQL database from zonky.io
-* Jackson
-* Kotest
-* Mockk
-* Kotlin Multiplatform Compose
+* {{< linkForRef "kotlin-lang" "Kotlin" >}}[<sup>[KotlinLang](#ref-KotlinLang)</sup>]
+* {{< linkForRef "gradle" "Gradle" >}}[<sup>[Gradle](#ref-Gradle)</sup>]
+* {{< linkForRef "spring-boot" "Spring Boot" >}}[<sup>[SpringBoot](#ref-SpringBoot)</sup>] with {{< linkForRef "spring-mvc" "Spring MVC" >}}[<sup>[SpringMvc](#ref-SpringMvc)</sup>], {{< linkForRef "spring-events" "Spring events" >}}[<sup>[SpringEvents](#ref-SpringEvents)</sup>], and parts of {{< linkForRef "spring-data" "Spring Data" >}}[<sup>[SpringData](#ref-SpringData)</sup>]
+* {{< linkForRef "ktorm" "Ktorm" >}}[<sup>[Ktorm](#ref-Ktorm)</sup>]
+* {{< linkForRef "flyway" "Flyway" >}}[<sup>[Flyway](#ref-Flyway)</sup>]
+* {{< linkForRef "postgresql" "PostgreSQL" >}}[<sup>[Postgresql](#ref-Postgresql)</sup>]
+* {{< linkForRef "embedded-postgresql" "Embedded PostgreSQL" >}}[<sup>[EmbeddedPostgresql](#ref-EmbeddedPostgresql)</sup>]
+* {{< linkForRef "jackson" "Jackson" >}}[<sup>[Jackson](#ref-Jackson)</sup>]
+* {{< linkForRef "kotest" "Kotest" >}}[<sup>[Kotest](#ref-Kotest)</sup>]
+* {{< linkForRef "mockk" "Mockk" >}}[<sup>[Mockk](#ref-Mockk)</sup>]
+* {{< linkForRef "kotlin-multiplatform-compose" "Kotlin Multi Platform Compose" >}}[<sup>[KotlinMultiPlatformCompose](#ref-KotlinMultiPlatformCompose)</sup>]  
 
 ## Package structure and application flow
 
@@ -354,12 +249,20 @@ cqrs-es
 
 #### Application flow
 
-So as we have seen in the previous section we have a lot of concepts and patters that we are using to structure the application. 
+So as we have seen in the previous section we have a lot of concepts and patterns that we are using to structure the application. 
 Before we go into the details of the implementation we will give a more coarse grained overview of the overall flow and the structure of the application. 
 
-The application lets the user manage inventory items. The user can create an inventory item, change the name of the inventory item, check in and check out items from the inventory item, set the maximum quantity of the inventory item, and deactivate the inventory item. 
-The user can also query the read side of the application to get the current state of the inventory item. 
-This is the same as in the original SimpleCQRS project. An extended domain example in Kotlin can be found here from ... 
+The application lets the user manage inventory items, where the user can
+
+* create inventory items
+* change the name on an inventory item
+* check in inventory items
+* remove inventory items
+* set and change the max quantity for the inventory item
+* deactivate an inventory item
+
+The user can also query the read side of the application to get a list and a detail view for the inventory items. 
+This is the same as in the original SimpleCQRS project. Examples with more complex domains can be found in the list in the introduction.  
 
 To give an overview of what is happening in the application we will go through the flow of the application. 
 Starting with the user sending a command to the application. The command is handled by a CommandHandler, which is responsible for handling the command 
@@ -1140,21 +1043,112 @@ In addition to that there are production ready frameworks like Axon Framework an
 Another difference to the original SimpleCQRS project is that I included tests for the backend in the code base. 
 This is because I already had my next blog post in mind in which I want to show how to test the application.
 
-<!-- 
-TODO:
-To include:
-- Other implentations of CQRS/ES in Kotlin and production ready frameworks like Axon Framework and Marten
-- Links to Domain Driven Design especially the blue book, the red book and patterns, principles and practices of domain driven design. Explaining aggregates, repositories, factories and domain events.
-- Links to the original SimpleCQRS project and the C# implementation
-- Links to the Kotlin Multiplatform Compose project
-- Links to Arrow-kt for further functional programming in Kotlin for domain side of the application
-- Explaining what is not included in the project like security, logging, monitoring, Rest API or GraphQL, etc.
-- Testing is described in the next blog post -->
 
+## References
 
+<!-- <a id="ref-1"></a>[1]: Gregory Young, "Simple CQRS example" [https://github.com/gregoryyoung/m-r/tree/master][simplest-possible-thing] -->
 
+{{< reference "SimpleCQRS" "Young, Gregory" "Simple CQRS example" "simplest-possible-thing" >}}<br>
 
+{{< reference "2" "Evans, Eric" "2003. Domain-Driven Design: Tacking Complexity In the Heart of Software. Addison-Wesley Longman Publishing Co., Inc., USA." >}}<br>
 
+{{< reference "3" "Young, Gregory" "CQRS, Task Based UIs, Event Sourcing agh!" "cqrs-task-based-uis-event-sourcing" >}}<br>
+
+{{< reference "4" "Steven van Deursen; Mark Seemann" "Dependency Injection Principles, Practices, and Patterns , Manning, 2019" >}}<br>
+
+{{< reference "5" "Scott Millet; Nick Tune" "2015. Patterns, Principles, and Practices of Domain-Driven Design (1st. ed.). Wrox Press Ltd., GBR." >}}<br>
+
+{{< reference "6" "Robert Cecil Martin" "2003. Agile Software Development: Principles, Patterns, and Practices. Prentice Hall PTR, USA." >}}<br>
+
+{{< reference "7" "Bertrand Meyer" "1988. Object-Oriented Software Construction (1st. ed.). Prentice-Hall, Inc., USA." >}}<br>
+
+{{< reference "9" "Wlaschin, Scott" "2018. Domain modeling made functional : tackle software complexity with domain-driven design and F#. Raleigh, North Carolina :The Pragmatic Bookshelf." >}}<br>
+
+{{< reference "10" "Vernon, Vaughn" "2013. Implementing Domain-Driven Design. Addison-Wesley Professional." >}}<br>
+
+{{< reference "KotlinMultiPlatformCompose" "Kotlin Multi Platform Compose" "" "kotlin-multiplatform-compose" >}}<br>
+
+{{< reference "CsharpLang" "C#" "" "csharp-lang" >}}<br>
+
+{{< reference "Dotnet" ".NET" "" "dotnet">}}<br>
+
+{{< reference "KotlinLang" "Kotlin Language" "" "kotlin-lang" >}}<br>
+
+{{< reference "SpringBoot" "Spring Boot" "" "spring-boot" >}}<br>
+
+{{< reference "SpringMvc" "Spring MVC" "" "spring-mvc" >}}<br>
+
+{{< reference "SpringEvents" "Spring Events" "" "spring-events" >}}<br>
+
+{{< reference "SpringData" "Spring Data" "" "spring-data" >}}<br>
+
+{{< reference "Ktorm" "Ktorm" "" "ktorm" >}}<br>
+
+{{< reference "Flyway" "Flyway" "" "flyway" >}}<br>
+
+{{< reference "Postgresql" "PostgreSQL" "" "postgresql" >}}<br>
+
+{{< reference "EmbeddedPostgresql" "Embedded PostgreSQL" "" "embedded-postgresql" >}}<br>
+
+{{< reference "Gradle" "Gradle" "" "gradle" >}}<br>
+
+{{< reference "Jackson" "Jackson" "" "jackson" >}}<br>
+
+{{< reference "Kotest" "Kotest" "" "kotest" >}}<br>
+
+{{< reference "Mockk" "Mockk" "" "mockk" >}}<br>
+
+{{< reference "KotlinLogging" "KotlinLogging" "" "KotlinLogging" >}}<br>
+
+{{< reference "Kestrel" "Kestrel" "" "kestrel" >}}<br>
+
+{{< reference "EventSourcingWithKotlin" "Event Sourcing with Kotlin" "" "event-sourcing-with-kotlin" >}}<br>
+
+{{< reference "KotlinEventSourcingExample" "Kotlin Event Sourcing Example" "" "kotlin-event-sourcing-example" >}}<br>
+
+{{< reference "FunctionalEventSourcingExample" "Functional Event Sourcing Example" "" "functional-event-sourcing-example" >}}<br>
+
+{{< reference "PracticalGuideEventSourcing" "Practical Guide to Event Sourcing" "" "practical-guide-event-sourcing" >}}<br>
+
+{{< reference "EventSourcingNetCore" "Event Sourcing .NET Core" "" "event-sourcing-netcore" >}}<br>
+
+{{< reference "Marten" "Marten" "" "marten" >}}<br>
+
+{{< reference "MartenEvents" "Marten Events" "" "marten-events" >}}<br>
+
+{{< reference "MartenGithub" "Marten Github" "" "marten-github" >}}<br>
+
+{{< reference "MartenLearning" "Marten Learning" "" "marten-learning" >}}<br>
+
+{{< reference "ProjectionsReadModels" "Projections and Read Models in Event Driven Architecture" "" "projections-read-models" >}}<br>
+
+{{< reference "ESVersioning" "Event Sourcing Versioning" "" "esversioning" >}}<br>
+
+{{< reference "DDDReadModels" "DDD Read Models" "" "ddd-read-models" >}}<br>
+
+{{< reference "Exposed" "Exposed" "" "exposed" >}}<br>
+
+{{< reference "AxonFramework" "Axon Framework" "" "axon-framework" >}}<br>
+
+{{< reference "EAACatalog" "EAA Catalog" "" "eaa-catalog" >}}<br>
+
+{{< reference "DomainModel" "Domain Model" "" "domain-model" >}}<br>
+
+{{< reference "DependecyInjection" "Dependency Injection" "" "dependency-injection" >}}<br>
+
+{{< reference "DataClasses" "Data Classes" "" "data-classes" >}}<br>
+
+{{< reference "ArrowKT" "Arrow KT" "" "arrow-kt" >}}<br>
+
+{{< reference "ImmutableData" "Immutable Data" "" "immutable-data" >}}<br>
+
+{{< reference "LayersOnionsPortsAdapters" "Layers Onions Ports Adapters" "" "layers-onions-ports-adapters" >}}<br>
+
+{{< reference "VerticalSliceArchitecture" "Vertical Slice Architecture" "" "vertical-slice-architecture" >}}<br>
+
+{{< reference "DependenciesWorkflowOrientedDesign" "Dependencies Workflow Oriented Design" "" "dependencies-workflow-oriented-design" >}}<br>
+
+{{< reference "UdiDahanIfDomainLogic" "Udi Dahan If Domain Logic" "" "udi-dahan-if-domain-logic" >}}<br>
 
 
 [^1]: The implementation of command handlers for the inventory item are grouped together in the InventoryItemCommandHandlers class which handles multiple commands instead of using on handler class per commmand 
