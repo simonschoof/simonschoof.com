@@ -467,7 +467,7 @@ class EventStoreAggregateRepository<T : AggregateRoot<T>>(
 As we can see from the constructor in the EventStoreAggregateRepository class the EventStoreAggregateRepository has to collaborators as dependencies, 
 the EventStore and the AggregateQualifiedNameProvider. We will have a closer look at the QualifiedNameProvider later in the Conventions and workarounds section. 
 The implementation of the EventStore can be found in the KtormEventStore class. 
-As in the name of the class the KtormEventStore is using Ktorm as the ORM to interact with the database. 
+As in the name of the class the KtormEventStore is using Ktorm<cite>[^2]<cite>. as the ORM to interact with the database. 
 We will not go into the details of Ktorm here but can see that it provides us with a type safe query DSL to interact with the database. 
 To get the events for an aggregate we have to query the event table in the database, filter the events by the aggregate ID and order the events by the timestamp. 
 The events are then mapped to the corresponding event class and returned as a list of events. 
@@ -577,6 +577,7 @@ interface AggregateRepository<T: AggregateRoot<T>> {
     fun save(aggregate: T)
     fun getById(id: AggregateId): Optional<T>
 }
+```
 
 We can find the EventStoreAggregateRepository class again.
 
@@ -639,8 +640,8 @@ can continue with the read side.
 
 With publishing the events to the event bus we have completed the write side of the application and changed the application state. 
 We now want to have that reflected on the read side of the application, update the read model and show the changes to the user when the user queries a 
-read model. For that we are using inline projections, which means, that we are  listening to the in memory event bus and update the read model directly 
-when an event is published. So let's have a look at the InventoryItemProjection file, which is doing exactly that. In the file we can find two classes, 
+read model. For that we are using {{ < linkForRef " marten-events" "inline projections" > }}[<sup> [MartenEvents](#ref-MartenEvents)</sup>] which means, that we are  listening to the in memory event bus and update the read model directly when an event is published.<cite>[3]</cite> 
+So let's have a look at the InventoryItemProjection file, which is doing exactly that. In the file we can find two classes, 
 one is holding the event listeners for a list view of the inventory items and the other one is holding the event listeners for a detail view of the inventory items. Again we are only showing the listeners for the InventoryItemChanged event, as we have chosen this for our walk through example.   
 
 ```kotlin
@@ -1046,7 +1047,18 @@ This is because I already had my next blog post in mind in which I want to show 
 
 ## References
 
-<!-- <a id="ref-1"></a>[1]: Gregory Young, "Simple CQRS example" [https://github.com/gregoryyoung/m-r/tree/master][simplest-possible-thing] -->
+<!-- {{< reference "MartenLearning" "Marten Learning" "" "marten-learning" >}}<br>
+
+{{< reference "ProjectionsReadModels" "Projections and Read Models in Event Driven Architecture" "" "projections-read-models" >}}<br>
+
+{{< reference "DDDReadModels" "DDD Read Models" "" "ddd-read-models" >}}<br>
+
+{{< reference "DataClasses" "Data Classes" "" "data-classes" >}}<br>
+
+{{< reference "ArrowKT" "Arrow KT" "" "arrow-kt" >}}<br>
+
+{{< reference "ImmutableData" "Immutable Data" "" "immutable-data" >}}<br>  -->
+
 
 {{< reference "SimpleCQRS" "Young, Gregory" "Simple CQRS example" "simplest-possible-thing" >}}<br>
 
@@ -1151,4 +1163,8 @@ This is because I already had my next blog post in mind in which I want to show 
 {{< reference "UdiDahanIfDomainLogic" "Udi Dahan If Domain Logic" "" "udi-dahan-if-domain-logic" >}}<br>
 
 
-[^1]: The implementation of command handlers for the inventory item are grouped together in the InventoryItemCommandHandlers class which handles multiple commands instead of using on handler class per commmand 
+[^1]: The implementation of command handlers for the inventory item are grouped together in the InventoryItemCommandHandlers class which handles multiple commands instead of using on handler class per commmand.
+
+[^2]: Another ORM with a similar feature set is {{< linkForRef "exposed" "Exposed" >}}[<sup>[Exposed](#ref-Exposed)</sup>] by JetBrains
+
+[^3]: More info on projections and read models can be found on the  {{< linkForRef "projections-read-models" "blog of Oskar Dudycz" >}}[<sup>[ProjectionsReadModels](#ref-ProjectionsReadModels)</sup>] and the  {{< linkForRef "ddd-read-models" "blog of Xebia" >}}[<sup>[DddReadModels](#ref-DddReadModels)</sup>]  
