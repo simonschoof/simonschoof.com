@@ -78,10 +78,13 @@ a Command Query Responsibility Segregation (CQRS) and Event Sourcing (ES) archit
 ## Introduction
 
 We will implement a simple CQRS/ES architecture to demonstrate how to structure a backend application with these concepts. 
-The application builds upon the implementation of {{< linkForRef "simplest-possible-thing" "Greg Young's SimpleCQRS project" >}}[<sup>[SimpleCQRS](#ref-SimpleCQRS)</sup>], 
-but uses {{< linkForRef "kotlin-lang" "Kotlin" >}}[<sup>[KotlinLang](#ref-KotlinLang)</sup>] and {{< linkForRef "spring-boot" "Spring Boot" >}}[<sup>[SpringBoot](#ref-SpringBoot)</sup>] instead of {{< linkForRef "csharp-lang" "C#" >}}[<sup>[CsharpLang](#ref-CsharpLang)</sup>] on {{< linkForRef "dotnet" ".NET" >}}[<sup>[Dotnet](#ref-Dotnet)</sup>] and adds an {{< linkForRef "embedded-postgresql" "(embedded)" >}}[<sup>[EmbeddedPostgresql](#ref-)</sup>] {{< linkForRef "postgresql" "PotsgreSQL database" >}}[<sup>[Postgresql](#ref-Postgresql)</sup>]PostgreSQL database and {{< linkForRef "spring-events" "Spring events" >}}[<sup>[SpringEvents](#ref-SpringEvents)</sup>] to the mix. 
+The application builds upon the implementation of {{< linkForRef "simplest-possible-thing" "Greg Young's SimpleCQRS project" >}}[<sup>[1](#ref-1)</sup>], 
+but uses {{< linkForRef "kotlin-lang" "Kotlin" >}}[<sup>[2](#ref-2)</sup>] and {{< linkForRef "spring-boot" "Spring Boot" >}}[<sup>[3](#ref-3)</sup>] 
+instead of {{< linkForRef "csharp-lang" "C#" >}}[<sup>[4](#ref-4)</sup>] on {{< linkForRef "dotnet" ".NET" >}}[<sup>[5](#ref-5)</sup>] 
+and adds an {{< linkForRef "embedded-postgresql" "(embedded)" >}}[<sup>[6](#ref-6)</sup>] {{< linkForRef "postgresql" "PotsgreSQL database" >}}[<sup>[7](#ref-7)</sup>]PostgreSQL database 
+and {{< linkForRef "spring-events" "Spring events" >}}[<sup>[8](#ref-8)</sup>] to the mix. 
 A frontend application is also part of the codebase, but is not the focus of this post. 
-The frontend application is build using {{< linkForRef "kotlin-multiplatform-compose" "Kotlin Multiplatform Compose" >}}[<sup>[KotlinMultiPlatformCompose](#ref-KotlinMultiPlatformCompose)</sup>] and is more to show and simplify the interaction with the backend. 
+The frontend application is build using {{< linkForRef "kotlin-multiplatform-compose" "Kotlin Multiplatform Compose" >}}[<sup>[9](#ref-9)</sup>] and is more to show and simplify the interaction with the backend. 
 For the domain side of the application we also follow the original SimpleCQRS project, and implement a simple inventory management system with only one aggregate root, 
 the `InventoryItem`. The application is structured in a way that it can be easily extended with more aggregate roots, commands, events, and projections. 
 Nevertheless the application is not production ready and lacks many features like security, monitoring, proper error handling and logging, etc. 
@@ -94,15 +97,15 @@ Following we will introduce the technologies used in the project and give a brie
 Afterwarde We will explain the components of the codebase and how they interact with each other. 
 Finally, we will give a brief outlook on the next post in this series, which will focus on testing the application.
 
-As mentioned before, the application is not production ready and lacks many features, but there are production ready frameworks avaible for CQRS/ES like the {{< linkForRef "axon-framework" "Axon Framework" >}}[<sup>[AxonFramework](#ref-)</sup>] or {{< linkForRef "marten" "Marten" >}}[<sup>[Marten](#ref-)</sup>]. 
+As mentioned before, the application is not production ready and lacks many features, but there are production ready frameworks avaible for CQRS/ES like the {{< linkForRef "axon-framework" "Axon Framework" >}}[<sup>[10](#ref-10)</sup>] or {{< linkForRef "marten" "Marten" >}}[<sup>[11](#ref-11)</sup>]. 
 In addition to that you can find a lot more implementations of CQRS/ES online. Here is a short an definitely non exhaustive list of projects which I found while working on the project:
 
-* {{< linkForRef "kestrel" "Kestrel" >}}[<sup>[Kestrel](#ref-Kestrel)</sup>] 
-* {{< linkForRef "event-sourcing-with-kotlin" "Event Sourcing with Kotlin by Thomas Uhrig" >}}[<sup>[EventSourcingWithKotlin](#ref-EventSourcingWithKotlin)</sup>]
-* {{< linkForRef "kotlin-event-sourcing-example" "Kotlin Event Sourcing Example by Lorenzo Nicora" >}}[<sup>[KotlinEventSourcingExample](#ref-KotlinEventSourcingExample)</sup>]
-* {{< linkForRef "functional-event-sourcing-example" "Functional Event Sourcing Example by Jakub Zalas" >}}[<sup>[FunctionalEventSourcingExample](#ref-FunctionalEventSourcingExample)</sup>]
-* {{< linkForRef "practical-guide-event-sourcing" "Practical Guide to Event Sourcing by Sam-Nicolai Johnston" >}}[<sup>[PracticalGuideEventSourcing](#ref-PracticalGuideEventSourcing)</sup>]
-* {{< linkForRef "event-sourcing-netcore" "Event Sourcing .NET Core by Oskar Dudycz" >}}[<sup>[EventSourcingNetCore](#ref-EventSourcingNetCore)</sup>]
+* {{< linkForRef "kestrel" "Kestrel" >}}[<sup>[12](#ref-12)</sup>] 
+* {{< linkForRef "event-sourcing-with-kotlin" "Event Sourcing with Kotlin by Thomas Uhrig" >}}[<sup>[13](#ref-13)</sup>]
+* {{< linkForRef "kotlin-event-sourcing-example" "Kotlin Event Sourcing Example by Lorenzo Nicora" >}}[<sup>[14](#ref-14)</sup>]
+* {{< linkForRef "functional-event-sourcing-example" "Functional Event Sourcing Example by Jakub Zalas" >}}[<sup>[15](#ref-15)</sup>]
+* {{< linkForRef "practical-guide-event-sourcing" "Practical Guide to Event Sourcing by Sam-Nicolai Johnston" >}}[<sup>[16](#ref-16)</sup>]
+* {{< linkForRef "event-sourcing-netcore" "Event Sourcing .NET Core by Oskar Dudycz" >}}[<sup>[17](#ref-17)</sup>]
 
 All of the examples are in Kotlin or C# but you can probaly find more expamples in the language of your choice.
 
@@ -119,8 +122,8 @@ Also note that the explanations are simplified and probably lack strictness in t
 
 The first time I heard about CQRS and Event Sourcing was in the context of Domain Driven Design (DDD). 
 DDD is an approach of developing software that focuses on the domain and the business logic of the application. 
-It was introduced 2003 by Eric Evans in his seminal book Domain-Driven Design: Tackling Complexity in the Heart of Software[<sup>[2](#ref-2)</sup>]. 
-Since the publication of the book, DDD has gained a lot of popularity and is now a widely used approach in software development, where a lot of other resources like books, e.g. Implementing Domain-Driven Design by Vaughn Vernon[<sup>[10](#ref-10)</sup>], Domain-Driven Design Principles, Patterns, and Practices by Scott Millet and Nick Tune[<sup>[5](#ref-5)</sup>] or Domain Modeling Made Functional by Scott Wlaschin[<sup>[9](#ref-9)</sup>], 
+It was introduced 2003 by Eric Evans in his seminal book Domain-Driven Design: Tackling Complexity in the Heart of Software[<sup>[18](#ref-18)</sup>]. 
+Since the publication of the book, DDD has gained a lot of popularity and is now a widely used approach in software development, where a lot of other resources like books, e.g. Implementing Domain-Driven Design by Vaughn Vernon[<sup>[19](#ref-19)</sup>], Domain-Driven Design Principles, Patterns, and Practices by Scott Millet and Nick Tune[<sup>[20](#ref-20)</sup>] or Domain Modeling Made Functional by Scott Wlaschin[<sup>[21](#ref-21)</sup>], 
 and a plethora of blog posts, and videos are available. 
 The book from Eric Evans itself is thereby split into two parts. The first part is about desinging and implementing the domain model with the so called tactical patterns like Aggregates, Repositories, Factories, and Domain Events. The second part is about the strategic patterns like Bounded Contexts, Context Maps, and Shared Kernel. Whereas the second part is regarded as the more important one by many people and Eric Evans himself, we we are focussing on some of the tacatical patterns as we are implementing an example in this project. Going forward we will go through the small list of tactical patterns used in the project.
 
@@ -157,30 +160,30 @@ Domain Events are not used to integrate with other systems or services, therefor
 
 ##### Dependency Inversion Principle (DIP) compliant architecture
 
-To isolate the domain from the infrastructure and to make the domain independent of the infrastructure, we are using the Dependency Inversion Principle (DIP)[<sup> [6](#ref-6)</sup>]. This is the underlying principle for many architectures like the {< linkForRef "layers-onions-ports-adapters" "Hexagonal Architecture, Onion Architecture, or Clean Architecture. " >}[<sup>[LayersOnionsPortsAdapters](#ref-LayersOnionsPortsAdapters)</sup>] 
+To isolate the domain from the infrastructure and to make the domain independent of the infrastructure, we are using the Dependency Inversion Principle (DIP)[<sup> [22](#ref-22)</sup>]. This is the underlying principle for many architectures like the {< linkForRef "layers-onions-ports-adapters" "Hexagonal Architecture, Onion Architecture, or Clean Architecture. " >}[<sup>[23](#ref-23)</sup>] 
 The DIP states that 
 
 > high-level modules should not depend on low-level modules. Both should depend on abstractions. 
 
-We will see how this is implemented in the project later on in this post. If isolating the domain from the infrastructure is a good practice is still a matter of debate, see {{< linkForRef "dependencies-workflow-oriented-design" "here" >}}[<sup>[DependenciesWorkflowOrientedDesign](#ref-DependenciesWorkflowOrientedDesign)</sup>], {{< linkForRef "udi-dahan-if-domain-logic" "here" >}}[<sup>[UdiDahanIfDomainLogic](#ref-UdiDahanIfDomainLogic)</sup>] or {{< linkForRef "vertical-slice-architecture" "here" >}}[<sup>[VerticalSliceArchitecture](#ref-VerticalSliceArchitecture)</sup>], as the isolation comes with a cost of higher complexity in architecture and code. Choosing an implementation with a {{< linkForRef "domain-model" "rich domain model" >}}[<sup>[DomainModel](#ref-DomainModel)</sup>] also depends on the complexity of the domain and the business logic. Other {{< linkForRef "eaa-catalog" "architecture patterns" >}}[<sup>[EAACatalog](#ref-EAACatalog)</sup>] like Transaction Script or Table Module might be more suitable for simple domains. Nevertheless, we are going with a DIP compliant architecture in this project.
+We will see how this is implemented in the project later on in this post. If isolating the domain from the infrastructure is a good practice is still a matter of debate, see {{< linkForRef "dependencies-workflow-oriented-design" "here" >}}[<sup>[24](#ref-24)</sup>], {{< linkForRef "udi-dahan-if-domain-logic" "here" >}}[<sup>[25](#ref-25)</sup>] or {{< linkForRef "vertical-slice-architecture" "here" >}}[<sup>[26](#ref-26)</sup>], as the isolation comes with a cost of higher complexity in architecture and code. Choosing an implementation with a {{< linkForRef "domain-model" "rich domain model" >}}[<sup>[27](#ref-27)</sup>] also depends on the complexity of the domain and the business logic. Other {{< linkForRef "eaa-catalog" "architecture patterns" >}}[<sup>[28](#ref-28)</sup>] like Transaction Script or Table Module might be more suitable for simple domains. Nevertheless, we are going with a DIP compliant architecture in this project.
 
 ##### Dependency Injection (DI)
 
 In the previous section we talked about the DIP compliant architecture and how high and low level modules should depend on abstractions. 
-We will leverage {{< linkForRef "dependency-injection" "Dependency Injection (DI)" >}}[<sup>[DependencyInjection](#ref-DependencyInjection)</sup>] to fulfill this principle and decouple the domain from the infrastructure.
-Dependency Injection[<sup> [4](#ref-4)</sup>] is a technique where one object supplies the dependencies of another object instead of the object creating the dependencies itself. This is done by injecting the dependencies into the object that needs them. This can be done by constructor injection, setter injection, or interface injection, but we are only using constructor injection in the project. 
+We will leverage {{< linkForRef "dependency-injection" "Dependency Injection (DI)" >}}[<sup>[29](#ref-29)</sup>] to fulfill this principle and decouple the domain from the infrastructure.
+Dependency Injection[<sup> [30](#ref-30)</sup>] is a technique where one object supplies the dependencies of another object instead of the object creating the dependencies itself. This is done by injecting the dependencies into the object that needs them. This can be done by constructor injection, setter injection, or interface injection, but we are only using constructor injection in the project. 
 This will also help us with the testing of the application where we can test the domain logic in isolation and provide mock implementations for the infrastructure dependencies. We will talk more about testing in the next post of this blog. 
 
 ##### Command Query Responsibility Segregation (CQRS)
 
-CQRS is one of the two main architectural patterns we want to demonstrate in the implementation of the project. CQRS is an extension of the Command Query Separation (CQS) principle, which was introduced by Bertrand Meyer in his book Object-Oriented Software Construction[<sup> [7](#ref-7) </sup>]. 
+CQRS is one of the two main architectural patterns we want to demonstrate in the implementation of the project. CQRS is an extension of the Command Query Separation (CQS) principle, which was introduced by Bertrand Meyer in his book Object-Oriented Software Construction[<sup> [31](#ref-31) </sup>]. 
 CQS states that a method should either change the state of an object or return a result, but not both. CQRS takes this principle further and segregates the read and write operations of an application into two different parts of the application. 
 In its simplest form, CQRS 
 > is simply the creation of two objects where there was previously only one. 
 
 Whereas one object is responsible for handling the commands and changing the state of the application, the so called write side of the application. 
 The other object is responsible for handling the queries and returning the state of the application, the so called read side of the application. 
-For the beginning there is nothing more to CQRS than that, as also described by Greg Young in his blog post {{< linkForRef "cqrs-task-based-uis-event-sourcing" "CQRS, Task Based UIs, Event Sourcing agh!" >}}[<sup>[3](#ref-3)</sup>]. 
+For the beginning there is nothing more to CQRS than that, as also described by Greg Young in his blog post {{< linkForRef "cqrs-task-based-uis-event-sourcing" "CQRS, Task Based UIs, Event Sourcing agh!" >}}[<sup>[32](#ref-32)</sup>]. 
 Nevertheless CQRS enables us to optimize the read and write operations of an application independently and to introduce other interesting patterns like Event Sourcing, Task Based UIs and Eventual Consistency, 
 even though these are not part of CQRS itself.
 
@@ -191,24 +194,25 @@ Event Sourcing is a pattern where the state of an application is determined by a
 The events are an excellent way to capture the changes in the state of the domain and also provide an audit log of the changes. 
 Event sourcing is a quiet different approach compared to the traditional way of persisting the state of the application and comes with its
 own set of challenges, e.g. versioning or snap shots. Solutions on how to address these challenges can be found in the (unfinished) book 
-{{< linkForRef "esversioning" "Versioning in an Event Sourced System" >}}[<sup>[ESVersioning](#ref-ESVersioning)</sup>] by Greg Young.
+{{< linkForRef "esversioning" "Versioning in an Event Sourced System" >}}[<sup>[33](#ref-33)</sup>] by Greg Young.
 
 ## Technologies used
 
 In adddition to the concepts described above, and before we go into the details of the implementation of the project,
 I shortly want to list the main technologies in the project:
 
-* {{< linkForRef "kotlin-lang" "Kotlin" >}}[<sup>[KotlinLang](#ref-KotlinLang)</sup>]
-* {{< linkForRef "gradle" "Gradle" >}}[<sup>[Gradle](#ref-Gradle)</sup>]
-* {{< linkForRef "spring-boot" "Spring Boot" >}}[<sup>[SpringBoot](#ref-SpringBoot)</sup>] with {{< linkForRef "spring-mvc" "Spring MVC" >}}[<sup>[SpringMvc](#ref-SpringMvc)</sup>], {{< linkForRef "spring-events" "Spring events" >}}[<sup>[SpringEvents](#ref-SpringEvents)</sup>], and parts of {{< linkForRef "spring-data" "Spring Data" >}}[<sup>[SpringData](#ref-SpringData)</sup>]
-* {{< linkForRef "ktorm" "Ktorm" >}}[<sup>[Ktorm](#ref-Ktorm)</sup>]
-* {{< linkForRef "flyway" "Flyway" >}}[<sup>[Flyway](#ref-Flyway)</sup>]
-* {{< linkForRef "postgresql" "PostgreSQL" >}}[<sup>[Postgresql](#ref-Postgresql)</sup>]
-* {{< linkForRef "embedded-postgresql" "Embedded PostgreSQL" >}}[<sup>[EmbeddedPostgresql](#ref-EmbeddedPostgresql)</sup>]
-* {{< linkForRef "jackson" "Jackson" >}}[<sup>[Jackson](#ref-Jackson)</sup>]
-* {{< linkForRef "kotest" "Kotest" >}}[<sup>[Kotest](#ref-Kotest)</sup>]
-* {{< linkForRef "mockk" "Mockk" >}}[<sup>[Mockk](#ref-Mockk)</sup>]
-* {{< linkForRef "kotlin-multiplatform-compose" "Kotlin Multi Platform Compose" >}}[<sup>[KotlinMultiPlatformCompose](#ref-KotlinMultiPlatformCompose)</sup>]  
+* {{< linkForRef "kotlin-lang" "Kotlin" >}}[<sup>[2](#ref-2)</sup>]
+* {{< linkForRef "gradle" "Gradle" >}}[<sup>[34](#ref-34)</sup>]
+* {{< linkForRef "spring-boot" "Spring Boot" >}}[<sup>[3](#ref-3)</sup>] with {{< linkForRef "spring-mvc" "Spring MVC" >}}[<sup>[35](#ref-35)</sup>], {{< linkForRef "spring-events" "Spring events" >}}[<sup>[8](#ref-8)</sup>], and parts of {{< linkForRef "spring-data" "Spring Data" >}}[<sup>[36](#ref-36)</sup>]
+* {{< linkForRef "ktorm" "Ktorm" >}}[<sup>[37](#ref-37)</sup>]
+* {{< linkForRef "flyway" "Flyway" >}}[<sup>[38](#ref-38)</sup>]
+* {{< linkForRef "postgresql" "PostgreSQL" >}}[<sup>[7](#ref-7)</sup>]
+* {{< linkForRef "embedded-postgresql" "Embedded PostgreSQL" >}}[<sup>[6](#ref-6)</sup>]
+* {{< linkForRef "jackson" "Jackson" >}}[<sup>[39](#ref-39)</sup>]
+* {{< linkForRef "kotest" "Kotest" >}}[<sup>[40](#ref-40)</sup>]
+* {{< linkForRef "mockk" "Mockk" >}}[<sup>[41](#ref-41)</sup>]
+* {{< linkForRef "kotlin-logging" "Kotlin Logging" >}}[<sup>[42](#ref-42)</sup>]
+* {{< linkForRef "kotlin-multiplatform-compose" "Kotlin Multi Platform Compose" >}}[<sup>[9](#ref-9)</sup>]  
 
 ## Package structure and application flow
 
@@ -640,7 +644,7 @@ can continue with the read side.
 
 With publishing the events to the event bus we have completed the write side of the application and changed the application state. 
 We now want to have that reflected on the read side of the application, update the read model and show the changes to the user when the user queries a 
-read model. For that we are using {{ < linkForRef " marten-events" "inline projections" > }}[<sup> [MartenEvents](#ref-MartenEvents)</sup>] which means, that we are  listening to the in memory event bus and update the read model directly when an event is published.<cite>[3]</cite> 
+read model. For that we are using {{ < linkForRef " marten-events" "inline projections" > }}[<sup> [43](#ref-43)</sup>] which means, that we are  listening to the in memory event bus and update the read model directly when an event is published.<cite>[^3]</cite> 
 So let's have a look at the InventoryItemProjection file, which is doing exactly that. In the file we can find two classes, 
 one is holding the event listeners for a list view of the inventory items and the other one is holding the event listeners for a detail view of the inventory items. Again we are only showing the listeners for the InventoryItemChanged event, as we have chosen this for our walk through example.   
 
@@ -841,8 +845,8 @@ data class InventoryItem(
 
 In the AggregateRoot interface we have defined three properties, the id, the changes list and a clock, which must be overriden in the constructor 
 of the aggregate implementation. Additional properties can then be defined in the aggregate itself. I have chosen to make the aggregate immutable by 
-defining all of the properties with the val keyword and using Kotlins data class feature. The additional properties of the aggregate are then defined 
-in the consructor of the data class and need to have a default value. This way we can instantiate an empty aggregate with the default values via the constructor.
+defining all of the properties with the val keyword and using {{< linkForRef "kotlin-data-class" "Kotlins data class feature" >}}[<sup>[44](#ref-44)</sup>].
+The additional properties of the aggregate are then defined in the consructor of the data class and need to have a default value. This way we can instantiate an empty aggregate with the default values via the constructor.
 As we have seen we need and empty instance of the aggregate to apply the events to the aggregate when loading the aggregate from the database. When we want to
 create a new aggregate we need to provide and use an invoke function in a companion object of the aggregate. 
 The invoke function is then used to create a new instance of the aggregate and apply an initial creation event to the aggregate. Whith the constructor with
@@ -851,7 +855,9 @@ using event sourcing to reconstitute the current state of the aggregate.
 
 Another point we have seen is that the aggregate is immutable and we are returning a copy of the aggregate with the new state 
 when calling the applyEvent function of the aggregate. Immutability is a common pattern in functional programming and is also recommended for
-domain modelling in DDD by the Arrow-kt library and other thought leaders in the domain driven design community.
+domain modelling in DDD by the {{< linkForRef "arrow-kt" "Arrow-kt library" >}}[<sup>[45](#ref-45)</sup>] and also seems to gain popularity in the DDD community.
+Whereas I did not make use of the Arrow-kt library in the project one can find more information about immutability and domain modeling in the 
+{{< linkForRef "immutable-data" "immutable data section" >}}[<sup>[46](#ref-46)</sup>] of Arrow-kt documentation and in Scott Wlashin's book Domain Modeling Made Functional[<sup>[21](#ref-21)</sup>].
 
 In summary we need to follow the following conventions to create an aggregate and to make it immutable:
 
@@ -1047,124 +1053,107 @@ This is because I already had my next blog post in mind in which I want to show 
 
 ## References
 
-<!-- {{< reference "MartenLearning" "Marten Learning" "" "marten-learning" >}}<br>
+{{< reference "1" "Young, Gregory" "Simple CQRS example" "simplest-possible-thing" >}}<br>
 
-{{< reference "ProjectionsReadModels" "Projections and Read Models in Event Driven Architecture" "" "projections-read-models" >}}<br>
+{{< reference "2" "Kotlin Language" "" "kotlin-lang" >}}<br>
 
-{{< reference "DDDReadModels" "DDD Read Models" "" "ddd-read-models" >}}<br>
+{{< reference "3" "Spring Boot" "" "spring-boot" >}}<br>
 
-{{< reference "DataClasses" "Data Classes" "" "data-classes" >}}<br>
+{{< reference "4" "C#" "" "csharp-lang" >}}<br>
 
-{{< reference "ArrowKT" "Arrow KT" "" "arrow-kt" >}}<br>
+{{< reference "5" ".NET" "" "dotnet">}}<br>
 
-{{< reference "ImmutableData" "Immutable Data" "" "immutable-data" >}}<br>  -->
+{{< reference "6" "Embedded PostgreSQL" "" "embedded-postgresql" >}}<br>
 
+{{< reference "7" "PostgreSQL" "" "postgresql" >}}<br>
 
-{{< reference "SimpleCQRS" "Young, Gregory" "Simple CQRS example" "simplest-possible-thing" >}}<br>
+{{< reference "8" "Spring Events" "" "spring-events" >}}<br>
 
-{{< reference "2" "Evans, Eric" "2003. Domain-Driven Design: Tacking Complexity In the Heart of Software. Addison-Wesley Longman Publishing Co., Inc., USA." >}}<br>
+{{< reference "9" "Kotlin Multi Platform Compose" "" "kotlin-multiplatform-compose" >}}<br>
 
-{{< reference "3" "Young, Gregory" "CQRS, Task Based UIs, Event Sourcing agh!" "cqrs-task-based-uis-event-sourcing" >}}<br>
+{{< reference "10" "Axon Framework" "" "axon-framework" >}}<br>
 
-{{< reference "4" "Steven van Deursen; Mark Seemann" "Dependency Injection Principles, Practices, and Patterns , Manning, 2019" >}}<br>
+{{< reference "11" "Marten" "" "marten" >}}<br>
 
-{{< reference "5" "Scott Millet; Nick Tune" "2015. Patterns, Principles, and Practices of Domain-Driven Design (1st. ed.). Wrox Press Ltd., GBR." >}}<br>
+{{< reference "12" "Kestrel" "" "kestrel" >}}<br>
 
-{{< reference "6" "Robert Cecil Martin" "2003. Agile Software Development: Principles, Patterns, and Practices. Prentice Hall PTR, USA." >}}<br>
+{{< reference "13" "Event Sourcing with Kotlin" "" "event-sourcing-with-kotlin" >}}<br>
 
-{{< reference "7" "Bertrand Meyer" "1988. Object-Oriented Software Construction (1st. ed.). Prentice-Hall, Inc., USA." >}}<br>
+{{< reference "14" "Kotlin Event Sourcing Example" "" "kotlin-event-sourcing-example" >}}<br>
 
-{{< reference "9" "Wlaschin, Scott" "2018. Domain modeling made functional : tackle software complexity with domain-driven design and F#. Raleigh, North Carolina :The Pragmatic Bookshelf." >}}<br>
+{{< reference "15" "Functional Event Sourcing Example" "" "functional-event-sourcing-example" >}}<br>
 
-{{< reference "10" "Vernon, Vaughn" "2013. Implementing Domain-Driven Design. Addison-Wesley Professional." >}}<br>
+{{< reference "16" "Practical Guide to Event Sourcing" "" "practical-guide-event-sourcing" >}}<br>
 
-{{< reference "KotlinMultiPlatformCompose" "Kotlin Multi Platform Compose" "" "kotlin-multiplatform-compose" >}}<br>
+{{< reference "17" "Event Sourcing .NET Core" "" "event-sourcing-netcore" >}}<br>
 
-{{< reference "CsharpLang" "C#" "" "csharp-lang" >}}<br>
+{{< reference "18" "Evans, Eric" "2003. Domain-Driven Design: Tacking Complexity In the Heart of Software. Addison-Wesley Longman Publishing Co., Inc., USA." >}}<br>
 
-{{< reference "Dotnet" ".NET" "" "dotnet">}}<br>
+{{< reference "19" "Vernon, Vaughn" "2013. Implementing Domain-Driven Design. Addison-Wesley Professional." >}}<br>
 
-{{< reference "KotlinLang" "Kotlin Language" "" "kotlin-lang" >}}<br>
+{{< reference "20" "Scott Millet; Nick Tune" "2015. Patterns, Principles, and Practices of Domain-Driven Design (1st. ed.). Wrox Press Ltd., GBR." >}}<br>
 
-{{< reference "SpringBoot" "Spring Boot" "" "spring-boot" >}}<br>
+{{< reference "21" "Wlaschin, Scott" "2018. Domain modeling made functional : tackle software complexity with domain-driven design and F#. Raleigh, North Carolina :The Pragmatic Bookshelf." >}}<br>
 
-{{< reference "SpringMvc" "Spring MVC" "" "spring-mvc" >}}<br>
+{{< reference "22" "Robert Cecil Martin" "2003. Agile Software Development: Principles, Patterns, and Practices. Prentice Hall PTR, USA." >}}<br>
 
-{{< reference "SpringEvents" "Spring Events" "" "spring-events" >}}<br>
+{{< reference "23" "Layers Onions Ports Adapters" "" "layers-onions-ports-adapters" >}}<br>
 
-{{< reference "SpringData" "Spring Data" "" "spring-data" >}}<br>
+{{< reference "24" "Dependencies Workflow Oriented Design" "" "dependencies-workflow-oriented-design" >}}<br>
 
-{{< reference "Ktorm" "Ktorm" "" "ktorm" >}}<br>
+{{< reference "25" "Udi Dahan If Domain Logic" "" "udi-dahan-if-domain-logic" >}}<br>
 
-{{< reference "Flyway" "Flyway" "" "flyway" >}}<br>
+{{< reference "26" "Vertical Slice Architecture" "" "vertical-slice-architecture" >}}<br>
 
-{{< reference "Postgresql" "PostgreSQL" "" "postgresql" >}}<br>
+{{< reference "27" "Domain Model" "" "domain-model" >}}<br>
 
-{{< reference "EmbeddedPostgresql" "Embedded PostgreSQL" "" "embedded-postgresql" >}}<br>
+{{< reference "28" "EAA Catalog" "" "eaa-catalog" >}}<br>
 
-{{< reference "Gradle" "Gradle" "" "gradle" >}}<br>
+{{< reference "29" "Dependency Injection" "" "dependency-injection" >}}<br>
 
-{{< reference "Jackson" "Jackson" "" "jackson" >}}<br>
+{{< reference "30" "Steven van Deursen; Mark Seemann" "Dependency Injection Principles, Practices, and Patterns , Manning, 2019" >}}<br>
 
-{{< reference "Kotest" "Kotest" "" "kotest" >}}<br>
+{{< reference "31" "Bertrand Meyer" "1988. Object-Oriented Software Construction (1st. ed.). Prentice-Hall, Inc., USA." >}}<br>
 
-{{< reference "Mockk" "Mockk" "" "mockk" >}}<br>
+{{< reference "32" "Young, Gregory" "CQRS, Task Based UIs, Event Sourcing agh!" "cqrs-task-based-uis-event-sourcing" >}}<br>
 
-{{< reference "KotlinLogging" "KotlinLogging" "" "KotlinLogging" >}}<br>
+{{< reference "33" "Event Sourcing Versioning" "" "esversioning" >}}<br>
 
-{{< reference "Kestrel" "Kestrel" "" "kestrel" >}}<br>
+{{< reference "34" "Gradle" "" "gradle" >}}<br>
 
-{{< reference "EventSourcingWithKotlin" "Event Sourcing with Kotlin" "" "event-sourcing-with-kotlin" >}}<br>
+{{< reference "35" "Spring MVC" "" "spring-mvc" >}}<br>
 
-{{< reference "KotlinEventSourcingExample" "Kotlin Event Sourcing Example" "" "kotlin-event-sourcing-example" >}}<br>
+{{< reference "36" "Spring Data" "" "spring-data" >}}<br>
 
-{{< reference "FunctionalEventSourcingExample" "Functional Event Sourcing Example" "" "functional-event-sourcing-example" >}}<br>
+{{< reference "37" "Ktorm" "" "ktorm" >}}<br>
 
-{{< reference "PracticalGuideEventSourcing" "Practical Guide to Event Sourcing" "" "practical-guide-event-sourcing" >}}<br>
+{{< reference "38" "Flyway" "" "flyway" >}}<br>
 
-{{< reference "EventSourcingNetCore" "Event Sourcing .NET Core" "" "event-sourcing-netcore" >}}<br>
+{{< reference "39" "Jackson" "" "jackson" >}}<br>
 
-{{< reference "Marten" "Marten" "" "marten" >}}<br>
+{{< reference "40" "Kotest" "" "kotest" >}}<br>
 
-{{< reference "MartenEvents" "Marten Events" "" "marten-events" >}}<br>
+{{< reference "41" "Mockk" "" "mockk" >}}<br>
 
-{{< reference "MartenGithub" "Marten Github" "" "marten-github" >}}<br>
+{{< reference "42" "KotlinLogging" "" "kotlin-logging" >}}<br>
 
-{{< reference "MartenLearning" "Marten Learning" "" "marten-learning" >}}<br>
+{{< reference "43" "Marten Events" "" "marten-events" >}}<br>
 
-{{< reference "ProjectionsReadModels" "Projections and Read Models in Event Driven Architecture" "" "projections-read-models" >}}<br>
+{{< reference "44" "Data Classes" "" "data-classes" >}}<br>
 
-{{< reference "ESVersioning" "Event Sourcing Versioning" "" "esversioning" >}}<br>
+{{< reference "45" "Arrow KT" "" "arrow-kt" >}}<br>
 
-{{< reference "DDDReadModels" "DDD Read Models" "" "ddd-read-models" >}}<br>
+{{< reference "46" "Immutable Data" "" "immutable-data" >}}<br>
 
-{{< reference "Exposed" "Exposed" "" "exposed" >}}<br>
+{{< reference "47" "Exposed" "" "exposed" >}}<br>
 
-{{< reference "AxonFramework" "Axon Framework" "" "axon-framework" >}}<br>
+{{< reference "48" "Projections and Read Models in Event Driven Architecture" "" "projections-read-models" >}}<br>
 
-{{< reference "EAACatalog" "EAA Catalog" "" "eaa-catalog" >}}<br>
-
-{{< reference "DomainModel" "Domain Model" "" "domain-model" >}}<br>
-
-{{< reference "DependecyInjection" "Dependency Injection" "" "dependency-injection" >}}<br>
-
-{{< reference "DataClasses" "Data Classes" "" "data-classes" >}}<br>
-
-{{< reference "ArrowKT" "Arrow KT" "" "arrow-kt" >}}<br>
-
-{{< reference "ImmutableData" "Immutable Data" "" "immutable-data" >}}<br>
-
-{{< reference "LayersOnionsPortsAdapters" "Layers Onions Ports Adapters" "" "layers-onions-ports-adapters" >}}<br>
-
-{{< reference "VerticalSliceArchitecture" "Vertical Slice Architecture" "" "vertical-slice-architecture" >}}<br>
-
-{{< reference "DependenciesWorkflowOrientedDesign" "Dependencies Workflow Oriented Design" "" "dependencies-workflow-oriented-design" >}}<br>
-
-{{< reference "UdiDahanIfDomainLogic" "Udi Dahan If Domain Logic" "" "udi-dahan-if-domain-logic" >}}<br>
+{{< reference "49" "DDD Read Models" "" "ddd-read-models" >}}<br>
 
 
 [^1]: The implementation of command handlers for the inventory item are grouped together in the InventoryItemCommandHandlers class which handles multiple commands instead of using on handler class per commmand.
 
-[^2]: Another ORM with a similar feature set is {{< linkForRef "exposed" "Exposed" >}}[<sup>[Exposed](#ref-Exposed)</sup>] by JetBrains
+[^2]: Another ORM with a similar feature set is {{< linkForRef "exposed" "Exposed" >}}[<sup>[47](#ref-47)</sup>] by JetBrains
 
-[^3]: More info on projections and read models can be found on the  {{< linkForRef "projections-read-models" "blog of Oskar Dudycz" >}}[<sup>[ProjectionsReadModels](#ref-ProjectionsReadModels)</sup>] and the  {{< linkForRef "ddd-read-models" "blog of Xebia" >}}[<sup>[DddReadModels](#ref-DddReadModels)</sup>]  
+[^3]: More info on projections and read models can be found for example on the  {{< linkForRef "projections-read-models" "blog of Oskar Dudycz" >}}[<sup>[48](#ref-48)</sup>] and the  {{< linkForRef "ddd-read-models" "blog of Xebia" >}}[<sup>[49](#ref-49)</sup>]  
