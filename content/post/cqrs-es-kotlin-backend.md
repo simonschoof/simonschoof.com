@@ -114,94 +114,109 @@ All the examples are in Kotlin or C#, but you can probably find more examples in
 
 ## Concepts
 
-In this section we will give a brief introduction to the underlying concepts used in the implementation of the project. 
-We will only scratch the surface of each concept and give a short overview of the concept. 
-Every concept could fill a whole book or at least a blog post on its own. 
-So please be aware that further reading on each concept is necessary and highly recommended. 
-Also note that the explanations are simplified and probably lack strictness in their definitions.
+In this section, we provide a brief introduction to the fundamental concepts used in implementing the project.
+We will only scratch the surface of each concept and provide a brief overview. Each concept could fill an entire book or at least a separate blog post.
+Please note, therefore, that further reading on each concept is necessary and highly recommended. Also note that the explanations are simplified and probably not strictly defined enough.
 
 ##### Domain Driven Design (DDD)
 
-The first time I heard about CQRS and Event Sourcing was in the context of Domain Driven Design (DDD). 
-DDD is an approach of developing software that focuses on the domain and the business logic of the application. 
-It was introduced 2003 by Eric Evans in his seminal book Domain-Driven Design: Tackling Complexity in the Heart of Software[<sup>[18](#ref-18)</sup>]. 
-Since the publication of the book, DDD has gained a lot of popularity and is now a widely used approach in software development, where a lot of other resources like books, e.g. Implementing Domain-Driven Design by Vaughn Vernon[<sup>[19](#ref-19)</sup>], Domain-Driven Design Principles, Patterns, and Practices by Scott Millet and Nick Tune[<sup>[20](#ref-20)</sup>] or Domain Modeling Made Functional by Scott Wlaschin[<sup>[21](#ref-21)</sup>], 
-and a plethora of blog posts, and videos are available. 
-The book from Eric Evans itself is thereby split into two parts. The first part is about desinging and implementing the domain model with the so called tactical patterns like Aggregates, Repositories, Factories, and Domain Events. The second part is about the strategic patterns like Bounded Contexts, Context Maps, and Shared Kernel. Whereas the second part is regarded as the more important one by many people and Eric Evans himself, we we are focussing on some of the tacatical patterns as we are implementing an example in this project. Going forward we will go through the small list of tactical patterns used in the project.
+I first heard about CQRS and event sourcing in the context of Domain-Driven Design (DDD).
+DDD is an approach to developing software that focuses on the domain and business logic of the application. 
+It was introduced by Eric Evans in his seminal book Domain-Driven Design: Tackling Complexity in the Heart of Software [<sup>[18](#ref-18)</sup>] in 2003.
+Since the publication of the book, DDD has grown in popularity and is now a widely used approach in software development, 
+where many other resources such as books, e.g. "Implementing Domain-Driven Design" by Vaughn Vernon[<sup>[19](#ref-19)</sup>],
+"Domain-Driven Design Principles, Patterns, and Practices" by Scott Millet and Nick Tune[<sup>[20](#ref-20)</sup>] 
+or Domain Modeling Made Functional by Scott Wlaschin<sup>[21](#ref-21)</sup>, as well as a variety of blog posts and videos are available.
+Eric Evans's book itself is divided into two parts.
+The first part is about designing and implementing the domain model using tactical patterns such as Aggregates, Repositories, Factories, and Domain Events. 
+The second part is about the strategic patterns such as Bounded Contexts, Context Maps, and Shared Kernel.
+While the second part is considered by many people and Eric Evans himself to be the more important one,
+we will concentrate on some of the tactical patterns, since we are implementing an example in this project.
+In the following, we will go through the small list of tactical patterns used in the project.
 
 
 **Aggregates and Aggregate Roots**
 
-We will start with Aggregates and the Aggregate Root, which is also the main abstraction used in the implementation of the project. 
-An Aggregate is a cluster of domain objects (Entities and Value Objects) that can be treated as a single unit. 
-The Aggregate Root is the main entity of the Aggregate and is the only entity that can be accessed from outside the Aggregate. 
-The Aggregate Root is responsible for maintaining the consistency of the Aggregate. In the project we have only one Aggregate the 
-InventoryItem, which is at the same time the Aggregate Root.
+We start with aggregates and the aggregate root, which is also the main abstraction in implementing the project.
+An aggregate is a cluster of domain objects (entities and value objects) that can be treated as a single unit.
+The aggregate root is the main entity of the aggregate and the only entity that can be accessed from outside the aggregate. 
+The aggregate root is responsible for maintaining the consistency of the aggregate. In our project, we have only one aggregate, the
+*InventoryItem*, which is also the aggregate root.
 
 **Factories**
 
-A Factory in DDD is ressponsible for creating an Aggregate in a consistent state. The Factory of DDD is not the same as the Factory pattern from the Gang of Four, but the Factory pattern could be used to implement a Factory in DDD. A Factory in DDD is about creating an Aggregate in a consistent state. 
-In the project we simply have the constructor of the InventoryItem and an companion object invoke function as a Factory.
+A factory in DDD is responsible for creating an aggregate in a consistent state. The factory of DDD is not the same as one of the Gang of Four's factory patterns[<sup>[50](#ref-50)</sup>], 
+but the factory patterns could be used to implement a factory in DDD. The point of a factory in DDD is to create an aggregate in a consistent state.
+In the project, we simply have the constructor of the *InventoryItem* and an invoke-function on a companion object as a factory.
 
 **Repositories** 
 
-A Repository in DDD is responsible for loading and saving Aggregates. It is also an abstraction that hides the details of the underlying data store from the domain, when working with an Dependency Inversion Principle (DIP) compliant architecture. 
-Also here it is important to note, that when loading and saving an Aggregate the whole Aggregate is loaded and saved in a consistent state. 
-In this project we have the AggregateRepository, which has a dependency to the EventStore and is responsible for loading and saving the events of the InventoryItem Aggregate. 
-As we are using Event Sourcing the Repository is not responsible for loading and saving the state of the Aggregate, but the events that lead to the current state of the Aggregate. 
+A repository in DDD is responsible for loading and saving aggregates. It is also an abstraction that hides the details of the underlying data store from the domain 
+when working with an architecture that adheres to the Dependency Inversion Principle (DIP).
+Again, it is important to note that when loading and saving an aggregate, the entire aggregate is loaded and saved in a consistent state. 
+In this project, we have the *AggregateRepository*, which has a dependency on the *EventStore* and is responsible for loading and saving the events of the *InventoryItem* aggregate.
+Since we are using event sourcing, the repository is not responsible for loading and saving the aggregate state, but rather for the events that lead to the current aggregate state.
 
 **Domain Events**
 
-A core concept in our implementation of the project are Domain Events. Domain Events are events that are published when there was a change in the Aggregate, which means a change in the state of the application. 
-The event names are denoted in the past tense and describe what happened in the Aggregate. The events are stored in the EventStore and are used to rebuild the state of the Aggregate, hence the name Event Sourcing. 
-The events are also used to update the Read Side of the application via Projections. We are going with the definintion of Marten for Projections as 
-> any strategy for generating "read side" views from the raw events. 
+A core concept in the implementation of our project is domain events. Domain events are events that are published when there has been a change in the aggregate, i.e. a change in the state of the application.
+The event names are given in the past tense and describe what has happened in the aggregate. The events are stored in the event store and are used to rebuild the state of the aggregate, hence the name event sourcing. 
+The events are also used to update the read side of the application via projections. We use Marten's definition of projections as
 
-Domain Events are not used to integrate with other systems or services, therefore so called Integration Events are used. 
+> any strategy for generating "read side" views from the raw events.
+
+Domain events are not used to integrate with other systems or services, so-called integration events are used.
 
 
 ##### Dependency Inversion Principle (DIP) compliant architecture
 
-To isolate the domain from the infrastructure and to make the domain independent of the infrastructure, we are using the Dependency Inversion Principle (DIP)[<sup> [22](#ref-22)</sup>]. This is the underlying principle for many architectures like the {< linkForRef "layers-onions-ports-adapters" "Hexagonal Architecture, Onion Architecture, or Clean Architecture. " >}[<sup>[23](#ref-23)</sup>] 
-The DIP states that 
-
+To isolate the domain from the infrastructure and make the domain independent of the infrastructure, 
+we use the Dependency Inversion Principle (DIP) [<sup>[22](#ref-22)</sup>]. 
+This is the basic principle of many architectures such as the {< linkForRef "layers-onions-ports-adapters" "Hexagonal Architecture, Onion Architecture or Clean Architecture">}[<sup>[23](#ref-23)</sup>]
+The DIP states that
 > high-level modules should not depend on low-level modules. Both should depend on abstractions. 
 
-We will see how this is implemented in the project later on in this post. If isolating the domain from the infrastructure is a good practice is still a matter of debate, see {{< linkForRef "dependencies-workflow-oriented-design" "here" >}}[<sup>[24](#ref-24)</sup>], {{< linkForRef "udi-dahan-if-domain-logic" "here" >}}[<sup>[25](#ref-25)</sup>] or {{< linkForRef "vertical-slice-architecture" "here" >}}[<sup>[26](#ref-26)</sup>], as the isolation comes with a cost of higher complexity in architecture and code. Choosing an implementation with a {{< linkForRef "domain-model" "rich domain model" >}}[<sup>[27](#ref-27)</sup>] also depends on the complexity of the domain and the business logic. Other {{< linkForRef "eaa-catalog" "architecture patterns" >}}[<sup>[28](#ref-28)</sup>] like Transaction Script or Table Module might be more suitable for simple domains. Nevertheless, we are going with a DIP compliant architecture in this project.
+We will see how this is implemented in the project later in this post. 
+While isolating the domain from the infrastructure is a good practice, it is still controversial. See {{< linkForRef "dependencies-workflow-oriented-design" "here" >}}[<sup>[24](#ref-24)</sup>], {{< linkForRef "udi-dahan-if-domain-logic ‘ ’here" >}}[<sup> [25](#ref-25)</sup>] or {{< linkForRef "vertical-slice-architecture" "here" >}}[<sup>[26](#ref-26)</sup>], since isolation comes with higher complexity costs in architecture and code. 
+The decision for an implementation with a {{< linkForRef "domain-model" "rich domain model" >}}[<sup>[27](#ref-27)</sup>] also depends on the complexity of the area and the business logic. Other {{< linkForRef "eaa-catalog" "architecture pattern" >}}[<sup>[28](#ref-28)</sup>] such as transaction script or table module might be more suitable for simple domains. Nevertheless, we are using a DIP-compliant architecture for this project.
 
 ##### Dependency Injection (DI)
 
-In the previous section we talked about the DIP compliant architecture and how high and low level modules should depend on abstractions. 
-We will leverage {{< linkForRef "dependency-injection" "Dependency Injection (DI)" >}}[<sup>[29](#ref-29)</sup>] to fulfill this principle and decouple the domain from the infrastructure.
-Dependency Injection[<sup> [30](#ref-30)</sup>] is a technique where one object supplies the dependencies of another object instead of the object creating the dependencies itself. This is done by injecting the dependencies into the object that needs them. This can be done by constructor injection, setter injection, or interface injection, but we are only using constructor injection in the project. 
-This will also help us with the testing of the application where we can test the domain logic in isolation and provide mock implementations for the infrastructure dependencies. We will talk more about testing in the next post of this blog. 
+In the previous segment, we discussed the DIP-compliant architecture and how high- and low-level modules should depend on abstractions.
+We will use {{< linkForRef "dependency-injection" "Dependency Injection (DI)" >}}[<sup>[29](#ref-29)</sup>] to fulfill this principle and decouple the domain from the infrastructure.
+Dependency injection[<sup> [30](#ref-30)</sup>] is a technique in which an object provides the dependencies of another object instead of that object creating the dependencies itself. 
+This is done by injecting the dependencies into the object that needs them. 
+This can be done through constructor injection, setter injection or interface injection, but we only use constructor injection in the project. 
+This will also help us when testing the application, where we can test the domain logic in isolation and provide mock implementations for the infrastructure dependencies. 
+We will talk more about testing in the next post of this blog.
 
 ##### Command Query Responsibility Segregation (CQRS)
 
-CQRS is one of the two main architectural patterns we want to demonstrate in the implementation of the project. CQRS is an extension of the Command Query Separation (CQS) principle, which was introduced by Bertrand Meyer in his book Object-Oriented Software Construction[<sup> [31](#ref-31) </sup>]. 
-CQS states that a method should either change the state of an object or return a result, but not both. CQRS takes this principle further and segregates the read and write operations of an application into two different parts of the application. 
-In its simplest form, CQRS 
-> is simply the creation of two objects where there was previously only one. 
+CQRS is one of the two main architectural patterns we want to demonstrate in implementing the project. CQRS is an extension of the command-query separation principle (CQS), which was introduced by Bertrand Meyer in his book "Object-Oriented Software Construction" [<sup> [31](#ref-31) </sup>]. 
+CQS states that a method should either change the state of an object or return a result, but not both. CQRS takes this principle further and separates the reading and writing operations of an application into two different parts of the application.
 
-Whereas one object is responsible for handling the commands and changing the state of the application, the so called write side of the application. 
-The other object is responsible for handling the queries and returning the state of the application, the so called read side of the application. 
-For the beginning there is nothing more to CQRS than that, as also described by Greg Young in his blog post {{< linkForRef "cqrs-task-based-uis-event-sourcing" "CQRS, Task Based UIs, Event Sourcing agh!" >}}[<sup>[32](#ref-32)</sup>]. 
-Nevertheless CQRS enables us to optimize the read and write operations of an application independently and to introduce other interesting patterns like Event Sourcing, Task Based UIs and Eventual Consistency, 
+In its simplest form, CQRS
+
+> is simply the creation of two objects where there was previously only one.
+
+While one object is responsible for processing the commands and changing the state of the application, the so-called write side of the application.
+The other object is responsible for processing the queries and returning the state of the application, the so-called read side of the application. 
+To start with, CQRS is no more than that, as Greg Young describes in his blog post {{< linkForRef "cqrs-task-based-uis-event-sourcing" "CQRS, Task Based UIs, Event Sourcing agh!" >}}[<sup>[32](#ref-32)</sup>]. 
+Nevertheless, CQRS allows us to optimize an application's reads and writes independently of each other and to introduce other interesting patterns such as event sourcing, task-based UIs, and eventual consistency,
 even though these are not part of CQRS itself.
 
 ##### Event Sourcing (ES)
 
-The next pattern we will have a closer look at in the implementation of the project is Event Sourcing. 
-Event Sourcing is a pattern where the state of an application is determined by a sequence of events instead of storing the current state of the oject directly.
+The next pattern we will take a closer look at for implementing the project is event sourcing. 
+Event sourcing is a pattern where the state of an application is determined by a sequence of events, rather than by directly storing the current state of the object. 
 The events are an excellent way to capture the changes in the state of the domain and also provide an audit log of the changes. 
-Event sourcing is a quiet different approach compared to the traditional way of persisting the state of the application and comes with its
-own set of challenges, e.g. versioning or snap shots. Solutions on how to address these challenges can be found in the (unfinished) book 
-{{< linkForRef "esversioning" "Versioning in an Event Sourced System" >}}[<sup>[33](#ref-33)</sup>] by Greg Young.
+Event sourcing is a very different approach than the traditional method of persisting the state of the application and comes with its own set of challenges, such as versioning or snapshots. 
+Solutions to these challenges can be found in the (unfinished) book "Versioning in an Event Sourced System"[<sup>[33](#ref-33)</sup>] by Greg Young.
 
 ## Technologies used
 
-In adddition to the concepts described above, and before we go into the details of the implementation of the project,
-I shortly want to list the main technologies in the project:
+In addition to the concepts described above and before we go into the details of the project implementation,
+I would like to briefly list the most important technologies of the project:
 
 * {{< linkForRef "kotlin-lang" "Kotlin" >}}[<sup>[2](#ref-2)</sup>]
 * {{< linkForRef "gradle" "Gradle" >}}[<sup>[34](#ref-34)</sup>]
@@ -1152,6 +1167,8 @@ This is because I already had my next blog post in mind in which I want to show 
 {{< reference "48" "Projections and Read Models in Event Driven Architecture" "" "projections-read-models" >}}<br>
 
 {{< reference "49" "DDD Read Models" "" "ddd-read-models" >}}<br>
+
+{{< reference "50" "Erich Gamma ... [and others]" "Design Patterns : Elements of Reusable Object-Oriented Software. Reading, Mass. :Addison-Wesley, 1995.">}}
 
 
 [^1]: The implementation of command handlers for the inventory item are grouped together in the InventoryItemCommandHandlers class which handles multiple commands instead of using on handler class per commmand.
