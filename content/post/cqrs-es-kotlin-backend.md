@@ -38,10 +38,8 @@ references = [
     { name = "functional-event-sourcing-example", url = "https://dev.to/jakub_zalas/functional-event-sourcing-example-in-kotlin-3245" },
     { name = "practical-guide-event-sourcing", url = "https://medium.com/ssense-tech/event-sourcing-a-practical-guide-to-actually-getting-it-done-27d23d81de04" },
     { name = "event-sourcing-netcore", url = "https://github.com/oskardudycz/EventSourcing.NetCore?tab=readme-ov-file" },
-    { name = "marten-events", url = "https://martendb.io/" },
+    { name = "marten", url = "https://martendb.io/" },
     { name = "marten-events", url = "https://martendb.io/events/" },
-    { name = "marten-github", url = "https://github.com/JasperFx/marten" },
-    { name = "marten-learning", url = "https://martendb.io/events/learning" },
     { name = "projections-read-models", url = "https://event-driven.io/en/projections_and_read_models_in_event_driven_architecture/" },
     { name = "esversioning", url = "https://leanpub.com/esversioning/read#leanpub-auto-immutability" },
     { name = "ddd-read-models", url = "https://xebia.com/blog/domain-driven-design-part-3-read-models/" },
@@ -77,28 +75,32 @@ a Command Query Responsibility Segregation (CQRS) and Event Sourcing (ES) archit
 
 ## Introduction
 
-We will implement a simple CQRS/ES architecture to demonstrate how to structure a backend application with these concepts. 
-The application builds upon the implementation of {{< linkForRef "simplest-possible-thing" "Greg Young's SimpleCQRS project" >}}[<sup>[1](#ref-1)</sup>], 
-but uses {{< linkForRef "kotlin-lang" "Kotlin" >}}[<sup>[2](#ref-2)</sup>] and {{< linkForRef "spring-boot" "Spring Boot" >}}[<sup>[3](#ref-3)</sup>] 
-instead of {{< linkForRef "csharp-lang" "C#" >}}[<sup>[4](#ref-4)</sup>] on {{< linkForRef "dotnet" ".NET" >}}[<sup>[5](#ref-5)</sup>] 
-and adds an {{< linkForRef "embedded-postgresql" "(embedded)" >}}[<sup>[6](#ref-6)</sup>] {{< linkForRef "postgresql" "PotsgreSQL database" >}}[<sup>[7](#ref-7)</sup>]PostgreSQL database 
-and {{< linkForRef "spring-events" "Spring events" >}}[<sup>[8](#ref-8)</sup>] to the mix. 
-A frontend application is also part of the codebase, but is not the focus of this post. 
-The frontend application is build using {{< linkForRef "kotlin-multiplatform-compose" "Kotlin Multiplatform Compose" >}}[<sup>[9](#ref-9)</sup>] and is more to show and simplify the interaction with the backend. 
-For the domain side of the application we also follow the original SimpleCQRS project, and implement a simple inventory management system with only one aggregate root, 
-the `InventoryItem`. The application is structured in a way that it can be easily extended with more aggregate roots, commands, events, and projections. 
-Nevertheless the application is not production ready and lacks many features like security, monitoring, proper error handling and logging, etc. 
-The focus of the project is to demonstrate the concepts of CQRS and ES and how to implement them in Kotlin with Spring Boot. 
 
-In this post we we will give a brief introduction of the underlying concepts of Domain Driven Design (DDD), CQRS and ES. 
-Please note, that each of the cocepts is very complex on its own and we will only scratch the surface of each of them.
-In the following section we will explain the flow and structure of the application. 
-Following we will introduce the technologies used in the project and give a brief overview of the codebase structure. 
-Afterwarde We will explain the components of the codebase and how they interact with each other. 
+We will implement a simple CQRS/ES architecture to show how a backend application can be structured using these concepts.
+The application is built on top of the implementation of {{< linkForRef "simplest-possible-thing" "Greg Young's SimpleCQRS project" >}}[<sup>[1](#ref-1)</sup>], 
+but uses {{< linkForRef "kotlin-lang" "Kotlin" >}}[<sup>[2](#ref-2)</sup>] and {{< linkForRef "spring-boot" "Spring Boot" >}}[<sup>[3](#ref-3)</sup>] 
+instead of {{< linkForRef "csharp-lang" "C#" >}}[<sup>[4](#ref-4)</sup>] and {{< linkForRef "dotnet" ".NET" >}}[<sup>[5](#ref-5)</sup>] 
+and adds an {{< linkForRef "embedded-postgresql" "(embedded)" >}}[<sup>[6](#ref-6)</sup>] {{< linkForRef "postgresql" "PotsgreSQL database" >}}[<sup>[7](#ref-7)</sup>]
+and {{< linkForRef "spring-events" "Spring Events" >}}[<sup>[8](#ref-8)</sup>] to the mix.
+A frontend application is also part of the codebase, but is not the focus of this article.
+
+The frontend application is created using {{< linkForRef "kotlin-multiplatform-compose" "Kotlin Multiplatform Compose" >}}[<sup>[9](#ref-9)</sup>] and serves more to demonstrate and facilitate interaction with the backend.
+For the domain side of the application, we also follow the original SimpleCQRS project and implement a simple inventory management system with only one aggregate root, 
+the *InventoryItem*. The application is structured in a way that makes it easy to extend with more aggregate roots, commands, events, and projections.
+Nevertheless, the application is not production-ready and many features such as security, monitoring, proper error handling and logging, etc. are missing.
+The focus of the project is to demonstrate the concepts of CQRS and ES and their implementation in Kotlin using Spring Boot.
+
+In this post, we will give a brief introduction to the underlying concepts of Domain Driven Design (DDD), CQRS and ES.
+Please note that each of the concepts is very complex in its own right and we will only scratch the surface.
+In the following section, we will explain the flow and structure of the application. 
+We will then present the technologies used in the project and give a brief overview of the codebase structure.
+After that, we will explain the components of the codebase and how they interact with each other.
 Finally, we will give a brief outlook on the next post in this series, which will focus on testing the application.
 
-As mentioned before, the application is not production ready and lacks many features, but there are production ready frameworks avaible for CQRS/ES like the {{< linkForRef "axon-framework" "Axon Framework" >}}[<sup>[10](#ref-10)</sup>] or {{< linkForRef "marten" "Marten" >}}[<sup>[11](#ref-11)</sup>]. 
-In addition to that you can find a lot more implementations of CQRS/ES online. Here is a short an definitely non exhaustive list of projects which I found while working on the project:
+As already mentioned, the application is not yet ready for production and many functions are missing, but there are production-ready frameworks 
+for CQRS/ES such as the {{< linkForRef "axon-framework" "Axon Framework" >}} [< sup>[10](#ref-10)</sup>] or {{< linkForRef "marten" "Marten" >}}[<sup>[11](#ref-11)</sup>].
+Furthermore, you can find many more implementations of CQRS/ES online. 
+Here is a short and definitely incomplete list of projects that I found while working on the project:
 
 * {{< linkForRef "kestrel" "Kestrel" >}}[<sup>[12](#ref-12)</sup>] 
 * {{< linkForRef "event-sourcing-with-kotlin" "Event Sourcing with Kotlin by Thomas Uhrig" >}}[<sup>[13](#ref-13)</sup>]
@@ -107,7 +109,7 @@ In addition to that you can find a lot more implementations of CQRS/ES online. H
 * {{< linkForRef "practical-guide-event-sourcing" "Practical Guide to Event Sourcing by Sam-Nicolai Johnston" >}}[<sup>[16](#ref-16)</sup>]
 * {{< linkForRef "event-sourcing-netcore" "Event Sourcing .NET Core by Oskar Dudycz" >}}[<sup>[17](#ref-17)</sup>]
 
-All of the examples are in Kotlin or C# but you can probaly find more expamples in the language of your choice.
+All the examples are in Kotlin or C#, but you can probably find more examples in the language of your choice.
 
 
 ## Concepts
@@ -644,7 +646,7 @@ can continue with the read side.
 
 With publishing the events to the event bus we have completed the write side of the application and changed the application state. 
 We now want to have that reflected on the read side of the application, update the read model and show the changes to the user when the user queries a 
-read model. For that we are using {{ < linkForRef " marten-events" "inline projections" > }}[<sup> [43](#ref-43)</sup>] which means, that we are  listening to the in memory event bus and update the read model directly when an event is published.<cite>[^3]</cite> 
+read model. For that we are using {{< linkForRef "marten-events" "inline projections" >}}[<sup>[43](#ref-43)</sup>] which means, that we are  listening to the in memory event bus and update the read model directly when an event is published.<cite>[^3]</cite> 
 So let's have a look at the InventoryItemProjection file, which is doing exactly that. In the file we can find two classes, 
 one is holding the event listeners for a list view of the inventory items and the other one is holding the event listeners for a detail view of the inventory items. Again we are only showing the listeners for the InventoryItemChanged event, as we have chosen this for our walk through example.   
 
