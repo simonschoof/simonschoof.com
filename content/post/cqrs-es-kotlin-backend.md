@@ -967,21 +967,21 @@ Alternatively you can run the application with Docker.
 
 #### Running the application
 
-The application is separated into two parts, the backend and the UI. The backend resides in the `cqrs-es` directory and the UI in the `cqrs-es-ui` directory. The given commands below have to be executed in the corresponding directory.
+The application is divided into two parts, the backend and the user interface. The backend is located in the `cqrs-es` directory and the user interface in the `cqrs-es-ui` directory. The commands given below must be executed in the corresponding directory.
 
-The tests for the backend can be run with
+The tests for the backend can be started with:
 
 ```shell
 ./gradlew test
 ```
 
-You can then start the backend with
+You can then start the backend with:
 
 ```shell
 ./gradlew bootRun
 ```
 
-The UI can be started with
+The user interface can be started with:
 
 ```shell
 ./gradlew desktopRun -DmainClass=MainKt --quiet
@@ -995,17 +995,15 @@ for the desktop application or with
 
 for the web application.
 
-I only started the Android application from Android Studio and I have not tried to start it from the command line.
-
-There is also an option to run the whole application with Docker and Docker Compose. The docker-compose file is located in the root directory of the project and the Dockerfiles for the backend and the UI are located in the corresponding directories. To run the application with Docker and Docker Compose you can use the following command:
+It is also possible to run the entire application using Docker and Docker Compose. The docker-compose file is located in the root directory of the project, and the Dockerfiles for the backend and the user interface are located in the corresponding directories. To run the application using Docker and Docker Compose, you can use the following command:
 
 ```shell
 docker compose up -d
 ```
 
-This will start the backend, the UI, and the database in separate containers in the background. You can then access the UI at `http://localhost:8081` and the backend at `http://localhost:8080`. The database will be available on `localhost:5432`.
+This starts the backend, the user interface and the database in separate containers in the background. You can then access the user interface at `http://localhost:8081` and the backend at `http://localhost:8080`. The database is available at `localhost:5432`.
 
-The Dockerfile for the frontend starts the frontend with `gradle wasmJsBrowserRun -t --quiet` which seems to start a development server. Starting it in this way takes a few minutes. You can see when the frontend is ready when you see the following message in the logs of the Docker container:
+The frontend Dockerfile starts the frontend with `gradle wasmJsBrowserRun -t --quiet`, which appears to start a development server. The startup process takes a few minutes. You can see when the frontend is ready when you see the following message in the Docker container logs:
 
 ```
 Waiting for changes to input files...
