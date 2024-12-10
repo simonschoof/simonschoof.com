@@ -651,7 +651,7 @@ we can proceed to the read side.
 ##### Read Side of the application
 
 With the publication of the events on the event bus, we have completed the write side of the application and changed the application state.
-We now want this to be reflected on the read side of the application, update the read model and show the changes to the user when they query a read model. To do this, we use {{< linkForRef “marten-events” “inline projections”>}}[<sup>[43](#ref-43)</sup>] which means that we monitor the in-memory event bus and update the read model directly when an event is published.<cite>[^3]</cite> 
+We now want this to be reflected on the read side of the application, update the read model and show the changes to the user when they query a read model. To do this, we use {{< linkForRef "marten-events" "inline projections">}}[<sup>[43](#ref-43)</sup>] which means that we monitor the in-memory event bus and update the read model directly when an event is published.<cite>[^3]</cite> 
 So let's take a look at the *InventoryItemProjection* file, which does just that. In the file, we find two classes,
 one containing the event listeners for a list view of inventory items and the other containing the event listeners for a detail view of inventory items. Again, we'll only show the listeners for the *InventoryItemNameChanged* event, since we've chosen this for our example.  
 
@@ -771,14 +771,13 @@ that arose during the implementation of the project.
 
 ##### Conventions and workarounds in the code
 
-During the walk through the code we have seen some implementation details which look a bit different from the original SimpleCQRS project and also
-to a solution which would have been written in Java, as we are using some concepts of Kotlin for the implementation. I am not sure if these solutions 
-are good or if they are even leading to more problems in the future.
+While going through the code, we saw some implementation details that are a bit different from the original SimpleCQRS project and also
+from a solution that would have been written in Java, because we are using some concepts of Kotlin for the implementation. I'm not sure if these solutions are good or if they will even lead to more problems in the future.
 
 **Creation of an Aggregate and Immutability**
 
-The first thing we will look at is the creation of an aggregate and the choice of 
-making the aggregate immutable. As we have seen before we have the AggregateRoot interface and the InventoryItem class as its implementation.
+First, we'll cover how to create an aggregate and the decision to
+make the aggregate immutable. As mentioned earlier, we have the *AggregateRoot* interface and the *InventoryItem* class as its implementation.
 
 ```kotlin
 interface AggregateRoot<T> where T : AggregateRoot<T> {
@@ -848,43 +847,27 @@ data class InventoryItem(
 }
 ```
 
-In the AggregateRoot interface we have defined three properties, the id, the changes list and a clock, which must be overriden in the constructor 
-of the aggregate implementation. Additional properties can then be defined in the aggregate itself. I have chosen to make the aggregate immutable by 
-defining all of the properties with the val keyword and using {{< linkForRef "kotlin-data-class" "Kotlins data class feature" >}}[<sup>[44](#ref-44)</sup>].
-The additional properties of the aggregate are then defined in the consructor of the data class and need to have a default value. This way we can instantiate an empty aggregate with the default values via the constructor.
-As we have seen we need and empty instance of the aggregate to apply the events to the aggregate when loading the aggregate from the database. When we want to
-create a new aggregate we need to provide and use an invoke function in a companion object of the aggregate. 
-The invoke function is then used to create a new instance of the aggregate and apply an initial creation event to the aggregate. Whith the constructor with
-the properties with default values and the invoke function we can distinguish between creating a new aggregate and creating an empty instance of the aggregate for
-using event sourcing to reconstitute the current state of the aggregate. 
+In the AggregateRoot interface, we have defined three properties: the *ID*, the *change* list, and a *clock*, which must be overridden in the constructor of the aggregate implementation. Additional properties can then be defined in the aggregate itself. I chose to make the aggregate immutable by defining all properties with the val keyword and using {{< linkForRef "kotlin-data-class" "Kotlin's data class feature">}}[<sup>[44](#ref-44)</sup>].
+The aggregate's additional properties are then defined in the data class's constructor and must have a default value. This way, we can instantiate an empty aggregate with the default values via the constructor.
+As we have seen, we need an empty instance of the aggregate to apply the events to the aggregate when it is loaded from the database. When we want to create a new aggregate, we have to provide and use an *invoke* function in a companion object of the aggregate.
+The *invoke* function is then used to create a new instance of the aggregate and apply an initial creation event to the aggregate. With the constructor with default properties and the *invoke* function, we can distinguish between creating a new aggregate and creating an empty instance of the aggregate to use event sourcing to restore the current state of the aggregate.
+Another thing we saw is that the aggregate is immutable and we return a copy of the aggregate with the new state when we call the *applyEvent* function of the aggregate. Immutability is a common pattern in functional programming and is also recommended for domain modeling in DDD by {{< linkForRef "arrow-kt" "Arrow-kt library" >}}[<sup>[45](#ref-45)</sup>] and seems to be gaining popularity in the DDD community as well.
+While I didn't use the Arrow-kt library in the project, you can find more information about immutability and domain modeling in the {{< linkForRef "immutable-data" "immutable data section" >}}[<sup>[46](#ref-46)</sup>] of the arrow.kt documentation and in Scott Wlaschin's book "Domain Modeling Made Functional"[<sup>[21](#ref-21)</sup>].
+To summarize, we need to follow these conventions to create an aggregate and make it immutable:
 
-Another point we have seen is that the aggregate is immutable and we are returning a copy of the aggregate with the new state 
-when calling the applyEvent function of the aggregate. Immutability is a common pattern in functional programming and is also recommended for
-domain modelling in DDD by the {{< linkForRef "arrow-kt" "Arrow-kt library" >}}[<sup>[45](#ref-45)</sup>] and also seems to gain popularity in the DDD community.
-Whereas I did not make use of the Arrow-kt library in the project one can find more information about immutability and domain modeling in the 
-{{< linkForRef "immutable-data" "immutable data section" >}}[<sup>[46](#ref-46)</sup>] of Arrow-kt documentation and in Scott Wlashin's book Domain Modeling Made Functional[<sup>[21](#ref-21)</sup>].
-
-In summary we need to follow the following conventions to create an aggregate and to make it immutable:
-
-* Override the id, changes and clock properties in the constructor of the data class
-* Define the properties of the aggregate in the constructor of the data class with the val keyword and default values
-* Define an invoke function in a companion object of the data class to create a new instance of the aggregate and apply an initial creation event to the aggregate
-* Define the applyEvent function in the data class to apply the events to the aggregate and return a copy of the aggregate with the new state
+* Overwrite the *ID*, *changes*, and *clock* properties in the data class constructor
+* Define the aggregate's properties in the data class constructor with the val keyword and default values
+* Define an *invoke* function in a companion object of the data class to create a new instance of the aggregate and apply an initial creation event to the aggregate
+* Define the *applyEvent* function in the data class to apply the events to the aggregate and return a copy of the aggregate with the new state
 
 **Loading events from the EventStore and creating the events and an empty aggregate via reflection**
 
-Above we have seen that we need to distinguish between creating a new aggregate and loading the aggregate from the database.
-To get the current state of the aggregate we need to create an empty instance of the aggregate, load all the events for the aggregate from the database
-and apply all the events to the aggregate. The problem here is the we do not know the type of the aggregate during runtime even 
-though the type is a generic type parameter of the AggregateRoot interface. This is because of type erasure in Java and Kotlin. 
-To overcome this shortcoming I store the aggregate type, which is the short name of the class, in the event table for each event.
-In addition I also use the short name of the event classes to define the type of the event in the event table. 
-
-Now when loading the events for an aggregate from the database I use the event type to create an instance of the event via reflection. I had to 
-add an additional cast to the event class here because the return type of the objectMapper.convertValue function is Any and I want to return a list of events.
-
-From the list of events we can get the aggregate type and create an empty instance of the aggregate also via reflection. 
-Afterwards we can apply all the events to the aggregate and return the aggregate. 
+Above, we saw that we need to distinguish between creating a new aggregate and loading the aggregate from the database.
+To get the current state of the aggregate, we need to create an empty instance of the aggregate, load all events for the aggregate from the database, and apply all events to the aggregate. The problem here is that we don't know the type of the aggregate at runtime, even though the type is a generic type parameter of the *AggregateRoot* interface. This is due to type erasure in Java and Kotlin.
+To address this problem, I store the aggregate type, which is the short name of the class, in the events table for each event.
+Additionally, I also use the short name of the event classes to define the type of event in the event table. 
+Now, when I load the events for an aggregate from the database, I use the event type to create an instance of the event using reflection. I had to add an additional cast to the event class here because the return type of the *objectMapper.convertValue* function is *Any* and I want to return a list of events. From the list of events, we can get the aggregate type and also create an empty instance of the aggregate using reflection. 
+We can then apply all events to the aggregate and return the aggregate.
 
 
 ```kotlin
@@ -921,12 +904,9 @@ override fun getById(id: AggregateId): Optional<T> {
 }
 ```
 
-Looking at the code snippets above we can see that the simple name is not enough to be able to create an instance of a class via reflection. 
-Herefore we need to get the fully qualified name of the class, which is the package name and the simple name of the class. For refactoring reasons
-I do not wanted to store the package name for the event and aggregate types in the event table. As as workaround I have created a domain class configuration
-with two beans, the AggregateQualifiedNameProvider and the EventQualifiedNameProvider. The AggregateQualifiedNameProvider is used to get the fully qualified name
-of all classes implementing the AggregateRoot interface and the EventQualifiedNameProvider is used to get the fully qualified name of all classes implementing the Event interface.
-The fully qualified name can then be retrieved by the simple name of the class. 
+Looking at the code snippets above, we see that the simple name is not sufficient to create an instance of a class via reflection.
+Therefore, we need the fully qualified name of the class, which consists of the package name and the simple name of the class. For reasons of refactoring, I didn't want to store the package name for the event and aggregate types in the event table. As a workaround, I created a domain class configuration with two beans, the *AggregateQualifiedNameProvider* and the *EventQualifiedNameProvider*. The *AggregateQualifiedNameProvider* is used to get the fully qualified name of all classes implementing the *AggregateRoot* interface and the *EventQualifiedNameProvider* is used to get the fully qualified name of all classes implementing the *Event* interface.
+The fully qualified name can then be obtained from the simple name of the class.
 
 ```kotlin
 @Configuration
@@ -960,11 +940,12 @@ class DomainClassNamesConfig() {
     }
 }
 ```
-This construct lead to two more conventions to follow when working with the code:
-* The name of an aggregate has to be unique
-* The name of an event has to be unique but should be prefixed with the aggregate name to avoid conflicts
+This design leads to two further conventions that must be adhered to when working with the code:
 
-When these conventions are not followed the application will not start and an error will be thrown.
+* The name of an aggregate must be unique
+* The name of an event must be unique, but should begin with the name of the aggregate to avoid conflicts
+
+If these conventions are not followed, the application will not start and an error message will be displayed.
 
 
 ## How to run the application
