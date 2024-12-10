@@ -55,20 +55,11 @@ references = [
     { name = "layers-onions-ports-adapters", url = "https://blog.ploeh.dk/2013/12/03/layers-onions-ports-adapters-its-all-the-same/" },
     { name = "vertical-slice-architecture", url = "https://www.jimmybogard.com/vertical-slice-architecture/" },
     { name = "dependencies-workflow-oriented-design", url = "https://fsharpforfunandprofit.com/posts/dependencies/#workflow-oriented-design" },
-    { name = "udi-dahan-if-domain-logic", url = "https://www.youtube.com/watch?v=fWU8ZK0Dmxs" }
+    { name = "udi-dahan-if-domain-logic", url = "https://www.youtube.com/watch?v=fWU8ZK0Dmxs" },
+    { name = "richardson-maturity-model", url = "https://martinfowler.com/articles/richardsonMaturityModel.html" },
+    { name = "graphql", url = "https://graphql.org/" }
 ]
 +++
-
-
-
-
-<!-- TODO:
-* Add all links and references
-* Move references to the bottom again
-* Go through all parts of the text and check if everything is correct and makes sense and reads well. Rewrite accordingly.
-* Proof read via Tool of choice
-* Add class diagram* 
-* publish post -->
 
 In this post, we will build an application using Kotlin, Spring Boot, Spring Events and an embedded database that introduces 
 a Command Query Responsibility Segregation (CQRS) and Event Sourcing (ES) architecture. 
@@ -126,7 +117,7 @@ It was introduced by Eric Evans in his seminal book Domain-Driven Design: Tackli
 Since the publication of the book, DDD has grown in popularity and is now a widely used approach in software development, 
 where many other resources such as books, e.g. "Implementing Domain-Driven Design" by Vaughn Vernon[<sup>[19](#ref-19)</sup>],
 "Domain-Driven Design Principles, Patterns, and Practices" by Scott Millet and Nick Tune[<sup>[20](#ref-20)</sup>] 
-or Domain Modeling Made Functional by Scott Wlaschin<sup>[21](#ref-21)</sup>, as well as a variety of blog posts and videos are available.
+or Domain Modeling Made Functional by Scott Wlaschin[<sup>[21](#ref-21)</sup>], as well as a variety of blog posts and videos are available.
 Eric Evans's book itself is divided into two parts.
 The first part is about designing and implementing the domain model using tactical patterns such as Aggregates, Repositories, Factories, and Domain Events. 
 The second part is about the strategic patterns such as Bounded Contexts, Context Maps, and Shared Kernel.
@@ -172,12 +163,12 @@ Domain events are not used to integrate with other systems or services, so-calle
 
 To isolate the domain from the infrastructure and make the domain independent of the infrastructure, 
 we use the Dependency Inversion Principle (DIP) [<sup>[22](#ref-22)</sup>]. 
-This is the basic principle of many architectures such as the {< linkForRef "layers-onions-ports-adapters" "Hexagonal Architecture, Onion Architecture or Clean Architecture">}[<sup>[23](#ref-23)</sup>]
+This is the basic principle of many architectures such as the {{< linkForRef "layers-onions-ports-adapters" "Hexagonal Architecture, Onion Architecture or Clean Architecture">}}[<sup>[23](#ref-23)</sup>]
 The DIP states that
 > high-level modules should not depend on low-level modules. Both should depend on abstractions. 
 
 We will see how this is implemented in the project later in this post. 
-While isolating the domain from the infrastructure is a good practice, it is still controversial. See {{< linkForRef "dependencies-workflow-oriented-design" "here" >}}[<sup>[24](#ref-24)</sup>], {{< linkForRef "udi-dahan-if-domain-logic ‘ ’here" >}}[<sup> [25](#ref-25)</sup>] or {{< linkForRef "vertical-slice-architecture" "here" >}}[<sup>[26](#ref-26)</sup>], since isolation comes with higher complexity costs in architecture and code. 
+While isolating the domain from the infrastructure is a good practice, it is still controversial. See {{< linkForRef "dependencies-workflow-oriented-design" "here" >}}[<sup>[24](#ref-24)</sup>], {{< linkForRef "udi-dahan-if-domain-logic" "here" >}}[<sup> [25](#ref-25)</sup>] or {{< linkForRef "vertical-slice-architecture" "here" >}}[<sup>[26](#ref-26)</sup>], since isolation comes with higher complexity costs in architecture and code. 
 The decision for an implementation with a {{< linkForRef "domain-model" "rich domain model" >}}[<sup>[27](#ref-27)</sup>] also depends on the complexity of the area and the business logic. Other {{< linkForRef "eaa-catalog" "architecture pattern" >}}[<sup>[28](#ref-28)</sup>] such as transaction script or table module might be more suitable for simple domains. Nevertheless, we are using a DIP-compliant architecture for this project.
 
 ##### Dependency Injection (DI)
@@ -645,8 +636,15 @@ class KtormEventStore(
 ```
 
 As we can see in the code above, the *saveEvents* function stores the events in the database using Ktorms insert function
-and then publishes the events on the event bus. This completes the write side of the application and
-we can proceed to the read side.
+and then publishes the events on the event bus. 
+
+A short note on the aggregate repository, the event store and the event bus. Even if the 
+abstractions are unrelated to each other, they are closely related in the implementation,
+where the aggregate repository holds a dependency on the event store and the event store holds a dependency on the event bus, as we can see in the diagram below.
+
+{{< figure2 src="images/class_diagram_persistence.webp" class="class_diagram_persistence" caption="Class diagram of aggregate repository, event store and the event bus and its implementation relations " attrrel="noopener noreferrer" >}} 
+
+This completes the write side of the application and we can proceed to the read side.
 
 ##### Read Side of the application
 
@@ -1016,7 +1014,8 @@ We started by introducing the fundamental concepts used in the codebase. These i
 After that, we looked at the package structure and the schematic flow of the application. The next step was to go through the code and explain the write and read side of the application. This was followed by a closer look at the conventions and workarounds used in the code.
 Finally, we showed how the application can be run locally and with Docker.
 Since this project is only intended as an example of how to present CQRS and event sourcing in Kotlin, there are of course many things that are not included in the project but should be considered when creating a real application.
-These include the obvious areas of error handling, security, logging, and monitoring. In addition, I have removed the versioning of events and aggregates  that can be found in the original SimpleCQRS project. I'll have to take a closer look at this later and add it to the project. Another point is that the endpoints are not fully restful. With a fully restful API, the frontend could only display the actions that are available to the user. I would also like to mention that the project does not have to be a web application, nor does it have to be restful. This also works for desktop applications, classic web applications, or web applications with GraphQL.
+These include the obvious areas of error handling, security, logging, and monitoring. In addition, I have removed the versioning of events and aggregates  that can be found in the original SimpleCQRS project. I'll have to take a closer look at this later and add it to the project. Another point is that the endpoints are {{< linkForRef "richardson-maturity-model" "not fully restful" >}}[<sup>[51](#ref-51)</sup>]. With a fully restful API, the frontend could only display the actions that are available to the user. I would also like to mention that the project does not have to be a web application, nor does it have to be restful. This also works for desktop applications, classic web applications, or web applications with 
+{{< linkForRef "graphql" "GraphQL" >}}[<sup>[52](#ref-52)</sup>].
 In general, I think the project can be used as a starting point to get familiar with CQRS and event sourcing in Kotlin.
 Of course, there are many more implementations of CQRS and event sourcing in Kotlin and other languages, since this is also just a rewrite of Gregory Young's original SimpleCQRS project.
 In addition, there are production-ready frameworks such as Axon Framework and Marten that are ready for use in production environments.
@@ -1124,8 +1123,11 @@ This is because I already had my next blog post in mind, in which I want to show
 
 {{< reference "49" "DDD Read Models by Xebia" "" "ddd-read-models" >}}<br>
 
-{{< reference "50" "Erich Gamma ... [and others]" "Design Patterns : Elements of Reusable Object-Oriented Software. Reading, Mass. :Addison-Wesley, 1995.">}}
+{{< reference "50" "Erich Gamma ... [and others]" "Design Patterns : Elements of Reusable Object-Oriented Software. Reading, Mass. :Addison-Wesley, 1995.">}}<br>
 
+{{< reference "51" "Richardson Maturity Model by Martin Fowler" "" "richardson-maturity-model" >}}<br>
+
+{{< reference "52" "GraphQL" "" "graphql" >}}
 
 [^1]: The implementation of command handlers for the inventory item is summarized in the class *InventoryItemCommandHandlers*, which processes several commands instead of using a handler class for each command.
 
