@@ -1,0 +1,723 @@
+<!doctype html><html lang=en-us><head><meta charset=utf-8><title>The slightly more complex thingy: A CQRS/ES backend in Kotlin - Simon Schoof</title>
+<meta name=description content="A CQRS/ES backend in Kotlin with Spring Boot, Spring events, and an embedded database"><meta name=viewport content="width=device-width,initial-scale=1"><link rel=stylesheet href=https://simonschoof.com/css/normalize.css><link rel=stylesheet href=https://simonschoof.com/css/barebones.css><link rel=stylesheet href=https://simonschoof.com/css/custom.css><link rel=stylesheet href=https://simonschoof.com/css/prettify.css><link rel=stylesheet href=https://simonschoof.com/css/syntax.css><link rel=stylesheet href=https://simonschoof.com/css/github-prettify-theme.css><link id=prettify-dark rel=stylesheet href=https://simonschoof.com/css/github-prettify-theme-dark.css disabled><link rel=stylesheet href=https://simonschoof.com/css/fontawesome.css><link rel=stylesheet href=https://simonschoof.com/css/googlefonts-raleway.css type=text/css><link rel=alternate type=application/rss+xml href=https://simonschoof.com/post/index.xml title="My Site"><script src=https://simonschoof.com/js/site.js></script><script src=https://simonschoof.com/js/fontawesome.js></script><link rel="shortcut icon" href=https://simonschoof.com/images/favicon.png type=image/png></head><body><nav><label for=drop class=toggle><i class="fas fa-bars u-pull-right" aria-hidden=true></i> <span><i class="fas fa-anchor" aria-hidden=true></i>
+Home</span></label>
+<input type=checkbox id=drop><ul class=menu><li><a href=https://simonschoof.com/><span><i class="fas fa-anchor" aria-hidden=true></i>
+Home</span></a></li><li class=u-pull-right><a href=https://simonschoof.com/post/index.xml class=Members><span><i class='fa-solid fa-rss'></i> rss</span></a></li><li class=u-pull-right><a href=https://social.simonschoof.com/@connect class=Members><span><i class='fab fa-mastodon'></i> mastodon</span></a></li><li class=u-pull-right><a href=https://github.com/simonschoof class=Members><span><i class='fab fa-github'></i> github</span></a></li><li class=u-pull-right><a href=https://simonschoof.com/post class=Members><span><i class='fas fa-list'></i> blog</span></a></li><li class=u-pull-right><a href=https://simonschoof.com/about class=Members><span><i class='fas fa-user'></i> about</span></a></li><li class=u-pull-right><span class=toggle-theme-button-span><button id=toggle-theme-btn-id class=toggle-theme-btn title="Toggle theme" aria-hidden=true onclick=toggleTheme()><div class=toggle-theme-btn-overlay-wrap><span id=dark-theme-span class=dark-theme-span><svg class="toggle-theme-svg" fill="none" viewBox="0 3 48 48" style="overflow:visible"><path fill="#fff" d="M12 11.807c-1.2582-1.2587-2.11512-2.86216-2.46238-4.6077C9.19037 5.45375 9.36832 3.64444 10.049 2c-1.94074.38205-3.7234 1.33431-5.12001 2.735-3.905 3.905-3.905 10.237.0 14.142 3.906 3.906 10.23701 3.905 14.14301.0 1.4003-1.3965 2.3525-3.1787 2.735-5.119C20.1625 14.4385 18.3533 14.6164 16.6077 14.2692 14.8622 13.9219 13.2588 13.0651 12 11.807v0z"/></svg></span>
+<span id=light-theme-span class=light-theme-span><svg class="toggle-theme-svg" fill="none" viewBox="0 3 48 48" style="overflow:visible"><path d="M6.995 12c0 2.761 2.246 5.007 5.007 5.007 2.761.0 5.007-2.246 5.007-5.007s-2.246-5.007-5.007-5.007C9.241 6.993 6.995 9.239 6.995 12zM11 19h2v3H11V19zM11 2h2V5H11V2zM2 11H5v2H2V11zm17 0h3v2H19V11z" fill="#fff"/><path d="M5.63702 19.778l-1.414-1.414 2.121-2.121 1.414 1.414-2.121 2.121z" fill="#fff"/><path d="M16.242 6.34405l2.122-2.122 1.414 1.414-2.122 2.122-1.414-1.414z" fill="#fff"/><path d="M6.34402 7.75902l-2.121-2.122 1.415-1.414 2.12 2.122-1.414 1.414z" fill="#fff"/><path d="M19.778 18.3639l-1.414 1.414-2.122-2.122 1.414-1.414 2.122 2.122z" fill="#fff"/></svg></span></div></button></span></li></ul></nav><div class="section hero"><div class=container><h1 class="section-heading section-sized-heading">The slightly more complex thingy: A CQRS/ES backend in Kotlin</h1><i class="far fa-calendar"></i> 2024-12-10,
+<i class="far fa-clock"></i> Reading Time: 36 minutes</h6></div></div><div class="section main"><div class="row content"><article><p>In this post, we will build an application using Kotlin, Spring Boot, Spring Events and an embedded database that introduces
+a Command Query Responsibility Segregation (CQRS) and Event Sourcing (ES) architecture.</p><h2 id=introduction>Introduction</h2><p>We will implement a simple CQRS/ES architecture to show how a backend application can be structured using these concepts.
+The application is built on top of the implementation of
+<a href=https://github.com/gregoryyoung/m-r/tree/master>Greg Young's SimpleCQRS project</a>
+[<a href=#ref-1>1</a>],
+but uses
+<a href=https://kotlinlang.org/>Kotlin</a>
+[<a href=#ref-2>2</a>] and
+<a href=https://spring.io/projects/spring-boot>Spring Boot</a>
+[<a href=#ref-3>3</a>]
+instead of
+<a href=https://dotnet.microsoft.com/en-us/languages/csharp>C#</a>
+[<a href=#ref-4>4</a>] and
+<a href=https://dotnet.microsoft.com/>.NET</a>
+[<a href=#ref-5>5</a>]
+and adds an
+<a href=https://github.com/zonkyio/embedded-postgres>(embedded)</a>
+[<a href=#ref-6>6</a>]
+<a href=https://www.postgresql.org/>PotsgreSQL database</a>
+[<a href=#ref-7>7</a>]
+and
+<a href=https://www.baeldung.com/spring-events>Spring Events</a>
+[<a href=#ref-8>8</a>] to the mix.
+A frontend application is also part of the codebase, but is not the focus of this article.</p><p>The frontend application is created using
+<a href=https://www.jetbrains.com/compose-multiplatform/>Kotlin Multiplatform Compose</a>
+[<a href=#ref-9>9</a>] and serves more to demonstrate and facilitate interaction with the backend.
+For the domain side of the application, we also follow the original SimpleCQRS project and implement a simple inventory management system with only one aggregate root,
+the <em>InventoryItem</em>. The application is structured in a way that makes it easy to extend with more aggregate roots, commands, events, and projections.
+Nevertheless, the application is not production-ready and many features such as security, monitoring, proper error handling and logging, etc. are missing.
+The focus of the project is to demonstrate the concepts of CQRS and ES and their implementation in Kotlin using Spring Boot.</p><p>In this post, we will give a brief introduction to the underlying concepts of Domain Driven Design (DDD), CQRS and ES.
+Please note that each of the concepts is very complex in its own right and we will only scratch the surface.
+In the following section, we will explain the flow and structure of the application.
+We will then present the technologies used in the project and give a brief overview of the codebase structure.
+After that, we will explain the components of the codebase and how they interact with each other.
+Finally, we will give a brief outlook on the next post in this series, which will focus on testing the application.</p><p>As already mentioned, the application is not yet ready for production and many functions are missing, but there are production-ready frameworks
+for CQRS/ES such as the
+<a href=https://www.axoniq.io/products/axon-framework>Axon Framework</a>
+[<a href=#ref-10>10</a>] or
+<a href=https://martendb.io/>Marten</a>
+[<a href=#ref-11>11</a>].
+Furthermore, you can find many more implementations of CQRS/ES online.
+Here is a short and definitely incomplete list of projects that I found while working on the project:</p><ul><li><a href=https://github.com/cultureamp/kestrel>Kestrel</a>
+[<a href=#ref-12>12</a>]</li><li><a href=https://tuhrig.de/event-sourcing-with-kotlin/>Event Sourcing with Kotlin by Thomas Uhrig</a>
+[<a href=#ref-13>13</a>]</li><li><a href=https://github.com/nicusX/kotlin-event-sourcing-example>Kotlin Event Sourcing Example by Lorenzo Nicora</a>
+[<a href=#ref-14>14</a>]</li><li><a href=https://dev.to/jakub_zalas/functional-event-sourcing-example-in-kotlin-3245>Functional Event Sourcing Example by Jakub Zalas</a>
+[<a href=#ref-15>15</a>]</li><li><a href=https://medium.com/ssense-tech/event-sourcing-a-practical-guide-to-actually-getting-it-done-27d23d81de04>Practical Guide to Event Sourcing by Sam-Nicolai Johnston</a>
+[<a href=#ref-16>16</a>]</li><li><a href="https://github.com/oskardudycz/EventSourcing.NetCore?tab=readme-ov-file">Event Sourcing .NET Core by Oskar Dudycz</a>
+[<a href=#ref-17>17</a>]</li></ul><p>All the examples are in Kotlin or C#, but you can probably find more examples in the language of your choice.</p><h2 id=concepts>Concepts</h2><p>In this section, we provide a brief introduction to the fundamental concepts used in implementing the project.
+We will only scratch the surface of each concept and provide a brief overview. Each concept could fill an entire book or at least a separate blog post.
+Please note, therefore, that further reading on each concept is necessary and highly recommended. Also note that the explanations are simplified and probably not strictly defined enough.</p><h5 id=domain-driven-design-ddd>Domain Driven Design (DDD)</h5><p>I first heard about CQRS and event sourcing in the context of Domain-Driven Design (DDD).
+DDD is an approach to developing software that focuses on the domain and business logic of the application.
+It was introduced by Eric Evans in his seminal book Domain-Driven Design: Tackling Complexity in the Heart of Software [<a href=#ref-18>18</a>] in 2003.
+Since the publication of the book, DDD has grown in popularity and is now a widely used approach in software development,
+where many other resources such as books, e.g. &ldquo;Implementing Domain-Driven Design&rdquo; by Vaughn Vernon[<a href=#ref-19>19</a>],
+&ldquo;Domain-Driven Design Principles, Patterns, and Practices&rdquo; by Scott Millet and Nick Tune[<a href=#ref-20>20</a>]
+or Domain Modeling Made Functional by Scott Wlaschin[<a href=#ref-21>21</a>], as well as a variety of blog posts and videos are available.
+Eric Evans&rsquo;s book itself is divided into two parts.
+The first part is about designing and implementing the domain model using tactical patterns such as Aggregates, Repositories, Factories, and Domain Events.
+The second part is about the strategic patterns such as Bounded Contexts, Context Maps, and Shared Kernel.
+While the second part is considered by many people and Eric Evans himself to be the more important one,
+we will concentrate on some of the tactical patterns, since we are implementing an example in this project.
+In the following, we will go through the small list of tactical patterns used in the project.</p><p><strong>Aggregates and Aggregate Roots</strong></p><p>We start with aggregates and the aggregate root, which is also the main abstraction in implementing the project.
+An aggregate is a cluster of domain objects (entities and value objects) that can be treated as a single unit.
+The aggregate root is the main entity of the aggregate and the only entity that can be accessed from outside the aggregate.
+The aggregate root is responsible for maintaining the consistency of the aggregate. In our project, we have only one aggregate, the
+<em>InventoryItem</em>, which is also the aggregate root.</p><p><strong>Factories</strong></p><p>A factory in DDD is responsible for creating an aggregate in a consistent state. The factory of DDD is not the same as one of the Gang of Four&rsquo;s factory patterns[<a href=#ref-50>50</a>],
+but the factory patterns could be used to implement a factory in DDD. The point of a factory in DDD is to create an aggregate in a consistent state.
+In the project, we simply have the constructor of the <em>InventoryItem</em> and an invoke-function on a companion object as a factory.</p><p><strong>Repositories</strong></p><p>A repository in DDD is responsible for loading and saving aggregates. It is also an abstraction that hides the details of the underlying data store from the domain
+when working with an architecture that adheres to the Dependency Inversion Principle (DIP).
+Again, it is important to note that when loading and saving an aggregate, the entire aggregate is loaded and saved in a consistent state.
+In this project, we have the <em>AggregateRepository</em>, which has a dependency on the <em>EventStore</em> and is responsible for loading and saving the events of the <em>InventoryItem</em> aggregate.
+Since we are using event sourcing, the repository is not responsible for loading and saving the aggregate state, but rather for the events that lead to the current aggregate state.</p><p><strong>Domain Events</strong></p><p>A core concept in the implementation of our project is domain events. Domain events are events that are published when there has been a change in the aggregate, i.e. a change in the state of the application.
+The event names are given in the past tense and describe what has happened in the aggregate. The events are stored in the event store and are used to rebuild the state of the aggregate, hence the name event sourcing.
+The events are also used to update the read side of the application via projections. We use Marten&rsquo;s definition of projections as</p><blockquote><p>any strategy for generating &ldquo;read side&rdquo; views from the raw events.</p></blockquote><p>Domain events are not used to integrate with other systems or services, so-called integration events are used.</p><h5 id=dependency-inversion-principle-dip-compliant-architecture>Dependency Inversion Principle (DIP) compliant architecture</h5><p>To isolate the domain from the infrastructure and make the domain independent of the infrastructure,
+we use the Dependency Inversion Principle (DIP) [<a href=#ref-22>22</a>].
+This is the basic principle of many architectures such as the
+<a href=https://blog.ploeh.dk/2013/12/03/layers-onions-ports-adapters-its-all-the-same/>Hexagonal Architecture, Onion Architecture or Clean Architecture</a>
+[<a href=#ref-23>23</a>]
+The DIP states that</p><blockquote><p>high-level modules should not depend on low-level modules. Both should depend on abstractions.</p></blockquote><p>We will see how this is implemented in the project later in this post.
+While isolating the domain from the infrastructure is a good practice, it is still controversial. See
+<a href=https://fsharpforfunandprofit.com/posts/dependencies/#workflow-oriented-design>here</a>
+[<a href=#ref-24>24</a>],
+<a href="https://www.youtube.com/watch?v=fWU8ZK0Dmxs">here</a>
+[ <a href=#ref-25>25</a>] or
+<a href=https://www.jimmybogard.com/vertical-slice-architecture/>here</a>
+[<a href=#ref-26>26</a>], since isolation comes with higher complexity costs in architecture and code.
+The decision for an implementation with a
+<a href=https://martinfowler.com/eaaCatalog/domainModel.html>rich domain model</a>
+[<a href=#ref-27>27</a>] also depends on the complexity of the area and the business logic. Other
+<a href=https://martinfowler.com/eaaCatalog/>architecture pattern</a>
+[<a href=#ref-28>28</a>] such as transaction script or table module might be more suitable for simple domains. Nevertheless, we are using a DIP-compliant architecture for this project.</p><h5 id=dependency-injection-di>Dependency Injection (DI)</h5><p>In the previous segment, we discussed the DIP-compliant architecture and how high- and low-level modules should depend on abstractions.
+We will use
+<a href=https://martinfowler.com/articles/injection.html>Dependency Injection (DI)</a>
+[<a href=#ref-29>29</a>] to fulfill this principle and decouple the domain from the infrastructure.
+Dependency injection[ <a href=#ref-30>30</a>] is a technique in which an object provides the dependencies of another object instead of that object creating the dependencies itself.
+This is done by injecting the dependencies into the object that needs them.
+This can be done through constructor injection, setter injection or interface injection, but we only use constructor injection in the project.
+This will also help us when testing the application, where we can test the domain logic in isolation and provide mock implementations for the infrastructure dependencies.
+We will talk more about testing in the next post of this blog.</p><h5 id=command-query-responsibility-segregation-cqrs>Command Query Responsibility Segregation (CQRS)</h5><p>CQRS is one of the two main architectural patterns we want to demonstrate in implementing the project. CQRS is an extension of the command-query separation principle (CQS), which was introduced by Bertrand Meyer in his book &ldquo;Object-Oriented Software Construction&rdquo; [ <a href=#ref-31>31</a> ].
+CQS states that a method should either change the state of an object or return a result, but not both. CQRS takes this principle further and separates the reading and writing operations of an application into two different parts of the application.</p><p>In its simplest form, CQRS</p><blockquote><p>is simply the creation of two objects where there was previously only one.</p></blockquote><p>While one object is responsible for processing the commands and changing the state of the application, the so-called write side of the application.
+The other object is responsible for processing the queries and returning the state of the application, the so-called read side of the application.
+To start with, CQRS is no more than that, as Greg Young describes in his blog post
+<a href=https://gist.github.com/simonschoof/74e155447fbc2ac47b0f7c0bb5a5f778>CQRS, Task Based UIs, Event Sourcing agh!</a>
+[<a href=#ref-32>32</a>].
+Nevertheless, CQRS allows us to optimize an application&rsquo;s reads and writes independently of each other and to introduce other interesting patterns such as event sourcing, task-based UIs, and eventual consistency,
+even though these are not part of CQRS itself.</p><h5 id=event-sourcing-es>Event Sourcing (ES)</h5><p>The next pattern we will take a closer look at for implementing the project is event sourcing.
+Event sourcing is a pattern where the state of an application is determined by a sequence of events, rather than by directly storing the current state of the object.
+The events are an excellent way to capture the changes in the state of the domain and also provide an audit log of the changes.
+Event sourcing is a very different approach than the traditional method of persisting the state of the application and comes with its own set of challenges, such as versioning or snapshots.
+Solutions to these challenges can be found in the (unfinished) book &ldquo;Versioning in an Event Sourced System&rdquo;[<a href=#ref-33>33</a>] by Greg Young.</p><h2 id=technologies-used>Technologies used</h2><p>In addition to the concepts described above and before we go into the details of the project implementation,
+I would like to briefly list the most important technologies of the project:</p><ul><li><a href=https://kotlinlang.org/>Kotlin</a>
+[<a href=#ref-2>2</a>]</li><li><a href=https://gradle.org/>Gradle</a>
+[<a href=#ref-34>34</a>]</li><li><a href=https://spring.io/projects/spring-boot>Spring Boot</a>
+[<a href=#ref-3>3</a>] with
+<a href=https://docs.spring.io/spring-framework/docs/current/reference/html/web.html>Spring MVC</a>
+[<a href=#ref-35>35</a>],
+<a href=https://www.baeldung.com/spring-events>Spring events</a>
+[<a href=#ref-8>8</a>], and parts of
+<a href=https://spring.io/projects/spring-data>Spring Data</a>
+[<a href=#ref-36>36</a>]</li><li><a href=https://ktorm.liuwj.me/>Ktorm</a>
+[<a href=#ref-37>37</a>]</li><li><a href=https://flywaydb.org/>Flyway</a>
+[<a href=#ref-38>38</a>]</li><li><a href=https://www.postgresql.org/>PostgreSQL</a>
+[<a href=#ref-7>7</a>]</li><li><a href=https://github.com/zonkyio/embedded-postgres>Embedded PostgreSQL</a>
+[<a href=#ref-6>6</a>]</li><li><a href=https://github.com/FasterXML/jackson>Jackson</a>
+[<a href=#ref-39>39</a>]</li><li><a href=https://kotest.io/>Kotest</a>
+[<a href=#ref-40>40</a>]</li><li><a href=https://mockk.io/>Mockk</a>
+[<a href=#ref-41>41</a>]</li><li><a href=https://github.com/oshai/kotlin-logging>Kotlin Logging</a>
+[<a href=#ref-42>42</a>]</li><li><a href=https://www.jetbrains.com/compose-multiplatform/>Kotlin Multi Platform Compose</a>
+[<a href=#ref-9>9</a>]</li></ul><h2 id=package-structure-and-application-flow>Package structure and application flow</h2><h4 id=package-structure>Package structure</h4><p>As mentioned in the section above about the architecture that follows the Dependency Inversion Principle (DIP), we use DIP to isolate the domain from the infrastructure.
+We use packages to structure the application so that the domain is separate from the infrastructure.
+This means that there are no dependencies from other packages to the domain package.
+The domain is the core of the application and contains the building blocks as abstractions. The building blocks are:</p><ul><li><em>AggregateRoot</em></li><li><em>AggregateRepository</em></li><li><em>EventBus</em></li><li><em>EventStore</em></li><li><em>Command</em></li><li><em>Event</em></li></ul><p>In addition to the building blocks, we have the domain logic in the InventoryItem class and the events and commands in the domain package.
+The infrastructure package contains the implementations of the building blocks for persistence, the event store and the event bus.
+The infrastructure package also contains the <em>InventoryItemController</em>, which is responsible for processing the API calls from the front-end application.
+The application package contains the <em>CommandHandler</em> class.
+The read models and the projections are located in the readmodel package.</p><pre tabindex=0><code>cqrs-es
+├── application
+├── config
+├── domain
+│   ├── buildingblocks
+├── infrastructure
+│   ├── persistence
+│   ├── web
+└── readmodels
+</code></pre><figure2 class=clean-architecture><img src=https://simonschoof.com/images/clean-architecture.webp alt="Clean architecture. Image from Daniel Mackay`s blog, original source: Clean Architecture, Jason Taylor - Goto Conference"><figcaption><p>Clean architecture. <a href=https://www.dandoescode.com/blog/clean-architecture-an-introduction rel="noopener noreferrer">Image from Daniel Mackay`s blog</a>, original source: Clean Architecture, Jason Taylor - Goto Conference</p></figcaption></figure2><h4 id=application-flow>Application flow</h4><p>As we saw in the previous section, there are many concepts and patterns that we use to structure the application.
+Before we get into the implementation details, let&rsquo;s provide a high-level overview of the overall flow and structure of the application.
+The application allows the user to manage inventory items, where the user can</p><ul><li>Create inventory items</li><li>Change the name of an inventory item</li><li>Check in inventory items</li><li>Remove inventory items</li><li>Set and change the maximum quantity for the inventory item</li><li>Deactivate an inventory item</li></ul><p>The user can also query the read side of the application for a list and a detail view of the inventory items.
+This corresponds to the original SimpleCQRS project. For examples with more complex domains, see the list in the introduction.
+To provide an overview of the operations in the application, we will walk through the flow of the application.
+Starting with the user submitting a command to the application. The command is processed by a command handler, which is responsible for processing the command and changing the state of the application. The command handler uses the an aggregate repository to load the aggregate, which in our case is the <em>InventoryItem</em>, and to store the events that lead to the current state of the aggregate. The events are stored in the event store.
+The comand handler then publishes the events on the event bus. The event bus is responsible for publishing the events to the event listeners.
+The event listeners are responsible for updating the application&rsquo;s read model.
+The read model is the read side of the application and is used to query the current state of the application.
+The read model is updated via projections. The projections are responsible for updating the read model with the events published by the event bus.
+The read model is then used to query the current state of the application.
+The following sequence diagram shows the application flow for changing the name of an inventory item:</p><pre class=mermaid>sequenceDiagram
+    actor User
+    participant UI
+    participant InventoryItemController
+    participant EventBus
+    participant CommandHandler
+    participant AggregateRepository#60;InventoryItem#62;
+    participant AggregateRoot#60;InventoryItem#62;
+    participant EventStore
+    participant EventBus
+    participant InventoryItemProjection
+    participant ReadModel
+
+    User->>UI: 1. Clicks change (inventory) item name  button
+    UI->>InventoryItemController: 2. Call action changeInventoryItemName
+    InventoryItemController->>EventBus: 3. Emit command ChangeInventoryItemName
+    EventBus->>CommandHandler: 4. Dispatch command
+    CommandHandler->>AggregateRepository#60;InventoryItem#62;: 5. Get inventory item by aggregate ID
+    AggregateRepository#60;InventoryItem#62;->>CommandHandler: 6. Return inventory item
+    CommandHandler->>AggregateRoot#60;InventoryItem#62;: 7. Call command method changeName
+    AggregateRoot#60;InventoryItem#62;->>CommandHandler: 8. Return aggregate root inventory item with list of unsaved event(s)
+    CommandHandler->>EventStore: 9. Save event(s)
+    EventStore->>EventBus: 10. Publish event
+    EventBus->>InventoryItemProjection: 11. Handle event
+    InventoryItemProjection->>ReadModel: 12. Update read model
+    UI->>InventoryItemController: 13. Request list or detail view of inventory item
+    InventoryItemController->>ReadModel: 14. Fetch list or detail view of inventory item
+    ReadModel->>InventoryItemController: 15. Return list or detail view of inventory item
+    InventoryItemController->>UI: 16. Return list or detail view of inventory item
+    UI->>User: 17. Display updated list or detail view of inventory item
+  </pre><p>As we saw in the sequence diagram above, several components are involved in triggering and processing a command, updating the domain object&rsquo;s state
+and finally updating the read model. We will now go through the code of the components, following the flow of the sequence diagram.
+We will start directly with the call to the <em>InventoryItemController</em>.
+We will follow the steps of the sequence diagram and explain the code of the components involved.
+We will further divide the code walkthrough into the write side of the application and the read side of the application, even though we use inline projections to update the read model. Therefore, we will not address eventual consistency due to asynchronous projections.
+I would like to reiterate that eventual consistency is not part of CQRS itself, but can be used in combination with CQRS.</p><h5 id=write-side-of-the-application>Write Side of the application</h5><p>If we start with the <em>InventoryItemController</em>, we see that it has a POST endpoint for the <em>changeInventoryItemName</em> action.
+For this action, we expect a request body with the aggregate ID and the new name of the inventory item as a JSON object.
+From this request body, we construct the <em>ChangeInventoryItemName</em> command and send it to the <em>EventBus</em> using the <em>send</em> function.
+The <em>EventBus</em> is injected into the <em>InventoryItemController</em> via the constructor.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-kotlin data-lang=kotlin><span class=line><span class=cl><span class=k>private</span> <span class=k>val</span> <span class=py>logger</span> <span class=p>=</span> <span class=nc>KotlinLogging</span><span class=p>.</span><span class=n>logger</span> <span class=p>{}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nd>@RestController</span>
+</span></span><span class=line><span class=cl><span class=c1>//@CrossOrigin(origins = [&#34;http://localhost:8081&#34;])
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=k>class</span> <span class=nc>InventoryItemController</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=k>val</span> <span class=py>eventBus</span><span class=p>:</span> <span class=n>EventBus</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=k>val</span> <span class=py>readModelFacade</span><span class=p>:</span> <span class=n>ReadModelFacade</span>
+</span></span><span class=line><span class=cl><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>data</span> <span class=k>class</span> <span class=nc>ChangeInventoryItemNameRequest</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>        <span class=k>val</span> <span class=py>aggregateId</span><span class=p>:</span> <span class=n>String</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>        <span class=k>val</span> <span class=py>newInventoryItemName</span><span class=p>:</span> <span class=n>String</span>
+</span></span><span class=line><span class=cl>    <span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=nd>@PostMapping</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>        <span class=k>value</span> <span class=p>=</span> <span class=p>[</span><span class=s2>&#34;/api/changeInventoryItemName&#34;</span><span class=p>],</span>
+</span></span><span class=line><span class=cl>        <span class=n>consumes</span> <span class=p>=</span> <span class=p>[</span><span class=nc>MediaType</span><span class=p>.</span><span class=n>APPLICATION_JSON_VALUE</span><span class=p>],</span>
+</span></span><span class=line><span class=cl>        <span class=n>produces</span> <span class=p>=</span> <span class=p>[</span><span class=nc>MediaType</span><span class=p>.</span><span class=n>APPLICATION_JSON_VALUE</span><span class=p>]</span>
+</span></span><span class=line><span class=cl>    <span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=k>fun</span> <span class=nf>changeInventoryItemName</span><span class=p>(</span><span class=nd>@RequestBody</span> <span class=n>changeInventoryItemNameRequest</span><span class=p>:</span> <span class=n>ChangeInventoryItemNameRequest</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>val</span> <span class=py>changeInventoryItemName</span> <span class=p>=</span> <span class=n>ChangeInventoryItemName</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>            <span class=nc>UUID</span><span class=p>.</span><span class=n>fromString</span><span class=p>(</span><span class=n>changeInventoryItemNameRequest</span><span class=p>.</span><span class=n>aggregateId</span><span class=p>),</span>
+</span></span><span class=line><span class=cl>            <span class=n>changeInventoryItemNameRequest</span><span class=p>.</span><span class=n>newInventoryItemName</span>
+</span></span><span class=line><span class=cl>        <span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=n>eventBus</span><span class=p>.</span><span class=n>send</span><span class=p>(</span><span class=n>changeInventoryItemName</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// other endpoints
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=p>}</span>
+</span></span></code></pre></div><p>The <em>EventBus</em> interface is defined in the domain package and has two functions, one for publishing an event and one for sending a command.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-kotlin data-lang=kotlin><span class=line><span class=cl><span class=k>interface</span> <span class=nc>EventBus</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>fun</span> <span class=nf>publish</span><span class=p>(</span><span class=n>event</span><span class=p>:</span> <span class=n>Event</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=k>fun</span> <span class=nf>send</span><span class=p>(</span><span class=n>command</span><span class=p>:</span> <span class=n>Command</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></div><p>The implementation of the <em>EventBus</em> is included in the infrastructure package and uses Spring Events to send commands and publish events.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-kotlin data-lang=kotlin><span class=line><span class=cl><span class=nd>@Component</span>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>SpringEventBus</span><span class=p>(</span><span class=k>val</span> <span class=py>publisher</span><span class=p>:</span> <span class=n>ApplicationEventPublisher</span><span class=p>):</span> <span class=n>EventBus</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>override</span> <span class=k>fun</span> <span class=nf>publish</span><span class=p>(</span><span class=n>event</span><span class=p>:</span> <span class=n>Event</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>publisher</span><span class=p>.</span><span class=n>publishEvent</span><span class=p>(</span><span class=n>event</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>override</span> <span class=k>fun</span> <span class=nf>send</span><span class=p>(</span><span class=n>command</span><span class=p>:</span> <span class=n>Command</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>publisher</span><span class=p>.</span><span class=n>publishEvent</span><span class=p>(</span><span class=n>command</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></div><p>The command is then dispatched to the <em>InventoryItemCommandHandlers</em> class<sup id=fnref:1><a href=#fn:1 class=footnote-ref role=doc-noteref>1</a></sup>.
+In the <em>InventoryItemCommandHandlers</em> class, the command is processed and the state of the application is changed if the command is valid and the
+state of the aggregate is consistent. Otherwise, the command is rejected. Processing a command generally follows this pattern:</p><ol><li>Load the aggregate from the database through the aggregate repository</li><li>Call the domain method on the aggregate root</li><li>Store the events in the event store</li><li>Publish the events to the event bus</li></ol><p>We find the described pattern in the <em>InventoryItemCommandHandlers</em> class in the handle method for the <em>ChangeInventoryItemName</em> command, as shown in the following code snippet.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-kotlin data-lang=kotlin><span class=line><span class=cl><span class=nd>@Component</span>
+</span></span><span class=line><span class=cl><span class=nd>@Transactional</span>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>InventoryItemCommandHandlers</span><span class=p>(</span><span class=k>private</span> <span class=k>val</span> <span class=py>aggregateRepository</span><span class=p>:</span> <span class=n>AggregateRepository</span><span class=p>&lt;</span><span class=n>InventoryItem</span><span class=p>&gt;)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=nd>@EventListener</span>
+</span></span><span class=line><span class=cl>    <span class=k>fun</span> <span class=nf>handle</span><span class=p>(</span><span class=n>command</span><span class=p>:</span> <span class=n>ChangeInventoryItemName</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>aggregateRepository</span><span class=p>.</span><span class=n>getById</span><span class=p>(</span><span class=n>command</span><span class=p>.</span><span class=n>aggregateId</span><span class=p>)</span>        <span class=c1>// (1) load aggregate from the database with event sourcing
+</span></span></span><span class=line><span class=cl><span class=c1></span>            <span class=p>.</span><span class=n>ifPresent</span> <span class=p>{</span>                                        <span class=c1>//     if the aggregate is found
+</span></span></span><span class=line><span class=cl><span class=c1></span>                <span class=k>it</span><span class=p>.</span><span class=n>changeName</span><span class=p>(</span><span class=n>command</span><span class=p>.</span><span class=n>newName</span><span class=p>)</span>                  <span class=c1>// (2) try to execute the command on the aggregate 
+</span></span></span><span class=line><span class=cl><span class=c1></span>                    <span class=p>.</span><span class=n>hasChanges</span><span class=p>()</span>                               <span class=c1>//     check if the command resulted in changes
+</span></span></span><span class=line><span class=cl><span class=c1></span>                        <span class=p>.</span><span class=n>apply</span> <span class=p>{</span> <span class=n>aggregateRepository</span><span class=p>.</span><span class=n>save</span><span class=p>(</span><span class=k>it</span><span class=p>)</span> <span class=p>}</span> <span class=c1>// (3) if changes, save the aggregate and publish the events
+</span></span></span><span class=line><span class=cl><span class=c1></span>            <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// other command handlers
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=p>}</span>
+</span></span></code></pre></div><p><strong>(1) Load the aggregate from the database via the aggregate repository</strong></p><p>The first step in handling a command is to load the aggregate from the database using the aggregate repository, unless you are creating a new aggregate.
+To be able to locate the aggregate, the command must include the aggregate ID. In our case, the aggregate ID is just a UUID.
+Since we are using event sourcing, the aggregate&rsquo;s current state is determined by all events that have been recorded as changes to the aggregate state.
+If we look at the <em>AggregateRepository</em> interface, we can see that the <em>getById</em> function returns an <em>Optional</em> of the <em>AggregateRoot</em>.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-kotlin data-lang=kotlin><span class=line><span class=cl><span class=k>interface</span> <span class=nc>AggregateRepository</span><span class=p>&lt;</span><span class=n>T</span><span class=p>:</span> <span class=n>AggregateRoot</span><span class=p>&lt;</span><span class=n>T</span><span class=p>&gt;&gt;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>fun</span> <span class=nf>getById</span><span class=p>(</span><span class=n>id</span><span class=p>:</span> <span class=n>AggregateId</span><span class=p>):</span> <span class=n>Optional</span><span class=p>&lt;</span><span class=n>T</span><span class=p>&gt;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// other functions
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=p>}</span>
+</span></span></code></pre></div><p>The implementation of the <em>getById</em> function is located in the <em>EventStoreAggregateRepository</em> class and
+loads the aggregate from the database. It does this by:</p><ol><li>Fetching all events for the aggregate from the event store</li><li>Creating an empty instance of the aggregate</li><li>Applying all events to the aggregate using the <em>loadFromHistory</em> function</li><li>Returning an optional of the aggregate or an empty optional if no events were found for the aggregate</li></ol><div class=highlight><pre tabindex=0 class=chroma><code class=language-kotlin data-lang=kotlin><span class=line><span class=cl><span class=nd>@Component</span>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>EventStoreAggregateRepository</span><span class=p>&lt;</span><span class=n>T</span> <span class=p>:</span> <span class=n>AggregateRoot</span><span class=p>&lt;</span><span class=n>T</span><span class=p>&gt;&gt;(</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=k>val</span> <span class=py>eventStore</span><span class=p>:</span> <span class=n>EventStore</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=k>val</span> <span class=py>aggregateQualifiedNameProvider</span><span class=p>:</span> <span class=n>AggregateQualifiedNameProvider</span>
+</span></span><span class=line><span class=cl><span class=p>)</span> <span class=p>:</span> <span class=n>AggregateRepository</span><span class=p>&lt;</span><span class=n>T</span><span class=p>&gt;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=nd>@Suppress</span><span class=p>(</span><span class=s2>&#34;UNCHECKED_CAST&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=k>override</span> <span class=k>fun</span> <span class=nf>getById</span><span class=p>(</span><span class=n>id</span><span class=p>:</span> <span class=n>AggregateId</span><span class=p>):</span> <span class=n>Optional</span><span class=p>&lt;</span><span class=n>T</span><span class=p>&gt;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=k>val</span> <span class=py>events</span> <span class=p>=</span> <span class=n>eventStore</span><span class=p>.</span><span class=n>getEventsForAggregate</span><span class=p>(</span><span class=n>id</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=n>events</span><span class=p>.</span><span class=n>ifEmpty</span> <span class=p>{</span> <span class=k>return</span> <span class=nc>Optional</span><span class=p>.</span><span class=n>empty</span><span class=p>()}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=k>val</span> <span class=py>emptyAggregate</span> <span class=p>=</span>
+</span></span><span class=line><span class=cl>            <span class=nc>Class</span><span class=p>.</span><span class=n>forName</span><span class=p>(</span><span class=n>aggregateQualifiedNameProvider</span><span class=p>.</span><span class=n>getQualifiedNameBySimpleName</span><span class=p>(</span><span class=n>events</span><span class=p>.</span><span class=n>first</span><span class=p>().</span><span class=n>aggregateType</span><span class=p>))</span>
+</span></span><span class=line><span class=cl>                <span class=p>.</span><span class=n>kotlin</span><span class=p>.</span><span class=n>java</span><span class=p>.</span><span class=n>getDeclaredConstructor</span><span class=p>().</span><span class=n>newInstance</span><span class=p>()</span> <span class=k>as</span> <span class=n>T</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=k>val</span> <span class=py>aggregate</span> <span class=p>=</span> <span class=n>emptyAggregate</span><span class=p>.</span><span class=n>loadFromHistory</span><span class=p>(</span><span class=n>events</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=nc>Optional</span><span class=p>.</span><span class=n>of</span><span class=p>(</span><span class=n>aggregate</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// other functions
+</span></span></span><span class=line><span class=cl><span class=c1></span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></div><p>As we can see from the constructor in the <em>EventStoreAggregateRepository</em> class, the <em>EventStoreAggregateRepository</em> has two collaborators as dependencies:
+the <em>EventStore</em> and the <em>AggregateQualifiedNameProvider</em>. We will take a closer look at the qualified name providers later in the section <a href=#conventions-and-workarounds>Conventions and Workarounds</a>.
+The implementation of the <em>EventStore</em> can be found in the <em>KtormEventStore</em> class.
+As the name of the class suggests, <em>KtormEventStore</em> uses Ktorm<sup id=fnref:2><a href=#fn:2 class=footnote-ref role=doc-noteref>2</a></sup> as the ORM for interacting with the database.
+We won&rsquo;t go into detail about Ktorm here, but we can see that it provides us with a type-safe query DSL for interacting with the database.
+To get the events for an aggregate, we have to query the event table in the database, filter the events by the aggregate ID, and order the events by the timestamp.
+The events are then assigned to the corresponding event class and returned as a list of events.
+We also find an <em>EventQualifiedNameProvider</em> in the <em>KtormEventStore</em> class, which we will discuss later in the <a href=#conventions-and-workarounds>Conventions and Workarounds</a> section.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-kotlin data-lang=kotlin><span class=line><span class=cl><span class=nd>@Component</span>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>KtormEventStore</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=k>val</span> <span class=py>database</span><span class=p>:</span> <span class=n>Database</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=k>val</span> <span class=py>e</span><span class=p>:</span> <span class=n>EventTable</span> <span class=p>=</span> <span class=nc>EventTable</span><span class=p>.</span><span class=n>aliased</span><span class=p>(</span><span class=s2>&#34;e&#34;</span><span class=p>),</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=k>val</span> <span class=py>clock</span><span class=p>:</span> <span class=n>Clock</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=k>val</span> <span class=py>objectMapper</span><span class=p>:</span> <span class=n>ObjectMapper</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=k>val</span> <span class=py>eventBus</span><span class=p>:</span> <span class=n>EventBus</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=k>val</span> <span class=py>eventQualifiedNameProvider</span><span class=p>:</span> <span class=n>EventQualifiedNameProvider</span>
+</span></span><span class=line><span class=cl><span class=p>)</span> <span class=p>:</span> <span class=n>EventStore</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>override</span> <span class=k>fun</span> <span class=nf>getEventsForAggregate</span><span class=p>(</span><span class=n>aggregateId</span><span class=p>:</span> <span class=n>AggregateId</span><span class=p>):</span> <span class=n>List</span><span class=p>&lt;</span><span class=n>Event</span><span class=p>&gt;</span> <span class=p>=</span>
+</span></span><span class=line><span class=cl>        <span class=n>database</span><span class=p>.</span><span class=n>from</span><span class=p>(</span><span class=n>e</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>            <span class=p>.</span><span class=n>select</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>            <span class=p>.</span><span class=k>where</span> <span class=p>{</span> <span class=n>e</span><span class=p>.</span><span class=n>aggregateId</span> <span class=n>eq</span> <span class=n>aggregateId</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>            <span class=p>.</span><span class=n>orderBy</span><span class=p>(</span><span class=n>e</span><span class=p>.</span><span class=n>timestamp</span><span class=p>.</span><span class=n>asc</span><span class=p>())</span>
+</span></span><span class=line><span class=cl>            <span class=p>.</span><span class=n>map</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=k>val</span> <span class=py>eventTypeClass</span> <span class=p>=</span>
+</span></span><span class=line><span class=cl>                    <span class=nc>Class</span><span class=p>.</span><span class=n>forName</span><span class=p>(</span><span class=n>eventQualifiedNameProvider</span><span class=p>.</span><span class=n>getQualifiedNameBySimpleName</span><span class=p>(</span><span class=k>it</span><span class=p>[</span><span class=n>e</span><span class=p>.</span><span class=n>eventType</span><span class=p>]</span><span class=o>!!</span><span class=p>))</span>
+</span></span><span class=line><span class=cl>                        <span class=p>.</span><span class=n>kotlin</span>
+</span></span><span class=line><span class=cl>                        <span class=p>.</span><span class=n>javaObjectType</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>                <span class=n>objectMapper</span><span class=p>.</span><span class=n>convertValue</span><span class=p>(</span><span class=k>it</span><span class=p>[</span><span class=n>e</span><span class=p>.</span><span class=k>data</span><span class=p>]</span><span class=o>!!</span> <span class=k>as</span> <span class=n>LinkedHashMap</span><span class=p>&lt;*,</span> <span class=p>*&gt;</span> <span class=p>,</span> <span class=n>eventTypeClass</span><span class=p>)</span> <span class=k>as</span> <span class=n>Event</span>
+</span></span><span class=line><span class=cl>            <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// other functions
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=p>}</span>
+</span></span></code></pre></div><p>That&rsquo;s almost all we need to load the aggregate from the database using event sourcing. There&rsquo;s just one piece missing, we haven&rsquo;t discussed the
+<em>loadFromHistory</em> function in the <em>AggregateRoot</em> interface. We will look at this function in more detail in the next step, when we call the
+domain function of the loaded aggregate. We will then see that we need to distinguish between new and existing events when applying the events to the aggregate.</p><p><strong>(2) Call the domain function of the loaded aggregate</strong></p><p>The next step is to try to execute the command on the aggregate and change its state. To do that, we need to
+look at the <em>AggregateRoot</em> interface and the <em>InventoryItem</em> class, which is our only aggregate in the project. The following code snippet shows the
+<em>InventoryItem</em> class and the <em>AggregateRoot</em> interface:</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-kotlin data-lang=kotlin><span class=line><span class=cl><span class=k>interface</span> <span class=nc>AggregateRoot</span><span class=p>&lt;</span><span class=n>T</span><span class=p>&gt;</span> <span class=k>where</span> <span class=n>T</span> <span class=p>:</span> <span class=n>AggregateRoot</span><span class=p>&lt;</span><span class=n>T</span><span class=p>&gt;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// properties
+</span></span></span><span class=line><span class=cl><span class=c1></span>
+</span></span><span class=line><span class=cl>    <span class=k>fun</span> <span class=nf>applyChange</span><span class=p>(</span><span class=n>event</span><span class=p>:</span> <span class=n>Event</span><span class=p>,</span> <span class=n>isNew</span><span class=p>:</span> <span class=n>Boolean</span> <span class=p>=</span> <span class=k>true</span><span class=p>):</span> <span class=n>T</span> <span class=p>=</span>
+</span></span><span class=line><span class=cl>        <span class=n>applyEvent</span><span class=p>(</span><span class=n>event</span><span class=p>).</span><span class=n>apply</span> <span class=p>{</span> <span class=k>if</span> <span class=p>(</span><span class=n>isNew</span><span class=p>)</span> <span class=n>changes</span> <span class=o>+=</span> <span class=n>event</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>fun</span> <span class=nf>applyEvent</span><span class=p>(</span><span class=n>event</span><span class=p>:</span> <span class=n>Event</span><span class=p>):</span> <span class=n>T</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>fun</span> <span class=nf>hasChanges</span><span class=p>()</span> <span class=p>=</span> <span class=n>changes</span><span class=p>.</span><span class=n>isNotEmpty</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=nd>@Suppress</span><span class=p>(</span><span class=s2>&#34;UNCHECKED_CAST&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=k>fun</span> <span class=nf>loadFromHistory</span><span class=p>(</span><span class=n>history</span><span class=p>:</span> <span class=n>List</span><span class=p>&lt;</span><span class=n>Event</span><span class=p>&gt;):</span> <span class=n>T</span> <span class=p>=</span>
+</span></span><span class=line><span class=cl>        <span class=n>history</span><span class=p>.</span><span class=n>fold</span><span class=p>(</span><span class=k>this</span> <span class=k>as</span> <span class=n>T</span><span class=p>)</span> <span class=p>{</span> <span class=n>acc</span><span class=p>:</span> <span class=n>T</span><span class=p>,</span> <span class=n>event</span><span class=p>:</span> <span class=n>Event</span> <span class=o>-&gt;</span>
+</span></span><span class=line><span class=cl>            <span class=n>acc</span><span class=p>.</span><span class=n>applyChange</span><span class=p>(</span><span class=n>event</span><span class=p>,</span> <span class=k>false</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// more functions
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>data</span> <span class=k>class</span> <span class=nc>InventoryItem</span><span class=p>(</span><span class=cm>/* constructor parameters */</span><span class=p>)</span> <span class=p>:</span> <span class=n>AggregateRoot</span><span class=p>&lt;</span><span class=n>InventoryItem</span><span class=p>&gt;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>override</span> <span class=k>fun</span> <span class=nf>applyEvent</span><span class=p>(</span><span class=n>event</span><span class=p>:</span> <span class=n>Event</span><span class=p>):</span> <span class=n>InventoryItem</span> <span class=p>=</span> <span class=k>when</span> <span class=p>(</span><span class=n>event</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>is</span> <span class=n>InventoryItemNameChanged</span> <span class=o>-&gt;</span> <span class=n>copy</span><span class=p>(</span><span class=n>name</span> <span class=p>=</span> <span class=nc>Optional</span><span class=p>.</span><span class=n>of</span><span class=p>(</span><span class=n>event</span><span class=p>.</span><span class=n>newName</span><span class=p>))</span>
+</span></span><span class=line><span class=cl>        <span class=c1>// other events
+</span></span></span><span class=line><span class=cl><span class=c1></span>        <span class=k>else</span> <span class=o>-&gt;</span> <span class=k>this</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>fun</span> <span class=nf>changeName</span><span class=p>(</span><span class=n>newName</span><span class=p>:</span> <span class=n>String</span><span class=p>):</span> <span class=n>InventoryItem</span> <span class=p>=</span> <span class=n>applyChange</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>        <span class=n>InventoryItemNameChanged</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>            <span class=k>this</span><span class=p>.</span><span class=n>baseEventInfo</span><span class=p>(),</span>
+</span></span><span class=line><span class=cl>            <span class=n>newName</span> <span class=p>=</span> <span class=n>newName</span>
+</span></span><span class=line><span class=cl>        <span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// other methods
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=p>}</span>
+</span></span></code></pre></div><p>As we saw in the command handler, we call the <em>changeName</em> function in the <em>InventoryItem</em> class.
+In the <em>changeName</em> function, we create a new <em>InventoryItemNameChanged</em> event and call the <em>applyChange</em> function in the <em>AggregateRoot</em> interface.
+The <em>applyChange</em> function then calls the <em>applyEvent</em> function in the InventoryItem class and adds the event to the aggregate&rsquo;s change list. This is
+due to the isNew boolean flag, which defaults to true. The <em>applyEvent</em> function takes an event and uses pattern matching to
+match the event against the appropriate event class and update the state of the aggregate accordingly. The updated aggregate is then
+returned according to the aggregate immutability pattern.
+As mentioned earlier, we need to distinguish between new and existing events when applying the events to the aggregate. As we see in the
+<em>AggregateRoot</em> interface, we use the <em>applyChange</em> function with the <em>isNew</em> flag set to false.
+This is because when we load the aggregate from history and apply its events, we don&rsquo;t want to add the existing events to the aggregate&rsquo;s change list.
+The change list is used only to keep track of the new events added to the aggregate. In the next step, we&rsquo;ll look at how the events are
+stored in the event store and then published.</p><p><strong>(3) Save the events to the event store and publish the events to the event bus</strong></p><p>The next step is to store the events in the event store and publish the events on the event bus.
+To store and publish the events, we need to look at the <em>AggregateRepository</em> and the event store again.
+Similar to the <em>getById</em> function, there is a <em>save</em> function in the <em>AggregateRepository</em> interface that takes an aggregate as a parameter.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-kotlin data-lang=kotlin><span class=line><span class=cl><span class=k>interface</span> <span class=nc>AggregateRepository</span><span class=p>&lt;</span><span class=n>T</span><span class=p>:</span> <span class=n>AggregateRoot</span><span class=p>&lt;</span><span class=n>T</span><span class=p>&gt;&gt;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>fun</span> <span class=nf>save</span><span class=p>(</span><span class=n>aggregate</span><span class=p>:</span> <span class=n>T</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=k>fun</span> <span class=nf>getById</span><span class=p>(</span><span class=n>id</span><span class=p>:</span> <span class=n>AggregateId</span><span class=p>):</span> <span class=n>Optional</span><span class=p>&lt;</span><span class=n>T</span><span class=p>&gt;</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></div><p>We can find the <em>EventStoreAggregateRepository</em> class again.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-kotlin data-lang=kotlin><span class=line><span class=cl><span class=nd>@Component</span>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>EventStoreAggregateRepository</span><span class=p>&lt;</span><span class=n>T</span> <span class=p>:</span> <span class=n>AggregateRoot</span><span class=p>&lt;</span><span class=n>T</span><span class=p>&gt;&gt;(</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=k>val</span> <span class=py>eventStore</span><span class=p>:</span> <span class=n>EventStore</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=k>val</span> <span class=py>aggregateQualifiedNameProvider</span><span class=p>:</span> <span class=n>AggregateQualifiedNameProvider</span>
+</span></span><span class=line><span class=cl><span class=p>)</span> <span class=p>:</span> <span class=n>AggregateRepository</span><span class=p>&lt;</span><span class=n>T</span><span class=p>&gt;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>override</span> <span class=k>fun</span> <span class=nf>save</span><span class=p>(</span><span class=n>aggregate</span><span class=p>:</span> <span class=n>T</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>aggregate</span><span class=p>.</span><span class=n>id</span><span class=p>.</span><span class=n>ifPresent</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>eventStore</span><span class=p>.</span><span class=n>saveEvents</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>                <span class=n>aggregateId</span> <span class=p>=</span> <span class=k>it</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                <span class=n>aggregateType</span> <span class=p>=</span> <span class=n>aggregate</span><span class=p>.</span><span class=n>aggregateType</span><span class=p>(),</span>
+</span></span><span class=line><span class=cl>                <span class=n>events</span> <span class=p>=</span> <span class=n>aggregate</span><span class=p>.</span><span class=n>changes</span>
+</span></span><span class=line><span class=cl>            <span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span></code></pre></div><p>When we store the events, we use the injected <em>EventStore</em> collaborator for this purpose as well.
+The implementation of the <em>saveEvents</em> function in the <em>KtormEventStore</em> class is shown in the following code snippet:</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-kotlin data-lang=kotlin><span class=line><span class=cl><span class=nd>@Component</span>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>KtormEventStore</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=k>val</span> <span class=py>database</span><span class=p>:</span> <span class=n>Database</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=k>val</span> <span class=py>e</span><span class=p>:</span> <span class=n>EventTable</span> <span class=p>=</span> <span class=nc>EventTable</span><span class=p>.</span><span class=n>aliased</span><span class=p>(</span><span class=s2>&#34;e&#34;</span><span class=p>),</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=k>val</span> <span class=py>clock</span><span class=p>:</span> <span class=n>Clock</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=k>val</span> <span class=py>objectMapper</span><span class=p>:</span> <span class=n>ObjectMapper</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=k>val</span> <span class=py>eventBus</span><span class=p>:</span> <span class=n>EventBus</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=k>val</span> <span class=py>eventQualifiedNameProvider</span><span class=p>:</span> <span class=n>EventQualifiedNameProvider</span>
+</span></span><span class=line><span class=cl><span class=p>)</span> <span class=p>:</span> <span class=n>EventStore</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>override</span> <span class=k>fun</span> <span class=nf>saveEvents</span><span class=p>(</span><span class=n>aggregateId</span><span class=p>:</span> <span class=n>AggregateId</span><span class=p>,</span> <span class=n>aggregateType</span><span class=p>:</span> <span class=n>String</span><span class=p>,</span> <span class=n>events</span><span class=p>:</span> <span class=n>List</span><span class=p>&lt;</span><span class=n>Event</span><span class=p>&gt;)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>events</span><span class=p>.</span><span class=n>forEach</span> <span class=p>{</span> <span class=n>event</span><span class=p>:</span> <span class=n>Event</span> <span class=o>-&gt;</span>
+</span></span><span class=line><span class=cl>            <span class=n>saveEvent</span><span class=p>(</span><span class=n>aggregateId</span><span class=p>,</span> <span class=n>aggregateType</span><span class=p>,</span> <span class=n>event</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>            <span class=n>eventBus</span><span class=p>.</span><span class=n>publish</span><span class=p>(</span><span class=n>event</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=k>fun</span> <span class=nf>saveEvent</span><span class=p>(</span><span class=n>aggregateId</span><span class=p>:</span> <span class=n>AggregateId</span><span class=p>,</span> <span class=n>aggregateType</span><span class=p>:</span> <span class=n>String</span><span class=p>,</span> <span class=n>event</span><span class=p>:</span> <span class=n>Event</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>database</span><span class=p>.</span><span class=n>insert</span><span class=p>(</span><span class=n>e</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=k>set</span><span class=p>(</span><span class=n>e</span><span class=p>.</span><span class=n>eventType</span><span class=p>,</span> <span class=n>event</span><span class=o>::</span><span class=k>class</span><span class=p>.</span><span class=n>simpleName</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>            <span class=k>set</span><span class=p>(</span><span class=n>e</span><span class=p>.</span><span class=n>aggregateId</span><span class=p>,</span> <span class=n>aggregateId</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>            <span class=k>set</span><span class=p>(</span><span class=n>e</span><span class=p>.</span><span class=n>aggregateType</span><span class=p>,</span> <span class=n>aggregateType</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>            <span class=k>set</span><span class=p>(</span><span class=n>e</span><span class=p>.</span><span class=n>timestamp</span><span class=p>,</span> <span class=n>event</span><span class=p>.</span><span class=n>timestamp</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>            <span class=k>set</span><span class=p>(</span><span class=n>e</span><span class=p>.</span><span class=k>data</span><span class=p>,</span> <span class=n>event</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></div><p>As we can see in the code above, the <em>saveEvents</em> function stores the events in the database using Ktorms insert function
+and then publishes the events on the event bus.</p><p>A short note on the aggregate repository, the event store and the event bus. Even if the
+abstractions are unrelated to each other, they are closely related in the implementation,
+where the aggregate repository holds a dependency on the event store and the event store holds a dependency on the event bus, as we can see in the diagram below.</p><figure2 class=class_diagram_persistence><img src=https://simonschoof.com/images/class_diagram_persistence.webp alt="Class diagram of aggregate repository, event store and the event bus and its implementation relations"><figcaption><p>Class diagram of aggregate repository, event store and the event bus and its implementation relations</p></figcaption></figure2><p>This completes the write side of the application and we can proceed to the read side.</p><h5 id=read-side-of-the-application>Read Side of the application</h5><p>With the publication of the events on the event bus, we have completed the write side of the application and changed the application state.
+We now want this to be reflected on the read side of the application, update the read model and show the changes to the user when they query a read model. To do this, we use
+<a href=https://martendb.io/events/>inline projections</a>
+[<a href=#ref-43>43</a>] which means that we monitor the in-memory event bus and update the read model directly when an event is published.<sup id=fnref:3><a href=#fn:3 class=footnote-ref role=doc-noteref>3</a></sup>
+So let&rsquo;s take a look at the <em>InventoryItemProjection</em> file, which does just that. In the file, we find two classes,
+one containing the event listeners for a list view of inventory items and the other containing the event listeners for a detail view of inventory items. Again, we&rsquo;ll only show the listeners for the <em>InventoryItemNameChanged</em> event, since we&rsquo;ve chosen this for our example.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-kotlin data-lang=kotlin><span class=line><span class=cl><span class=nd>@Component</span>
+</span></span><span class=line><span class=cl><span class=nd>@Transactional</span>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>InventoryItemListView</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=k>val</span> <span class=py>database</span><span class=p>:</span> <span class=n>Database</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=k>val</span> <span class=py>rmiit</span><span class=p>:</span> <span class=n>ReadModelInventoryItemTable</span> <span class=p>=</span> <span class=nc>ReadModelInventoryItemTable</span><span class=p>.</span><span class=n>aliased</span><span class=p>(</span><span class=s2>&#34;rmiit&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>val</span> <span class=py>Database</span><span class=p>.</span><span class=n>inventoryItems</span> <span class=k>get</span><span class=p>()</span> <span class=p>=</span> <span class=k>this</span><span class=p>.</span><span class=n>sequenceOf</span><span class=p>(</span><span class=n>rmiit</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=nd>@EventListener</span>
+</span></span><span class=line><span class=cl>    <span class=k>fun</span> <span class=nf>handle</span><span class=p>(</span><span class=n>event</span><span class=p>:</span> <span class=n>InventoryItemNameChanged</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>logger</span><span class=p>.</span><span class=n>info</span> <span class=p>{</span> <span class=s2>&#34;changed name of inventory item to name </span><span class=si>${event.newName}</span><span class=s2>&#34;</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=n>database</span><span class=p>.</span><span class=n>inventoryItems</span><span class=p>.</span><span class=n>find</span> <span class=p>{</span> <span class=k>it</span><span class=p>.</span><span class=n>aggregateId</span> <span class=n>eq</span> <span class=n>event</span><span class=p>.</span><span class=n>aggregateId</span> <span class=p>}</span><span class=o>?.</span><span class=n>let</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=k>it</span><span class=p>.</span><span class=n>name</span> <span class=p>=</span> <span class=n>event</span><span class=p>.</span><span class=n>newName</span>
+</span></span><span class=line><span class=cl>            <span class=k>it</span><span class=p>.</span><span class=n>flushChanges</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span> <span class=o>?:</span> <span class=k>throw</span> <span class=n>IllegalStateException</span><span class=p>(</span><span class=s2>&#34;Inventory item with id </span><span class=si>${event.aggregateId}</span><span class=s2> not found&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// other event listeners for the InventoryItemListView
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nd>@Component</span>
+</span></span><span class=line><span class=cl><span class=nd>@Transactional</span>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>InventoryItemDetailView</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=k>val</span> <span class=py>database</span><span class=p>:</span> <span class=n>Database</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=k>val</span> <span class=py>rmiidt</span><span class=p>:</span> <span class=n>ReadModelInventoryItemDetailsTable</span> <span class=p>=</span> <span class=nc>ReadModelInventoryItemDetailsTable</span><span class=p>.</span><span class=n>aliased</span><span class=p>(</span><span class=s2>&#34;rmiidt&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>val</span> <span class=py>Database</span><span class=p>.</span><span class=n>inventoryItemDetails</span> <span class=k>get</span><span class=p>()</span> <span class=p>=</span> <span class=k>this</span><span class=p>.</span><span class=n>sequenceOf</span><span class=p>(</span><span class=n>rmiidt</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=nd>@EventListener</span>
+</span></span><span class=line><span class=cl>    <span class=k>fun</span> <span class=nf>handle</span><span class=p>(</span><span class=n>event</span><span class=p>:</span> <span class=n>InventoryItemNameChanged</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>logger</span><span class=p>.</span><span class=n>info</span> <span class=p>{</span> <span class=s2>&#34;changed name of inventory item to name </span><span class=si>${event.newName}</span><span class=s2>&#34;</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=n>database</span><span class=p>.</span><span class=n>inventoryItemDetails</span><span class=p>.</span><span class=n>find</span> <span class=p>{</span> <span class=k>it</span><span class=p>.</span><span class=n>aggregateId</span> <span class=n>eq</span> <span class=n>event</span><span class=p>.</span><span class=n>aggregateId</span> <span class=p>}</span><span class=o>?.</span><span class=n>let</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=k>it</span><span class=p>.</span><span class=n>name</span> <span class=p>=</span> <span class=n>event</span><span class=p>.</span><span class=n>newName</span>
+</span></span><span class=line><span class=cl>            <span class=k>it</span><span class=p>.</span><span class=n>flushChanges</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span> <span class=o>?:</span> <span class=k>throw</span> <span class=n>IllegalStateException</span><span class=p>(</span><span class=s2>&#34;Inventory item with id </span><span class=si>${event.aggregateId}</span><span class=s2> not found&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// other event listeners for the InventoryItemDetailView
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=p>}</span>
+</span></span></code></pre></div><p>The list and detail view models are implemented as relational tables in the database. In the code snippet above, we see
+that we have the same workflow with different tables for both views. First, we locate the inventory item in the database by its aggregate ID,
+then update the name of the inventory item and commit the changes to the database. Again, we use Ktorm to interact with the database.
+Here we take full advantage of Ktorm&rsquo;s ORM capabilities and use its entity feature to map the tables to Kotlin classes. Again, we won&rsquo;t go into the details of Ktorm here either, but you should be able to see that the code is easy to read and understand what is happening.
+With the read model updated, we can query the read model via the <em>InventoryItemController</em> and return the inventory item list or details view to the user.
+The last thing to be shown is that we have implemented a <em>ReadModelFacade</em> to have a central point for querying the read model.
+The <em>ReadModelFacade</em> is injected into the <em>InventoryItemController</em> and is used to query the read model.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-kotlin data-lang=kotlin><span class=line><span class=cl><span class=k>interface</span> <span class=nc>ReadModelFacade</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>fun</span> <span class=nf>getInventoryItems</span><span class=p>():</span> <span class=n>List</span><span class=p>&lt;</span><span class=n>InventoryItemDto</span><span class=p>&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=k>fun</span> <span class=nf>getInventoryItemDetails</span><span class=p>(</span><span class=n>aggregateId</span><span class=p>:</span> <span class=n>AggregateId</span><span class=p>):</span> <span class=n>Optional</span><span class=p>&lt;</span><span class=n>InventoryItemDetailsDto</span><span class=p>&gt;</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nd>@Component</span>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>KtormReadModelFacade</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=k>val</span> <span class=py>database</span><span class=p>:</span> <span class=n>Database</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=k>val</span> <span class=py>rmiit</span><span class=p>:</span> <span class=n>ReadModelInventoryItemTable</span> <span class=p>=</span> <span class=nc>ReadModelInventoryItemTable</span><span class=p>.</span><span class=n>aliased</span><span class=p>(</span><span class=s2>&#34;rmiit&#34;</span><span class=p>),</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=k>val</span> <span class=py>rmiidt</span><span class=p>:</span> <span class=n>ReadModelInventoryItemDetailsTable</span> <span class=p>=</span> <span class=nc>ReadModelInventoryItemDetailsTable</span><span class=p>.</span><span class=n>aliased</span><span class=p>(</span><span class=s2>&#34;rmiidt&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>)</span> <span class=p>:</span> <span class=n>ReadModelFacade</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>override</span> <span class=k>fun</span> <span class=nf>getInventoryItems</span><span class=p>():</span> <span class=n>List</span><span class=p>&lt;</span><span class=n>InventoryItemDto</span><span class=p>&gt;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=n>database</span><span class=p>.</span><span class=n>from</span><span class=p>(</span><span class=n>rmiit</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>            <span class=p>.</span><span class=n>select</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>            <span class=p>.</span><span class=n>map</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=n>InventoryItemDto</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>                    <span class=n>aggregateId</span> <span class=p>=</span> <span class=k>it</span><span class=p>[</span><span class=n>rmiit</span><span class=p>.</span><span class=n>aggregateId</span><span class=p>]</span><span class=o>!!</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                    <span class=n>name</span> <span class=p>=</span> <span class=k>it</span><span class=p>[</span><span class=n>rmiit</span><span class=p>.</span><span class=n>name</span><span class=p>]</span><span class=o>!!</span>
+</span></span><span class=line><span class=cl>                <span class=p>)</span>
+</span></span><span class=line><span class=cl>            <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// implementation of getInventoryItemDetails
+</span></span></span><span class=line><span class=cl><span class=c1></span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nd>@RestController</span>
+</span></span><span class=line><span class=cl><span class=c1>//@CrossOrigin(origins = [&#34;http://localhost:8081&#34;])
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=k>class</span> <span class=nc>InventoryItemController</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=k>val</span> <span class=py>eventBus</span><span class=p>:</span> <span class=n>EventBus</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=k>val</span> <span class=py>readModelFacade</span><span class=p>:</span> <span class=n>ReadModelFacade</span>
+</span></span><span class=line><span class=cl><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// other endpoints
+</span></span></span><span class=line><span class=cl><span class=c1></span>
+</span></span><span class=line><span class=cl>    <span class=nd>@GetMapping</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>        <span class=k>value</span> <span class=p>=</span> <span class=p>[</span><span class=s2>&#34;/api/inventoryItems&#34;</span><span class=p>],</span>
+</span></span><span class=line><span class=cl>        <span class=n>produces</span> <span class=p>=</span> <span class=p>[</span><span class=nc>MediaType</span><span class=p>.</span><span class=n>APPLICATION_JSON_VALUE</span><span class=p>]</span>
+</span></span><span class=line><span class=cl>    <span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=k>fun</span> <span class=nf>getInventoryItems</span><span class=p>()</span> <span class=p>:</span> <span class=n>List</span><span class=p>&lt;</span><span class=n>InventoryItemDto</span><span class=p>&gt;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=n>readModelFacade</span><span class=p>.</span><span class=n>getInventoryItems</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=nd>@GetMapping</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>        <span class=k>value</span> <span class=p>=</span> <span class=p>[</span><span class=s2>&#34;/api/inventoryItemDetails/{aggregateId}&#34;</span><span class=p>],</span>
+</span></span><span class=line><span class=cl>        <span class=n>produces</span> <span class=p>=</span> <span class=p>[</span><span class=nc>MediaType</span><span class=p>.</span><span class=n>APPLICATION_JSON_VALUE</span><span class=p>]</span>
+</span></span><span class=line><span class=cl>    <span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=k>fun</span> <span class=nf>getInventoryItemDetails</span><span class=p>(</span><span class=nd>@PathVariable</span> <span class=n>aggregateId</span><span class=p>:</span> <span class=n>String</span><span class=p>):</span> <span class=n>Optional</span><span class=p>&lt;</span><span class=n>InventoryItemDetailsDto</span><span class=p>&gt;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=n>readModelFacade</span><span class=p>.</span><span class=n>getInventoryItemDetails</span><span class=p>(</span><span class=nc>UUID</span><span class=p>.</span><span class=n>fromString</span><span class=p>(</span><span class=n>aggregateId</span><span class=p>))</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></div><p>With that, we have finished the read side of the application. The updated read models can be queried and displayed to the user.
+The example domain is quite simple, but can be extended to more complex views combining multiple aggregates.
+The read models also don&rsquo;t necessarily have to be relational tables in the database, but can be implemented in different ways.
+Also, we only used inline projections instead of asynchronous projections to update the read models, which would result in a consistent system.
+In the next section, we will look at some conventions and workarounds in the code that were chosen as solutions to some problems
+that arose during the implementation of the project.</p><h5 id=conventions-and-workarounds-in-the-code>Conventions and workarounds in the code</h5><p>While going through the code, we saw some implementation details that are a bit different from the original SimpleCQRS project and also
+from a solution that would have been written in Java, because we are using some concepts of Kotlin for the implementation. I&rsquo;m not sure if these solutions are good or if they will even lead to more problems in the future.</p><p><strong>Creation of an Aggregate and Immutability</strong></p><p>First, we&rsquo;ll cover how to create an aggregate and the decision to
+make the aggregate immutable. As mentioned earlier, we have the <em>AggregateRoot</em> interface and the <em>InventoryItem</em> class as its implementation.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-kotlin data-lang=kotlin><span class=line><span class=cl><span class=k>interface</span> <span class=nc>AggregateRoot</span><span class=p>&lt;</span><span class=n>T</span><span class=p>&gt;</span> <span class=k>where</span> <span class=n>T</span> <span class=p>:</span> <span class=n>AggregateRoot</span><span class=p>&lt;</span><span class=n>T</span><span class=p>&gt;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>val</span> <span class=py>id</span><span class=p>:</span> <span class=n>Optional</span><span class=p>&lt;</span><span class=n>AggregateId</span><span class=p>&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=k>val</span> <span class=py>changes</span><span class=p>:</span> <span class=n>MutableList</span><span class=p>&lt;</span><span class=n>Event</span><span class=p>&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=k>val</span> <span class=py>clock</span><span class=p>:</span> <span class=n>Clock</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>fun</span> <span class=nf>applyChange</span><span class=p>(</span><span class=n>event</span><span class=p>:</span> <span class=n>Event</span><span class=p>,</span> <span class=n>isNew</span><span class=p>:</span> <span class=n>Boolean</span> <span class=p>=</span> <span class=k>true</span><span class=p>):</span> <span class=n>T</span> <span class=p>=</span>
+</span></span><span class=line><span class=cl>        <span class=n>applyEvent</span><span class=p>(</span><span class=n>event</span><span class=p>).</span><span class=n>apply</span> <span class=p>{</span> <span class=k>if</span> <span class=p>(</span><span class=n>isNew</span><span class=p>)</span> <span class=n>changes</span> <span class=o>+=</span> <span class=n>event</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>fun</span> <span class=nf>applyEvent</span><span class=p>(</span><span class=n>event</span><span class=p>:</span> <span class=n>Event</span><span class=p>):</span> <span class=n>T</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// other functions
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>data</span> <span class=k>class</span> <span class=nc>InventoryItem</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>    <span class=k>override</span> <span class=k>val</span> <span class=py>id</span><span class=p>:</span> <span class=n>Optional</span><span class=p>&lt;</span><span class=n>AggregateId</span><span class=p>&gt;</span> <span class=p>=</span> <span class=nc>Optional</span><span class=p>.</span><span class=n>empty</span><span class=p>(),</span>
+</span></span><span class=line><span class=cl>    <span class=k>override</span> <span class=k>val</span> <span class=py>changes</span><span class=p>:</span> <span class=n>MutableList</span><span class=p>&lt;</span><span class=n>Event</span><span class=p>&gt;</span> <span class=p>=</span> <span class=n>mutableListOf</span><span class=p>(),</span>
+</span></span><span class=line><span class=cl>    <span class=k>override</span> <span class=k>val</span> <span class=py>clock</span><span class=p>:</span> <span class=n>Clock</span> <span class=p>=</span> <span class=nc>Clock</span><span class=p>.</span><span class=n>systemUTC</span><span class=p>(),</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=k>val</span> <span class=py>name</span><span class=p>:</span> <span class=n>Optional</span><span class=p>&lt;</span><span class=n>String</span><span class=p>&gt;</span> <span class=p>=</span> <span class=nc>Optional</span><span class=p>.</span><span class=n>empty</span><span class=p>(),</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=k>val</span> <span class=py>isActivated</span><span class=p>:</span> <span class=n>Boolean</span> <span class=p>=</span> <span class=k>false</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=k>val</span> <span class=py>availableQuantity</span><span class=p>:</span> <span class=n>Int</span> <span class=p>=</span> <span class=m>0</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=k>private</span> <span class=k>val</span> <span class=py>maxQuantity</span><span class=p>:</span> <span class=n>Int</span> <span class=p>=</span> <span class=nc>Int</span><span class=p>.</span><span class=n>MAX_VALUE</span><span class=p>,</span>
+</span></span><span class=line><span class=cl><span class=p>)</span> <span class=p>:</span> <span class=n>AggregateRoot</span><span class=p>&lt;</span><span class=n>InventoryItem</span><span class=p>&gt;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>override</span> <span class=k>fun</span> <span class=nf>applyEvent</span><span class=p>(</span><span class=n>event</span><span class=p>:</span> <span class=n>Event</span><span class=p>):</span> <span class=n>InventoryItem</span> <span class=p>=</span> <span class=k>when</span> <span class=p>(</span><span class=n>event</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>is</span> <span class=n>InventoryItemCreated</span> <span class=o>-&gt;</span> <span class=n>copy</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>            <span class=n>id</span> <span class=p>=</span> <span class=nc>Optional</span><span class=p>.</span><span class=n>of</span><span class=p>(</span><span class=n>event</span><span class=p>.</span><span class=n>aggregateId</span><span class=p>),</span>
+</span></span><span class=line><span class=cl>            <span class=n>name</span> <span class=p>=</span> <span class=nc>Optional</span><span class=p>.</span><span class=n>of</span><span class=p>(</span><span class=n>event</span><span class=p>.</span><span class=n>name</span><span class=p>),</span>
+</span></span><span class=line><span class=cl>            <span class=n>availableQuantity</span> <span class=p>=</span> <span class=n>event</span><span class=p>.</span><span class=n>availableQuantity</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>maxQuantity</span> <span class=p>=</span> <span class=n>event</span><span class=p>.</span><span class=n>maxQuantity</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>isActivated</span> <span class=p>=</span> <span class=k>true</span>
+</span></span><span class=line><span class=cl>        <span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=k>is</span> <span class=n>InventoryItemNameChanged</span> <span class=o>-&gt;</span> <span class=n>copy</span><span class=p>(</span><span class=n>name</span> <span class=p>=</span> <span class=nc>Optional</span><span class=p>.</span><span class=n>of</span><span class=p>(</span><span class=n>event</span><span class=p>.</span><span class=n>newName</span><span class=p>))</span>
+</span></span><span class=line><span class=cl>        <span class=k>is</span> <span class=n>InventoryItemsRemoved</span> <span class=o>-&gt;</span> <span class=n>copy</span><span class=p>(</span><span class=n>availableQuantity</span> <span class=p>=</span> <span class=n>event</span><span class=p>.</span><span class=n>newAvailableQuantity</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=k>is</span> <span class=n>InventoryItemsCheckedIn</span> <span class=o>-&gt;</span> <span class=n>copy</span><span class=p>(</span><span class=n>availableQuantity</span> <span class=p>=</span> <span class=n>event</span><span class=p>.</span><span class=n>newAvailableQuantity</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=k>is</span> <span class=n>InventoryItemDeactivated</span> <span class=o>-&gt;</span> <span class=n>copy</span><span class=p>(</span><span class=n>isActivated</span> <span class=p>=</span> <span class=k>false</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=k>else</span> <span class=o>-&gt;</span> <span class=k>this</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>companion</span> <span class=k>object</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>operator</span> <span class=k>fun</span> <span class=nf>invoke</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>            <span class=n>inventoryItemName</span><span class=p>:</span> <span class=n>String</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>availableQuantity</span><span class=p>:</span> <span class=n>Int</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>maxQuantity</span><span class=p>:</span> <span class=n>Int</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>clock</span><span class=p>:</span> <span class=n>Clock</span> <span class=p>=</span> <span class=nc>Clock</span><span class=p>.</span><span class=n>systemUTC</span><span class=p>()):</span> <span class=n>InventoryItem</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=k>val</span> <span class=py>inventoryItem</span> <span class=p>=</span> <span class=n>InventoryItem</span><span class=p>(</span><span class=n>clock</span> <span class=p>=</span> <span class=n>clock</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>            <span class=k>val</span> <span class=py>event</span> <span class=p>=</span> <span class=n>InventoryItemCreated</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>                <span class=n>inventoryItem</span><span class=p>.</span><span class=n>baseEventInfo</span><span class=p>(</span><span class=n>isNew</span> <span class=p>=</span> <span class=k>true</span><span class=p>),</span>
+</span></span><span class=line><span class=cl>                <span class=n>name</span> <span class=p>=</span> <span class=n>inventoryItemName</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                <span class=n>availableQuantity</span> <span class=p>=</span> <span class=n>availableQuantity</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                <span class=n>maxQuantity</span> <span class=p>=</span> <span class=n>maxQuantity</span>
+</span></span><span class=line><span class=cl>            <span class=p>)</span>
+</span></span><span class=line><span class=cl>            <span class=k>return</span> <span class=n>inventoryItem</span><span class=p>.</span><span class=n>applyChange</span><span class=p>(</span><span class=n>event</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>fun</span> <span class=nf>changeName</span><span class=p>(</span><span class=n>newName</span><span class=p>:</span> <span class=n>String</span><span class=p>):</span> <span class=n>InventoryItem</span> <span class=p>=</span> <span class=n>applyChange</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>        <span class=n>InventoryItemNameChanged</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>            <span class=k>this</span><span class=p>.</span><span class=n>baseEventInfo</span><span class=p>(),</span>
+</span></span><span class=line><span class=cl>            <span class=n>newName</span> <span class=p>=</span> <span class=n>newName</span>
+</span></span><span class=line><span class=cl>        <span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// other functions
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=p>}</span>
+</span></span></code></pre></div><p>In the AggregateRoot interface, we have defined three properties: the <em>ID</em>, the <em>change</em> list, and a <em>clock</em>, which must be overridden in the constructor of the aggregate implementation. Additional properties can then be defined in the aggregate itself. I chose to make the aggregate immutable by defining all properties with the val keyword and using
+<span>Kotlin's data class feature</span>
+[<a href=#ref-44>44</a>].
+The aggregate&rsquo;s additional properties are then defined in the data class&rsquo;s constructor and must have a default value. This way, we can instantiate an empty aggregate with the default values via the constructor.
+As we have seen, we need an empty instance of the aggregate to apply the events to the aggregate when it is loaded from the database. When we want to create a new aggregate, we have to provide and use an <em>invoke</em> function in a companion object of the aggregate.
+The <em>invoke</em> function is then used to create a new instance of the aggregate and apply an initial creation event to the aggregate. With the constructor with default properties and the <em>invoke</em> function, we can distinguish between creating a new aggregate and creating an empty instance of the aggregate to use event sourcing to restore the current state of the aggregate.
+Another thing we saw is that the aggregate is immutable and we return a copy of the aggregate with the new state when we call the <em>applyEvent</em> function of the aggregate. Immutability is a common pattern in functional programming and is also recommended for domain modeling in DDD by
+<a href=https://arrow-kt.io/>Arrow-kt library</a>
+[<a href=#ref-45>45</a>] and seems to be gaining popularity in the DDD community as well.
+While I didn&rsquo;t use the Arrow-kt library in the project, you can find more information about immutability and domain modeling in the
+<a href=https://arrow-kt.io/learn/immutable-data/intro/>immutable data section</a>
+[<a href=#ref-46>46</a>] of the arrow.kt documentation and in Scott Wlaschin&rsquo;s book &ldquo;Domain Modeling Made Functional&rdquo;[<a href=#ref-21>21</a>].
+To summarize, we need to follow these conventions to create an aggregate and make it immutable:</p><ul><li>Overwrite the <em>ID</em>, <em>changes</em>, and <em>clock</em> properties in the data class constructor</li><li>Define the aggregate&rsquo;s properties in the data class constructor with the val keyword and default values</li><li>Define an <em>invoke</em> function in a companion object of the data class to create a new instance of the aggregate and apply an initial creation event to the aggregate</li><li>Define the <em>applyEvent</em> function in the data class to apply the events to the aggregate and return a copy of the aggregate with the new state</li></ul><p><strong>Loading events from the EventStore and creating the events and an empty aggregate via reflection</strong></p><p>Above, we saw that we need to distinguish between creating a new aggregate and loading the aggregate from the database.
+To get the current state of the aggregate, we need to create an empty instance of the aggregate, load all events for the aggregate from the database, and apply all events to the aggregate. The problem here is that we don&rsquo;t know the type of the aggregate at runtime, even though the type is a generic type parameter of the <em>AggregateRoot</em> interface. This is due to type erasure in Java and Kotlin.
+To address this problem, I store the aggregate type, which is the short name of the class, in the events table for each event.
+Additionally, I also use the short name of the event classes to define the type of event in the event table.
+Now, when I load the events for an aggregate from the database, I use the event type to create an instance of the event using reflection. I had to add an additional cast to the event class here because the return type of the <em>objectMapper.convertValue</em> function is <em>Any</em> and I want to return a list of events. From the list of events, we can get the aggregate type and also create an empty instance of the aggregate using reflection.
+We can then apply all events to the aggregate and return the aggregate.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-kotlin data-lang=kotlin><span class=line><span class=cl><span class=k>override</span> <span class=k>fun</span> <span class=nf>getEventsForAggregate</span><span class=p>(</span><span class=n>aggregateId</span><span class=p>:</span> <span class=n>AggregateId</span><span class=p>):</span> <span class=n>List</span><span class=p>&lt;</span><span class=n>Event</span><span class=p>&gt;</span> <span class=p>=</span>
+</span></span><span class=line><span class=cl>    <span class=n>database</span><span class=p>.</span><span class=n>from</span><span class=p>(</span><span class=n>e</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>.</span><span class=n>select</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>        <span class=p>.</span><span class=k>where</span> <span class=p>{</span> <span class=n>e</span><span class=p>.</span><span class=n>aggregateId</span> <span class=n>eq</span> <span class=n>aggregateId</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=p>.</span><span class=n>orderBy</span><span class=p>(</span><span class=n>e</span><span class=p>.</span><span class=n>timestamp</span><span class=p>.</span><span class=n>asc</span><span class=p>())</span>
+</span></span><span class=line><span class=cl>        <span class=p>.</span><span class=n>map</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=k>val</span> <span class=py>eventTypeClass</span> <span class=p>=</span>
+</span></span><span class=line><span class=cl>                <span class=nc>Class</span><span class=p>.</span><span class=n>forName</span><span class=p>(</span><span class=n>eventQualifiedNameProvider</span><span class=p>.</span><span class=n>getQualifiedNameBySimpleName</span><span class=p>(</span><span class=k>it</span><span class=p>[</span><span class=n>e</span><span class=p>.</span><span class=n>eventType</span><span class=p>]</span><span class=o>!!</span><span class=p>))</span>
+</span></span><span class=line><span class=cl>                    <span class=p>.</span><span class=n>kotlin</span>
+</span></span><span class=line><span class=cl>                    <span class=p>.</span><span class=n>javaObjectType</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>            <span class=n>objectMapper</span><span class=p>.</span><span class=n>convertValue</span><span class=p>(</span><span class=k>it</span><span class=p>[</span><span class=n>e</span><span class=p>.</span><span class=k>data</span><span class=p>]</span><span class=o>!!</span> <span class=k>as</span> <span class=n>LinkedHashMap</span><span class=p>&lt;*,</span> <span class=p>*&gt;</span> <span class=p>,</span> <span class=n>eventTypeClass</span><span class=p>)</span> <span class=k>as</span> <span class=n>Event</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span></code></pre></div><div class=highlight><pre tabindex=0 class=chroma><code class=language-kotlin data-lang=kotlin><span class=line><span class=cl><span class=nd>@Suppress</span><span class=p>(</span><span class=s2>&#34;UNCHECKED_CAST&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=k>override</span> <span class=k>fun</span> <span class=nf>getById</span><span class=p>(</span><span class=n>id</span><span class=p>:</span> <span class=n>AggregateId</span><span class=p>):</span> <span class=n>Optional</span><span class=p>&lt;</span><span class=n>T</span><span class=p>&gt;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>val</span> <span class=py>events</span> <span class=p>=</span> <span class=n>eventStore</span><span class=p>.</span><span class=n>getEventsForAggregate</span><span class=p>(</span><span class=n>id</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=n>events</span><span class=p>.</span><span class=n>ifEmpty</span> <span class=p>{</span> <span class=k>return</span> <span class=nc>Optional</span><span class=p>.</span><span class=n>empty</span><span class=p>()}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>val</span> <span class=py>emptyAggregate</span> <span class=p>=</span>
+</span></span><span class=line><span class=cl>        <span class=nc>Class</span><span class=p>.</span><span class=n>forName</span><span class=p>(</span><span class=n>aggregateQualifiedNameProvider</span><span class=p>.</span><span class=n>getQualifiedNameBySimpleName</span><span class=p>(</span><span class=n>events</span><span class=p>.</span><span class=n>first</span><span class=p>().</span><span class=n>aggregateType</span><span class=p>))</span>
+</span></span><span class=line><span class=cl>            <span class=p>.</span><span class=n>kotlin</span><span class=p>.</span><span class=n>java</span><span class=p>.</span><span class=n>getDeclaredConstructor</span><span class=p>().</span><span class=n>newInstance</span><span class=p>()</span> <span class=k>as</span> <span class=n>T</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>val</span> <span class=py>aggregate</span> <span class=p>=</span> <span class=n>emptyAggregate</span><span class=p>.</span><span class=n>loadFromHistory</span><span class=p>(</span><span class=n>events</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=nc>Optional</span><span class=p>.</span><span class=n>of</span><span class=p>(</span><span class=n>aggregate</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></div><p>Looking at the code snippets above, we see that the simple name is not sufficient to create an instance of a class via reflection.
+Therefore, we need the fully qualified name of the class, which consists of the package name and the simple name of the class. For reasons of refactoring, I didn&rsquo;t want to store the package name for the event and aggregate types in the event table. As a workaround, I created a domain class configuration with two beans, the <em>AggregateQualifiedNameProvider</em> and the <em>EventQualifiedNameProvider</em>. The <em>AggregateQualifiedNameProvider</em> is used to get the fully qualified name of all classes implementing the <em>AggregateRoot</em> interface and the <em>EventQualifiedNameProvider</em> is used to get the fully qualified name of all classes implementing the <em>Event</em> interface.
+The fully qualified name can then be obtained from the simple name of the class.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-kotlin data-lang=kotlin><span class=line><span class=cl><span class=nd>@Configuration</span>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>DomainClassNamesConfig</span><span class=p>()</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nd>@Bean</span><span class=p>(</span><span class=s2>&#34;AggregateRootClassNames&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=k>fun</span> <span class=nf>aggregateRootClassNames</span><span class=p>():</span> <span class=n>Set</span><span class=p>&lt;</span><span class=n>String</span><span class=p>&gt;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>val</span> <span class=py>provider</span> <span class=p>=</span> <span class=n>ClassPathScanningCandidateComponentProvider</span><span class=p>(</span><span class=k>false</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=n>provider</span><span class=p>.</span><span class=n>addIncludeFilter</span><span class=p>(</span><span class=n>AssignableTypeFilter</span><span class=p>(</span><span class=n>AggregateRoot</span><span class=o>::</span><span class=k>class</span><span class=p>.</span><span class=n>java</span><span class=p>));</span>
+</span></span><span class=line><span class=cl>        <span class=k>val</span> <span class=py>beans</span> <span class=p>=</span> <span class=n>provider</span><span class=p>.</span><span class=n>findCandidateComponents</span><span class=p>(</span><span class=n>BASE_PACKAGE</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=k>val</span> <span class=py>beansNamesList</span> <span class=p>=</span> <span class=n>beans</span><span class=p>.</span><span class=n>mapNotNull</span> <span class=p>{</span> <span class=k>it</span><span class=p>.</span><span class=n>beanClassName</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=k>val</span> <span class=py>beansNamesSet</span> <span class=p>=</span> <span class=n>beansNamesList</span><span class=p>.</span><span class=n>toSet</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=p>(</span><span class=n>beansNamesList</span><span class=p>.</span><span class=n>count</span><span class=p>()</span> <span class=o>!=</span> <span class=n>beansNamesSet</span><span class=p>.</span><span class=n>count</span><span class=p>())</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=k>throw</span> <span class=n>Error</span><span class=p>(</span><span class=s2>&#34;Domain contains aggregates with the same name!&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=n>beansNamesSet</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=nd>@Bean</span><span class=p>(</span><span class=s2>&#34;EventClassNames&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=k>fun</span> <span class=nf>eventClassNames</span><span class=p>():</span> <span class=n>Set</span><span class=p>&lt;</span><span class=n>String</span><span class=p>&gt;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>val</span> <span class=py>provider</span> <span class=p>=</span> <span class=n>ClassPathScanningCandidateComponentProvider</span><span class=p>(</span><span class=k>false</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=n>provider</span><span class=p>.</span><span class=n>addIncludeFilter</span><span class=p>(</span><span class=n>AssignableTypeFilter</span><span class=p>(</span><span class=n>Event</span><span class=o>::</span><span class=k>class</span><span class=p>.</span><span class=n>java</span><span class=p>));</span>
+</span></span><span class=line><span class=cl>        <span class=k>val</span> <span class=py>beans</span> <span class=p>=</span> <span class=n>provider</span><span class=p>.</span><span class=n>findCandidateComponents</span><span class=p>(</span><span class=n>BASE_PACKAGE</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=k>val</span> <span class=py>beansNamesList</span> <span class=p>=</span> <span class=n>beans</span><span class=p>.</span><span class=n>mapNotNull</span> <span class=p>{</span> <span class=k>it</span><span class=p>.</span><span class=n>beanClassName</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=k>val</span> <span class=py>beansNamesSet</span> <span class=p>=</span> <span class=n>beansNamesList</span><span class=p>.</span><span class=n>toSet</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=p>(</span><span class=n>beansNamesList</span><span class=p>.</span><span class=n>count</span><span class=p>()</span> <span class=o>!=</span> <span class=n>beansNamesSet</span><span class=p>.</span><span class=n>count</span><span class=p>())</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=k>throw</span> <span class=n>Error</span><span class=p>(</span><span class=s2>&#34;Domain contains events with the same name! Follow the convention and &#34;</span> <span class=p>+</span>
+</span></span><span class=line><span class=cl>                    <span class=s2>&#34;prefix the event with the aggregate name&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=n>beansNamesSet</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></div><p>This design leads to two further conventions that must be adhered to when working with the code:</p><ul><li>The name of an aggregate must be unique</li><li>The name of an event must be unique, but should begin with the name of the aggregate to avoid conflicts</li></ul><p>If these conventions are not followed, the application will not start and an error message will be displayed.</p><h2 id=how-to-run-the-application>How to run the application</h2><h4 id=prerequisites>Prerequisites</h4><p>To run the application locally from the command line or from the IDE(I am using IntelliJ for Kotlin development) you need to have the following software installed on your machine:</p><p>For the backend:</p><ul><li>Java 21 or higher</li></ul><p>For the frontend:</p><ul><li>Android Studio</li><li>Kotlin Multiplatform Compose plugin</li></ul><p>Alternatively you can run the application with Docker.</p><h4 id=running-the-application>Running the application</h4><p>The application is divided into two parts, the backend and the user interface. The backend is located in the <code>cqrs-es</code> directory and the user interface in the <code>cqrs-es-ui</code> directory. The commands given below must be executed in the corresponding directory.</p><p>The tests for the backend can be started with:</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>./gradlew <span class=nb>test</span>
+</span></span></code></pre></div><p>You can then start the backend with:</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>./gradlew bootRun
+</span></span></code></pre></div><p>The user interface can be started with:</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>./gradlew desktopRun -DmainClass<span class=o>=</span>MainKt --quiet
+</span></span></code></pre></div><p>for the desktop application or with</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>./gradlew wasmJsBrowserRun -t --quiet
+</span></span></code></pre></div><p>for the web application.</p><p>It is also possible to run the entire application using Docker and Docker Compose. The docker-compose file is located in the root directory of the project, and the Dockerfiles for the backend and the user interface are located in the corresponding directories. To run the application using Docker and Docker Compose, you can use the following command:</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>docker compose up -d
+</span></span></code></pre></div><p>This starts the backend, the user interface and the database in separate containers in the background. You can then access the user interface at <code>http://localhost:8081</code> and the backend at <code>http://localhost:8080</code>. The database is available at <code>localhost:5432</code>.</p><p>The frontend Dockerfile starts the frontend with <code>gradle wasmJsBrowserRun -t --quiet</code>, which appears to start a development server. The startup process takes a few minutes. You can see when the frontend is ready when you see the following message in the Docker container logs:</p><pre tabindex=0><code>Waiting for changes to input files...
+</code></pre><h2 id=summary-out-of-scope-and-outlook>Summary, out of scope and outlook</h2><p>To wrap things up, I&rsquo;d like to summarize the post, give a brief overview of the scope and take a look at the next steps.
+We started by introducing the fundamental concepts used in the codebase. These included CQRS and event sourcing, but also domain-driven design, dependency injection and an architecture that follows the principle of dependency inversion.
+After that, we looked at the package structure and the schematic flow of the application. The next step was to go through the code and explain the write and read side of the application. This was followed by a closer look at the conventions and workarounds used in the code.
+Finally, we showed how the application can be run locally and with Docker.
+Since this project is only intended as an example of how to present CQRS and event sourcing in Kotlin, there are of course many things that are not included in the project but should be considered when creating a real application.
+These include the obvious areas of error handling, security, logging, and monitoring. In addition, I have removed the versioning of events and aggregates that can be found in the original SimpleCQRS project. I&rsquo;ll have to take a closer look at this later and add it to the project. Another point is that the endpoints are
+<a href=https://martinfowler.com/articles/richardsonMaturityModel.html>not fully restful</a>
+[<a href=#ref-51>51</a>]. With a fully restful API, the frontend could only display the actions that are available to the user. I would also like to mention that the project does not have to be a web application, nor does it have to be restful. This also works for desktop applications, classic web applications, or web applications with
+<a href=https://graphql.org/>GraphQL</a>
+[<a href=#ref-52>52</a>].
+In general, I think the project can be used as a starting point to get familiar with CQRS and event sourcing in Kotlin.
+Of course, there are many more implementations of CQRS and event sourcing in Kotlin and other languages, since this is also just a rewrite of Gregory Young&rsquo;s original SimpleCQRS project.
+In addition, there are production-ready frameworks such as Axon Framework and Marten that are ready for use in production environments.
+Another difference from the original SimpleCQRS project is that I included tests for the backend in the code base.
+This is because I already had my next blog post in mind, in which I want to show how to test the application.</p><h2 id=references>References</h2><p><span id=ref-1>[1]</span>: Young, Gregory, "Simple CQRS example". <a href=https://github.com/gregoryyoung/m-r/tree/master>https://github.com/gregoryyoung/m-r/tree/master</a></p><p><span id=ref-2>[2]</span>: Kotlin Language. <a href=https://kotlinlang.org/>https://kotlinlang.org/</a></p><p><span id=ref-3>[3]</span>: Spring Boot. <a href=https://spring.io/projects/spring-boot>https://spring.io/projects/spring-boot</a></p><p><span id=ref-4>[4]</span>: C#. <a href=https://dotnet.microsoft.com/en-us/languages/csharp>https://dotnet.microsoft.com/en-us/languages/csharp</a></p><p><span id=ref-5>[5]</span>: .NET. <a href=https://dotnet.microsoft.com/>https://dotnet.microsoft.com/</a></p><p><span id=ref-6>[6]</span>: Embedded PostgreSQL. <a href=https://github.com/zonkyio/embedded-postgres>https://github.com/zonkyio/embedded-postgres</a></p><p><span id=ref-7>[7]</span>: PostgreSQL. <a href=https://www.postgresql.org/>https://www.postgresql.org/</a></p><p><span id=ref-8>[8]</span>: Spring Events. <a href=https://www.baeldung.com/spring-events>https://www.baeldung.com/spring-events</a></p><p><span id=ref-9>[9]</span>: Kotlin Multi Platform Compose. <a href=https://www.jetbrains.com/compose-multiplatform/>https://www.jetbrains.com/compose-multiplatform/</a></p><p><span id=ref-10>[10]</span>: Axon Framework. <a href=https://www.axoniq.io/products/axon-framework>https://www.axoniq.io/products/axon-framework</a></p><p><span id=ref-11>[11]</span>: Marten. <a href=https://martendb.io/>https://martendb.io/</a></p><p><span id=ref-12>[12]</span>: Kestrel. <a href=https://github.com/cultureamp/kestrel>https://github.com/cultureamp/kestrel</a></p><p><span id=ref-13>[13]</span>: Event Sourcing with Kotlin by Thomas Uhrig. <a href=https://tuhrig.de/event-sourcing-with-kotlin/>https://tuhrig.de/event-sourcing-with-kotlin/</a></p><p><span id=ref-14>[14]</span>: Kotlin Event Sourcing Example by Lorenzo Nicora . <a href=https://github.com/nicusX/kotlin-event-sourcing-example>https://github.com/nicusX/kotlin-event-sourcing-example</a></p><p><span id=ref-15>[15]</span>: Functional Event Sourcing Example by Jakub Zalas. <a href=https://dev.to/jakub_zalas/functional-event-sourcing-example-in-kotlin-3245>https://dev.to/jakub_zalas/functional-event-sourcing-example-in-kotlin-3245</a></p><p><span id=ref-16>[16]</span>: Practical Guide to Event Sourcing by Sam-Nicolai Johnston. <a href=https://medium.com/ssense-tech/event-sourcing-a-practical-guide-to-actually-getting-it-done-27d23d81de04>https://medium.com/ssense-tech/event-sourcing-a-practical-guide-to-actually-getting-it-done-27d23d81de04</a></p><p><span id=ref-17>[17]</span>: Event Sourcing .NET Core by Oskar Dudycz. <a href="https://github.com/oskardudycz/EventSourcing.NetCore?tab=readme-ov-file">https://github.com/oskardudycz/EventSourcing.NetCore?tab=readme-ov-file</a></p><p><span id=ref-18>[18]</span>: Evans, Eric, "2003. Domain-Driven Design: Tacking Complexity In the Heart of Software. Addison-Wesley Longman Publishing Co., Inc., USA."</p><p><span id=ref-19>[19]</span>: Vernon, Vaughn, "2013. Implementing Domain-Driven Design. Addison-Wesley Professional."</p><p><span id=ref-20>[20]</span>: Scott Millet; Nick Tune, "2015. Patterns, Principles, and Practices of Domain-Driven Design (1st. ed.). Wrox Press Ltd., GBR."</p><p><span id=ref-21>[21]</span>: Wlaschin, Scott, "2018. Domain modeling made functional : tackle software complexity with domain-driven design and F#. Raleigh, North Carolina :The Pragmatic Bookshelf."</p><p><span id=ref-22>[22]</span>: Robert Cecil Martin, "2003. Agile Software Development: Principles, Patterns, and Practices. Prentice Hall PTR, USA."</p><p><span id=ref-23>[23]</span>: Layers Onions Ports Adapters by Mark Seemann. <a href=https://blog.ploeh.dk/2013/12/03/layers-onions-ports-adapters-its-all-the-same/>https://blog.ploeh.dk/2013/12/03/layers-onions-ports-adapters-its-all-the-same/</a></p><p><span id=ref-24>[24]</span>: Dependencies Workflow Oriented Design by Scott Wlashin. <a href=https://fsharpforfunandprofit.com/posts/dependencies/#workflow-oriented-design>https://fsharpforfunandprofit.com/posts/dependencies/#workflow-oriented-design</a></p><p><span id=ref-25>[25]</span>: If Domain Logic keynote by Udi Dahan. <a href="https://www.youtube.com/watch?v=fWU8ZK0Dmxs">https://www.youtube.com/watch?v=fWU8ZK0Dmxs</a></p><p><span id=ref-26>[26]</span>: Vertical Slice Architecture by Jimmy Bogard. <a href=https://www.jimmybogard.com/vertical-slice-architecture/>https://www.jimmybogard.com/vertical-slice-architecture/</a></p><p><span id=ref-27>[27]</span>: Domain Model by Martin Fowler. <a href=https://martinfowler.com/eaaCatalog/domainModel.html>https://martinfowler.com/eaaCatalog/domainModel.html</a></p><p><span id=ref-28>[28]</span>: EAA Catalog by Martin Fowler. <a href=https://martinfowler.com/eaaCatalog/>https://martinfowler.com/eaaCatalog/</a></p><p><span id=ref-29>[29]</span>: Dependency Injection by Martin Fowler. <a href=https://martinfowler.com/articles/injection.html>https://martinfowler.com/articles/injection.html</a></p><p><span id=ref-30>[30]</span>: Steven van Deursen; Mark Seemann, "Dependency Injection Principles, Practices, and Patterns , Manning, 2019"</p><p><span id=ref-31>[31]</span>: Bertrand Meyer, "1988. Object-Oriented Software Construction (1st. ed.). Prentice-Hall, Inc., USA."</p><p><span id=ref-32>[32]</span>: Young, Gregory, "CQRS, Task Based UIs, Event Sourcing agh!". <a href=https://gist.github.com/simonschoof/74e155447fbc2ac47b0f7c0bb5a5f778>https://gist.github.com/simonschoof/74e155447fbc2ac47b0f7c0bb5a5f778</a></p><p><span id=ref-33>[33]</span>: Versioning in an Event Sourced System By Gregory Young. <a href=https://leanpub.com/esversioning/read#leanpub-auto-immutability>https://leanpub.com/esversioning/read#leanpub-auto-immutability</a></p><p><span id=ref-34>[34]</span>: Gradle. <a href=https://gradle.org/>https://gradle.org/</a></p><p><span id=ref-35>[35]</span>: Spring MVC. <a href=https://docs.spring.io/spring-framework/docs/current/reference/html/web.html>https://docs.spring.io/spring-framework/docs/current/reference/html/web.html</a></p><p><span id=ref-36>[36]</span>: Spring Data. <a href=https://spring.io/projects/spring-data>https://spring.io/projects/spring-data</a></p><p><span id=ref-37>[37]</span>: Ktorm. <a href=https://ktorm.liuwj.me/>https://ktorm.liuwj.me/</a></p><p><span id=ref-38>[38]</span>: Flyway. <a href=https://flywaydb.org/>https://flywaydb.org/</a></p><p><span id=ref-39>[39]</span>: Jackson. <a href=https://github.com/FasterXML/jackson>https://github.com/FasterXML/jackson</a></p><p><span id=ref-40>[40]</span>: Kotest. <a href=https://kotest.io/>https://kotest.io/</a></p><p><span id=ref-41>[41]</span>: Mockk. <a href=https://mockk.io/>https://mockk.io/</a></p><p><span id=ref-42>[42]</span>: KotlinLogging. <a href=https://github.com/oshai/kotlin-logging>https://github.com/oshai/kotlin-logging</a></p><p><span id=ref-43>[43]</span>: Marten Events. <a href=https://martendb.io/events/>https://martendb.io/events/</a></p><p><span id=ref-44>[44]</span>: Data Classes. <a href=https://kotlinlang.org/docs/data-classes.html>https://kotlinlang.org/docs/data-classes.html</a></p><p><span id=ref-45>[45]</span>: Arrow KT. <a href=https://arrow-kt.io/>https://arrow-kt.io/</a></p><p><span id=ref-46>[46]</span>: Immutable Data. <a href=https://arrow-kt.io/learn/immutable-data/intro/>https://arrow-kt.io/learn/immutable-data/intro/</a></p><p><span id=ref-47>[47]</span>: Exposed. <a href=https://github.com/JetBrains/Exposed>https://github.com/JetBrains/Exposed</a></p><p><span id=ref-48>[48]</span>: Projections and Read Models in Event Driven Architecture by Oskar Dudycz. <a href=https://event-driven.io/en/projections_and_read_models_in_event_driven_architecture/>https://event-driven.io/en/projections_and_read_models_in_event_driven_architecture/</a></p><p><span id=ref-49>[49]</span>: DDD Read Models by Xebia. <a href=https://xebia.com/blog/domain-driven-design-part-3-read-models/>https://xebia.com/blog/domain-driven-design-part-3-read-models/</a></p><p><span id=ref-50>[50]</span>: Erich Gamma ... [and others], "Design Patterns : Elements of Reusable Object-Oriented Software. Reading, Mass. :Addison-Wesley, 1995."</p><p><span id=ref-51>[51]</span>: Richardson Maturity Model by Martin Fowler. <a href=https://martinfowler.com/articles/richardsonMaturityModel.html>https://martinfowler.com/articles/richardsonMaturityModel.html</a></p><span id=ref-52>[52]</span>: GraphQL. <a href=https://graphql.org/>https://graphql.org/</a><div class=footnotes role=doc-endnotes><hr><ol><li id=fn:1><p>The implementation of command handlers for the inventory item is summarized in the class <em>InventoryItemCommandHandlers</em>, which processes several commands instead of using a handler class for each command.&#160;<a href=#fnref:1 class=footnote-backref role=doc-backlink>&#8617;&#xfe0e;</a></p></li><li id=fn:2><p>Another ORM with a similar feature set is
+<a href=https://github.com/JetBrains/Exposed>Exposed</a>
+[<a href=#ref-47>47</a>] by JetBrains.&#160;<a href=#fnref:2 class=footnote-backref role=doc-backlink>&#8617;&#xfe0e;</a></p></li><li id=fn:3><p>For more information on projections and read models, see, for example,
+<a href=https://event-driven.io/en/projections_and_read_models_in_event_driven_architecture/>blog of Oskar Dudycz</a>
+[<a href=#ref-48>48</a> ] and in
+<a href=https://xebia.com/blog/domain-driven-design-part-3-read-models/>blog of Xebia</a>
+[<a href=#ref-49>49</a>]&#160;<a href=#fnref:3 class=footnote-backref role=doc-backlink>&#8617;&#xfe0e;</a></p></li></ol></div></article></div></div><script type=module>
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    document.addEventListener("DOMContentLoaded", function() {
+        mermaid.initialize({ startOnLoad: true });
+    });
+    window.mermaid = mermaid; 
+</script><footer><span class=copyright>Build with <a href=https://gohugo.io/ title=hugo alt=hugo target=_blank>hugo</a> & <span class=emojify>❤️</span>
+| Theme: Based on <a href=https://github.com/aanupam23/hugo-sugoi title=hugo-sugoi alt=hugo-sugoi target=_blank>hugo-sugoi</a>
+extended by <a href=https://github.com/simonschoof/hugo-sugoi title="my theme" alt="my theme" target=_blank>me</a>.<br>&copy; 2024 Simon Schoof
+| <a href=https://simonschoof.com/imprint title=Imprint alt=Imprint>Imprint</a>
+| <a href=https://simonschoof.com/privacy title=Privacy alt=Privacy>Privacy</a>
+| <a rel=me href=https://social.simonschoof.com/@connect></a></span></footer></body></html>

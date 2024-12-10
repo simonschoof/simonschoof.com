@@ -12,6 +12,20 @@ function toggleTheme() {
     }
 }
 
+function reRenderMermaidDiagrams(theme) {
+    if (window.mermaid) {
+        window.mermaid.initialize({ theme: theme });
+        document.querySelectorAll('.mermaid').forEach((el) => {
+            const graphDefinition = el.getAttribute('data-graph-definition') || el.textContent || el.innerText;
+            el.innerHTML = ''; // Clear existing diagram
+            el.removeAttribute('data-processed'); // Clear processed attribute
+            el.setAttribute('data-graph-definition', graphDefinition); // Store graph definition
+            el.textContent = graphDefinition; // Restore graph definition
+            mermaid.init(undefined, el); // Force re-render
+        });
+    }
+}
+
 function setTheme(theme) {
 
     var prettifyDark = document.getElementById('prettify-dark')
@@ -27,7 +41,9 @@ function setTheme(theme) {
         prettifyDark.removeAttribute('disabled')
         prettifyDark.disabled = false
         localStorage.setItem("theme", "dark")
-       
+
+        // Re-render Mermaid diagrams with dark theme
+        reRenderMermaidDiagrams('dark');
     }
     else {
         document.getElementById("light-theme-span").style.visibility="hidden";
@@ -35,7 +51,9 @@ function setTheme(theme) {
         document.documentElement.removeAttribute("data-theme", "dark")
         prettifyDark.disabled = true
         localStorage.setItem("theme", "light")
-        
+
+        // Re-render Mermaid diagrams with default (light) theme
+        reRenderMermaidDiagrams('default');
     }
 
     // remove transition class
