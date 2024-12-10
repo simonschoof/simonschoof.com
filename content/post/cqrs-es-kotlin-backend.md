@@ -98,7 +98,7 @@ After that, we will explain the components of the codebase and how they interact
 Finally, we will give a brief outlook on the next post in this series, which will focus on testing the application.
 
 As already mentioned, the application is not yet ready for production and many functions are missing, but there are production-ready frameworks 
-for CQRS/ES such as the {{< linkForRef "axon-framework" "Axon Framework" >}} [< sup>[10](#ref-10)</sup>] or {{< linkForRef "marten" "Marten" >}}[<sup>[11](#ref-11)</sup>].
+for CQRS/ES such as the {{< linkForRef "axon-framework" "Axon Framework" >}}[<sup>[10](#ref-10)</sup>] or {{< linkForRef "marten" "Marten" >}}[<sup>[11](#ref-11)</sup>].
 Furthermore, you can find many more implementations of CQRS/ES online. 
 Here is a short and definitely incomplete list of projects that I found while working on the project:
 
@@ -235,26 +235,23 @@ I would like to briefly list the most important technologies of the project:
 
 #### Package structure
 
-As mentioned above in the Dependency Inversion Principle (DIP) compliant architecture section, we are using the DIP to isolate the domain from the infrastructure. 
-We are using packages to structure the application in a way that the domain is separated from the infrastructure. 
-This means, that there are no dependencies from other packages to the domain package. 
-
+As mentioned in the section above about the architecture that follows the Dependency Inversion Principle (DIP), we use DIP to isolate the domain from the infrastructure.
+We use packages to structure the application so that the domain is separate from the infrastructure.
+This means that there are no dependencies from other packages to the domain package.
 The domain is the core of the application and contains the building blocks as abstractions. The building blocks are: 
 
-- AggregateRoot
-- AggregateRepository
-- EventBus
-- EventStore
-- Command
-- Event
+* *AggregateRoot*
+* *AggregateRepository*
+* *EventBus*
+* *EventStore*
+* *Command*
+* *Event*
 
-In addition to the building blocks we have the domain logic in the InventoryItem class and the events and commands in the domain package.
-
-The infrastructure package contains the implementations of the building blocks for the persistence, the event store and the event bus. 
-You can also find the InventoryItemController in the infrastructure package, which is responsible for handling the API calls from the frontend application.
-
-The application package contains the CommandHandler.
-The ReadModels and the Projections are located in the readmodel package.
+In addition to the building blocks, we have the domain logic in the InventoryItem class and the events and commands in the domain package.
+The infrastructure package contains the implementations of the building blocks for persistence, the event store and the event bus.
+The infrastructure package also contains the *InventoryItemController*, which is responsible for processing the API calls from the front-end application.
+The application package contains the *CommandHandler* class.
+The read models and the projections are located in the readmodel package.
 
 ```
 cqrs-es
@@ -268,34 +265,31 @@ cqrs-es
 └── readmodels
 ```
 
+{{< figure2 src="images/clean-architecture.webp" class="clean-architecture" caption="Clean architecture. [Image from Daniel Mackay`s blog](https://www.dandoescode.com/blog/clean-architecture-an-introduction), original source: Clean Architecture, Jason Taylor - Goto Conference" attrrel="noopener noreferrer" >}} 
+
 #### Application flow
 
-So as we have seen in the previous section we have a lot of concepts and patterns that we are using to structure the application. 
-Before we go into the details of the implementation we will give a more coarse grained overview of the overall flow and the structure of the application. 
+As we saw in the previous section, there are many concepts and patterns that we use to structure the application.
+Before we get into the implementation details, let's provide a high-level overview of the overall flow and structure of the application.
+The application allows the user to manage inventory items, where the user can
 
-The application lets the user manage inventory items, where the user can
+* Create inventory items
+* Change the name of an inventory item
+* Check in inventory items
+* Remove inventory items
+* Set and change the maximum quantity for the inventory item
+* Deactivate an inventory item
 
-* create inventory items
-* change the name on an inventory item
-* check in inventory items
-* remove inventory items
-* set and change the max quantity for the inventory item
-* deactivate an inventory item
-
-The user can also query the read side of the application to get a list and a detail view for the inventory items. 
-This is the same as in the original SimpleCQRS project. Examples with more complex domains can be found in the list in the introduction.  
-
-To give an overview of what is happening in the application we will go through the flow of the application. 
-Starting with the user sending a command to the application. The command is handled by a CommandHandler, which is responsible for handling the command 
-and changing the state of the application. The CommandHandler uses the AggregateRepository to load the Aggregate, which is the InventoryItem in our case, 
-and to save the events that lead to the current state of the Aggregate. The events are stored in the EventStore. 
-The CommandHandler then publishes the events to the EventBus. The EventBus is responsible for publishing the events to the EventListeners. 
-The EventListeners are responsible for updating the ReadModel of the application. 
-The ReadModel is the read side of the application and is used to query the current state of the application. 
-The ReadModel is updated via Projections. The Projections are responsible for updating the ReadModel with the events that are published by the EventBus. 
-The ReadModel is then used to query the current state of the application.
-
-The following sequence diagram shows the flow of the application for the change of the name of an inventory item:
+The user can also query the read side of the application for a list and a detail view of the inventory items.
+This corresponds to the original SimpleCQRS project. For examples with more complex domains, see the list in the introduction.
+To provide an overview of the operations in the application, we will walk through the flow of the application. 
+Starting with the user submitting a command to the application. The command is processed by a command handler, which is responsible for processing the command and changing the state of the application. The command handler uses the an aggregate repository to load the aggregate, which in our case is the *InventoryItem*, and to store the events that lead to the current state of the aggregate. The events are stored in the event store. 
+The comand handler then publishes the events on the event bus. The event bus is responsible for publishing the events to the event listeners.
+The event listeners are responsible for updating the application's read model.
+The read model is the read side of the application and is used to query the current state of the application. 
+The read model is updated via projections. The projections are responsible for updating the read model with the events published by the event bus.
+The read model is then used to query the current state of the application.
+The following sequence diagram shows the application flow for changing the name of an inventory item:
 
 ```mermaid
 sequenceDiagram
@@ -330,13 +324,12 @@ sequenceDiagram
     UI->>User: 17. Display updated list or detail view of inventory item
 ```
 
-As we have seen sequence diagram above there are multiple components involved to trigger and handle a command, update the state of the domain object 
-and finally update the read model. We will now go through the code of the components following the flow of the sequence diagram. 
-Thereby we will directly start with the call to the InventoryItemController. 
-We will follow the steps of the sequence diagram and explain the code of the involved components. 
-We will further split the code Walkthtrough into the write side of the application and the read side of the application, even though we use inline projections
-to update the read model. Thus we will not deal with eventual consistency due to async projections. 
-Again I want to mention that eventual consistency is not part of CQRS itself but can be used in combination with CQRS.
+As we saw in the sequence diagram above, several components are involved in triggering and processing a command, updating the domain object's state
+and finally updating the read model. We will now go through the code of the components, following the flow of the sequence diagram.
+We will start directly with the call to the *InventoryItemController*.
+We will follow the steps of the sequence diagram and explain the code of the components involved. 
+We will further divide the code walkthrough into the write side of the application and the read side of the application, even though we use inline projections to update the read model. Therefore, we will not address eventual consistency due to asynchronous projections.
+I would like to reiterate that eventual consistency is not part of CQRS itself, but can be used in combination with CQRS.
 
 ##### Write Side of the application
 
