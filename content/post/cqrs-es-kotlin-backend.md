@@ -650,11 +650,10 @@ we can proceed to the read side.
 
 ##### Read Side of the application
 
-With publishing the events to the event bus we have completed the write side of the application and changed the application state. 
-We now want to have that reflected on the read side of the application, update the read model and show the changes to the user when the user queries a 
-read model. For that we are using {{< linkForRef "marten-events" "inline projections" >}}[<sup>[43](#ref-43)</sup>] which means, that we are  listening to the in memory event bus and update the read model directly when an event is published.<cite>[^3]</cite> 
-So let's have a look at the InventoryItemProjection file, which is doing exactly that. In the file we can find two classes, 
-one is holding the event listeners for a list view of the inventory items and the other one is holding the event listeners for a detail view of the inventory items. Again we are only showing the listeners for the InventoryItemChanged event, as we have chosen this for our walk through example.   
+With the publication of the events on the event bus, we have completed the write side of the application and changed the application state.
+We now want this to be reflected on the read side of the application, update the read model and show the changes to the user when they query a read model. To do this, we use {{< linkForRef “marten-events” “inline projections”>}}[<sup>[43](#ref-43)</sup>] which means that we monitor the in-memory event bus and update the read model directly when an event is published.<cite>[^3]</cite> 
+So let's take a look at the *InventoryItemProjection* file, which does just that. In the file, we find two classes,
+one containing the event listeners for a list view of inventory items and the other containing the event listeners for a detail view of inventory items. Again, we'll only show the listeners for the *InventoryItemNameChanged* event, since we've chosen this for our example.  
 
 ```kotlin
 @Component
@@ -700,14 +699,13 @@ class InventoryItemDetailView(
 }
 ```
 
-The read models for the list and detail view are implemented as relational tables in the database. In the code snippet above we can see
-that for both views we have the same workflow with different tables. First we find the find the inventory item in the database by its aggregate ID,
-then we update the name of the inventory item and flush the changes to the database. Again we are using Ktorm to interact with the database. 
-Here we are using the full ORM capabilities of Ktorm and using its entity feature to map the tables to Kotlin classes. We will also not go into the details
-of Ktom here but should be able to see that the code is quite readable and one can easily understand what is happening.
-After updating the read model we can query the read model via the InventoryItemController and return the list or detail view of the inventory item to the user.
-One last point to show is that we have implemented a ReadModelFacade to have a central place to query the read model. 
-The ReadModelFacade is injected into the InventoryItemController and is used to query the read model. 
+The list and detail view models are implemented as relational tables in the database. In the code snippet above, we see
+that we have the same workflow with different tables for both views. First, we locate the inventory item in the database by its aggregate ID,
+then update the name of the inventory item and commit the changes to the database. Again, we use Ktorm to interact with the database. 
+Here we take full advantage of Ktorm's ORM capabilities and use its entity feature to map the tables to Kotlin classes. Again, we won't go into the details of Ktorm here either, but you should be able to see that the code is easy to read and understand what is happening.
+With the read model updated, we can query the read model via the *InventoryItemController* and return the inventory item list or details view to the user.
+The last thing to be shown is that we have implemented a *ReadModelFacade* to have a central point for querying the read model.
+The *ReadModelFacade* is injected into the *InventoryItemController* and is used to query the read model.
 
 ```kotlin
 interface ReadModelFacade {
@@ -764,12 +762,11 @@ class InventoryItemController(
 }
 ```
 
-With this we have completed the read side of the application. The updated read models can be queried and displayed to the user.
-The exaple of the bussiness domain is fairly simple but can be extended to more complex views combining multiple aggregates.
-The read models also must not necessarily be relational tables in the database but can be implemented in different ways. 
-In adddition we only used inline projections to update the read models instead of async projections, which would lead to an eventuals consistent system.
-
-In the next section we will look at some conventions and workarounds in the code which were chosen as solutions for some problems 
+With that, we have finished the read side of the application. The updated read models can be queried and displayed to the user.
+The example domain  is quite simple, but can be extended to more complex views combining multiple aggregates.
+The read models also don't necessarily have to be relational tables in the database, but can be implemented in different ways. 
+Also, we only used inline projections instead of asynchronous projections to update the read models, which would result in a consistent system.
+In the next section, we will look at some conventions and workarounds in the code that were chosen as solutions to some problems
 that arose during the implementation of the project.
 
 ##### Conventions and workarounds in the code
