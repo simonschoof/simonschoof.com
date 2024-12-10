@@ -333,10 +333,10 @@ I would like to reiterate that eventual consistency is not part of CQRS itself, 
 
 ##### Write Side of the application
 
-Starting with the InventoryItemController we can see that it has a POST endpoint for the changeInventoryItemName action.
-In this action we expect a request body with the aggregate ID and the new name of the inventory item as a JSON object.
-From this request body we construct the ChangeInventoryItemName command and send it to the event bus via the send method. 
-The event bus is injected into the InventoryItemController via the constructor.
+If we start with the *InventoryItemController*, we see that it has a POST endpoint for the *changeInventoryItemName* action.
+For this action, we expect a request body with the aggregate ID and the new name of the inventory item as a JSON object.
+From this request body, we construct the *ChangeInventoryItemName* command and send it to the *EventBus* using the *send* function.
+The *EventBus* is injected into the *InventoryItemController* via the constructor.
 
 ```kotlin
 private val logger = KotlinLogging.logger {}
@@ -369,7 +369,7 @@ class InventoryItemController(
 }
 ```
 
-The EventBus interface is defined in the domain package and has two functions, one to publish an event and one to send a command.
+The *EventBus* interface is defined in the domain package and has two functions, one for publishing an event and one for sending a command.
 
 ```kotlin
 interface EventBus {
@@ -378,7 +378,7 @@ interface EventBus {
 }
 ```
 
-The implementation of the event bus is in the infrastructure package and is using Spring events for sending commands and publishing events. 
+The implementation of the *EventBus* is included in the infrastructure package and uses Spring Events to send commands and publish events. 
 
 ```kotlin
 @Component
@@ -395,16 +395,16 @@ class SpringEventBus(val publisher: ApplicationEventPublisher): EventBus {
 }
 ```
 
-The command is then dispatched to the InventoryItemCommandHandlers class<cite>[^1]<cite>. 
-In the InventoryItemCommandHandlers class the command is handled and the state of the application is changed when the command is valid and the 
-state of the aggregate is consistent otherwise the command is rejected. The handling of a command generally follows the pattern:
+The command is then dispatched to the *InventoryItemCommandHandlers* class<cite>[^1]<cite>.
+In the *InventoryItemCommandHandlers* class, the command is processed and the state of the application is changed if the command is valid and the
+state of the aggregate is consistent. Otherwise, the command is rejected. Processing a command generally follows this pattern:
 
-1. Load the aggregate from the database via the aggregate repository
+1. Load the aggregate from the database through the aggregate repository
 2. Call the domain method on the aggregate root
-3. Save the events to the event store 
+3. Store the events in the event store
 4. Publish the events to the event bus
 
-We can find the described pattern in the InventoryItemCommandHandlers class in the handle method for the ChangeInventoryItemName command as shown in the following code snippet.
+We find the described pattern in the *InventoryItemCommandHandlers* class in the handle method for the *ChangeInventoryItemName* command, as shown in the following code snippet.
 
 ```kotlin 
 @Component
@@ -427,10 +427,10 @@ class InventoryItemCommandHandlers(private val aggregateRepository: AggregateRep
 
 **(1) Load the aggregate from the database via the aggregate repository**
 
-The first step when handling a command is, unless you are creating a new aggregate, to load the aggregate from the database via the aggregate repository.
-To be able to find the aggregate the command has to contain the aggregate ID. In our case the aggregate ID is only a UUID. 
-As we are using event sourcing the current state of the aggregate is determined by all the events that were captured as changes of the aggregate state.
-Looking at the AggregateRepository interface we can see that the getById function returns an Optional of the AggregateRoot.
+The first step in handling a command is to load the aggregate from the database using the aggregate repository, unless you are creating a new aggregate.
+To be able to locate the aggregate, the command must include the aggregate ID. In our case, the aggregate ID is just a UUID.
+Since we are using event sourcing, the aggregate's current state is determined by all events that have been recorded as changes to the aggregate state.
+If we look at the *AggregateRepository* interface, we can see that the *getById* function returns an *Optional* of the *AggregateRoot*.
 
 ```kotlin
 interface AggregateRepository<T: AggregateRoot<T>> {
@@ -441,13 +441,13 @@ interface AggregateRepository<T: AggregateRoot<T>> {
 }
 ```
 
-The implementation of the getById function can be found in the EventStoreAggregateRepository class and 
-does the following steps to load the aggregate from the database:
+The implementation of the *getById* function is located in the *EventStoreAggregateRepository* class and
+loads the aggregate from the database. It does this by:
 
-1. Get all events for the aggregate from the event store
-2. Create an empty instance of the aggregate
-3. Apply all events to the aggregate via the loadFromHistory function
-4. Return an Optional of the aggregate or an empty Optional if no events were found for the aggregate
+1. Fetching all events for the aggregate from the event store
+2. Creating an empty instance of the aggregate
+3. Applying all events to the aggregate using the *loadFromHistory* function
+4. Returning an optional of the aggregate or an empty optional if no events were found for the aggregate
 
 
 ```kotlin
@@ -478,14 +478,14 @@ class EventStoreAggregateRepository<T : AggregateRoot<T>>(
 }
 ```
 
-As we can see from the constructor in the EventStoreAggregateRepository class the EventStoreAggregateRepository has to collaborators as dependencies, 
-the EventStore and the AggregateQualifiedNameProvider. We will have a closer look at the QualifiedNameProvider later in the Conventions and workarounds section. 
-The implementation of the EventStore can be found in the KtormEventStore class. 
-As in the name of the class the KtormEventStore is using Ktorm<cite>[^2]<cite>. as the ORM to interact with the database. 
-We will not go into the details of Ktorm here but can see that it provides us with a type safe query DSL to interact with the database. 
-To get the events for an aggregate we have to query the event table in the database, filter the events by the aggregate ID and order the events by the timestamp. 
-The events are then mapped to the corresponding event class and returned as a list of events. 
-We also find the QualifiedNameProvider in the KtormEventStore class, which we will discuss later in the Conventions and workarounds section.   
+As we can see from the constructor in the *EventStoreAggregateRepository* class, the *EventStoreAggregateRepository* has two collaborators as dependencies:
+the *EventStore* and the *AggregateQualifiedNameProvider*. We will take a closer look at the qualified name providers later in the section [Conventions and Workarounds](#conventions-and-workarounds).
+The implementation of the *EventStore* can be found in the *KtormEventStore* class. 
+As the name of the class suggests, *KtormEventStore* uses Ktorm<cite>[^2]<cite> as the ORM for interacting with the database.
+We won't go into detail about Ktorm here, but we can see that it provides us with a type-safe query DSL for interacting with the database. 
+To get the events for an aggregate, we have to query the event table in the database, filter the events by the aggregate ID, and order the events by the timestamp.
+The events are then assigned to the corresponding event class and returned as a list of events.
+We also find an *EventQualifiedNameProvider* in the *KtormEventStore* class, which we will discuss later in the [Conventions and Workarounds](#conventions-and-workarounds) section. 
 
 ```kotlin
 @Component
@@ -516,16 +516,15 @@ class KtormEventStore(
 }
 ```
 
-This is nearly all we need to load the aggregate from the database using event sourcing. Only one part is missing, we did not discuss the 
-loadFromHistory function in the AggregateRoot interface. We will have a closer look at this function in the next step when we are calling the 
-domain function of the loaded aggregate. We will then see, that the we need to distinguish between new events and existing events when
-applying the events to the aggregate.
+That's almost all we need to load the aggregate from the database using event sourcing. There's just one piece missing, we haven't discussed the 
+*loadFromHistory* function in the *AggregateRoot* interface. We will look at this function in more detail in the next step, when we call the 
+domain function of the loaded aggregate. We will then see that we need to distinguish between new and existing events when applying the events to the aggregate.
 
 **(2) Call the domain function of the loaded aggregate**
 
-The next step is trying to execute the command on the aggregate and changing its state. Therefore we need to look 
-at the AggregateRoot interface and the InventoryItem class, which is our only aggregate in the project. The following code snippet shows the
-InventoryItem class and the AggregateRoot interface. 
+The next step is to try to execute the command on the aggregate and change its state. To do that, we need to
+look at the *AggregateRoot* interface and the *InventoryItem* class, which is our only aggregate in the project. The following code snippet shows the
+*InventoryItem* class and the *AggregateRoot* interface:
 
 ```kotlin
 interface AggregateRoot<T> where T : AggregateRoot<T> {
@@ -567,24 +566,23 @@ data class InventoryItem(/* constructor parameters */) : AggregateRoot<Inventory
 }
 ```
 
-As we have seen in the command handler we call the changeName funtion on the InventoryItem class. 
-In the changeName function we create a new InventoryItemNameChanged event and call the applyChange function on the AggregateRoot interface.
-The applyChange function then calld the applyEvent function on the InventoryItem class and adds the event to the changes list of the aggregate. This is
-because of the Boolean flag isNew, which is true by default. The applyEvent takes an event and uses pattern matching to 
-match the event to the corresponding event class and updates the state of the aggregate accordingly. The updated aggregate is then returned, following
-the pattern of immutability of the aggregate. 
-
-As we have mentioned before we need to distinguish between new events and existing events when applying the events to the aggregate. As we can see in the 
-loadFromHistory function of the AggregateRoot interface we are using the applyChange function with the isNew flag set to false. 
-This is because we do not want to add the existing events to the changes list of the aggregate when loading the aggregate from history and applying the events.
-The changes list is only used to keep track of the new events that are added to the aggregate. In the next step we will have a look at how the events
-are persited to the event store and published afterwards.
+As we saw in the command handler, we call the *changeName* function in the *InventoryItem* class.
+In the *changeName* function, we create a new *InventoryItemNameChanged* event and call the *applyChange* function in the *AggregateRoot* interface.
+The *applyChange* function then calls the *applyEvent* function in the InventoryItem class and adds the event to the aggregate's change list. This is
+due to the isNew boolean flag, which defaults to true. The *applyEvent* function takes an event and uses pattern matching to
+match the event against the appropriate event class and update the state of the aggregate accordingly. The updated aggregate is then
+returned according to the aggregate immutability pattern.
+As mentioned earlier, we need to distinguish between new and existing events when applying the events to the aggregate. As we see in the 
+*AggregateRoot* interface, we use the *applyChange* function with the *isNew* flag set to false.
+This is because when we load the aggregate from history and apply its events, we don't want to add the existing events to the aggregate's change list.
+The change list is used only to keep track of the new events added to the aggregate. In the next step, we'll look at how the events are
+stored in the event store and then published.
 
 **(3) Save the events to the event store and publish the events to the event bus**
 
-The next step is to save the events to the event store and publish the events to the event bus. 
-To save and publish the events we need to look at the aggregate repository and the event store again. 
-In analogy to the getById function we have a save function in the AggregateRepository interface that takes an aggregate as a parameter. 
+The next step is to store the events in the event store and publish the events on the event bus.
+To store and publish the events, we need to look at the *AggregateRepository* and the event store again.
+Similar to the *getById* function, there is a *save* function in the *AggregateRepository* interface that takes an aggregate as a parameter.
 
 ```kotlin
 interface AggregateRepository<T: AggregateRoot<T>> {
@@ -593,7 +591,7 @@ interface AggregateRepository<T: AggregateRoot<T>> {
 }
 ```
 
-We can find the EventStoreAggregateRepository class again.
+We can find the *EventStoreAggregateRepository* class again.
 
 ```kotlin
 @Component
@@ -613,8 +611,8 @@ class EventStoreAggregateRepository<T : AggregateRoot<T>>(
     }
 ```
 
-Also when we save the events we use the injected event store collaborator to do so. 
-The implementation of the saveEvents function in the KtormEventStore class is shown in the following code snippet.
+When we store the events, we use the injected *EventStore* collaborator for this purpose as well.
+The implementation of the *saveEvents* function in the *KtormEventStore* class is shown in the following code snippet:
 
 ```kotlin
 @Component
@@ -646,9 +644,9 @@ class KtormEventStore(
 }
 ```
 
-As we can see in the code above the saveEvents function saves the events to the database with Ktorms insert function 
-and publishes the events to the event bus afterwards. With this we have completed the write side of the application and
-can continue with the read side.
+As we can see in the code above, the *saveEvents* function stores the events in the database using Ktorms insert function
+and then publishes the events on the event bus. This completes the write side of the application and
+we can proceed to the read side.
 
 ##### Read Side of the application
 
