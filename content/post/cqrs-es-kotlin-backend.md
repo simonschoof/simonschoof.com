@@ -1,8 +1,8 @@
 +++
-draft = true
+draft = false
 author = "Simon Schoof"
 title = "The slightly more complex thingy: A CQRS/ES backend in Kotlin"
-date = "2024-07-19"
+date = "2024-12-10"
 description = "A CQRS/ES backend in Kotlin with Spring Boot, Spring events, and an embedded database"
 tags = [
     "cqrs",
