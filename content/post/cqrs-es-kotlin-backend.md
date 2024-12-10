@@ -1011,28 +1011,17 @@ Waiting for changes to input files...
 
 ## Summary, out of scope and outlook
 
-Lastly I want to summarize the post, give a short overview of what is out scope and have a look at what is coming next.
-
-We started with the introduction of the underlying concepts used in the code base. This included CQRS and Event Sourcing but also
-expanded to Domain Driven Design, Dependency Injection and an architecture wich adheres to the dependency inversion principle.
-After that we had a look at the package structure and the schematic flow of the application. The next step was to walk through the code and 
-explain the write side and the read side of the application. This was followed by a closer look on the used conventions and workarounds in the code.
-In the end we showed how to run the application locally and with Docker.
-
-As this project should only serve as an example to showcase CQRS and Event Sourcing in Kotlin there are of course a lot of things 
-that are not included in the project, but should be considered when building a real world application, 
-this includes the obvious areas of error handling, security, logging, and monitoring. In adddition to that I removed the versioning of the events and the aggregates 
-which can be found in the original SimpleCQRS project. I need to have a closer look at this later on and add it to the project. Another point is that the 
-endpoints are not fully restful. With a fully restful API the frontend could only show the actions that are available for the user. 
-I also want to mention that the project does not need to be a web application nor does it has to be restful. 
-This works also for desktop applications, classic web applications or web applications with GraphQL.
-
-In general I think that the project can be used as a starting point to get familiar with CQRS and Event Sourcing in Kotlin. 
-Of course there exist a lot  more implementations of CQRS and Event Sourcing in Kotlin and other languages, as this is also only a rewrite of the original SimpleCQRS project of Gregory Young.
-In addition to that there are production ready frameworks like Axon Framework and Marten, which are ready to be used in production evironments.
-
-Another difference to the original SimpleCQRS project is that I included tests for the backend in the code base. 
-This is because I already had my next blog post in mind in which I want to show how to test the application.
+To wrap things up, I'd like to summarize the post, give a brief overview of the scope and take a look at the next steps.
+We started by introducing the fundamental concepts used in the codebase. These included CQRS and event sourcing, but also domain-driven design, dependency injection and an architecture that follows the principle of dependency inversion.
+After that, we looked at the package structure and the schematic flow of the application. The next step was to go through the code and explain the write and read side of the application. This was followed by a closer look at the conventions and workarounds used in the code.
+Finally, we showed how the application can be run locally and with Docker.
+Since this project is only intended as an example of how to present CQRS and event sourcing in Kotlin, there are of course many things that are not included in the project but should be considered when creating a real application.
+These include the obvious areas of error handling, security, logging, and monitoring. In addition, I have removed the versioning of events and aggregates  that can be found in the original SimpleCQRS project. I'll have to take a closer look at this later and add it to the project. Another point is that the endpoints are not fully restful. With a fully restful API, the frontend could only display the actions that are available to the user. I would also like to mention that the project does not have to be a web application, nor does it have to be restful. This also works for desktop applications, classic web applications, or web applications with GraphQL.
+In general, I think the project can be used as a starting point to get familiar with CQRS and event sourcing in Kotlin.
+Of course, there are many more implementations of CQRS and event sourcing in Kotlin and other languages, since this is also just a rewrite of Gregory Young's original SimpleCQRS project.
+In addition, there are production-ready frameworks such as Axon Framework and Marten that are ready for use in production environments.
+Another difference from the original SimpleCQRS project is that I included tests for the backend in the code base.
+This is because I already had my next blog post in mind, in which I want to show how to test the application.
 
 
 ## References
@@ -1061,15 +1050,15 @@ This is because I already had my next blog post in mind in which I want to show 
 
 {{< reference "12" "Kestrel" "" "kestrel" >}}<br>
 
-{{< reference "13" "Event Sourcing with Kotlin" "" "event-sourcing-with-kotlin" >}}<br>
+{{< reference "13" "Event Sourcing with Kotlin by Thomas Uhrig" "" "event-sourcing-with-kotlin" >}}<br>
 
-{{< reference "14" "Kotlin Event Sourcing Example" "" "kotlin-event-sourcing-example" >}}<br>
+{{< reference "14" "Kotlin Event Sourcing Example by  Lorenzo Nicora " "" "kotlin-event-sourcing-example" >}}<br>
 
-{{< reference "15" "Functional Event Sourcing Example" "" "functional-event-sourcing-example" >}}<br>
+{{< reference "15" "Functional Event Sourcing Example by Jakub Zalas" "" "functional-event-sourcing-example" >}}<br>
 
-{{< reference "16" "Practical Guide to Event Sourcing" "" "practical-guide-event-sourcing" >}}<br>
+{{< reference "16" "Practical Guide to Event Sourcing by Sam-Nicolai Johnston" "" "practical-guide-event-sourcing" >}}<br>
 
-{{< reference "17" "Event Sourcing .NET Core" "" "event-sourcing-netcore" >}}<br>
+{{< reference "17" "Event Sourcing .NET Core by Oskar Dudycz" "" "event-sourcing-netcore" >}}<br>
 
 {{< reference "18" "Evans, Eric" "2003. Domain-Driven Design: Tacking Complexity In the Heart of Software. Addison-Wesley Longman Publishing Co., Inc., USA." >}}<br>
 
@@ -1081,19 +1070,19 @@ This is because I already had my next blog post in mind in which I want to show 
 
 {{< reference "22" "Robert Cecil Martin" "2003. Agile Software Development: Principles, Patterns, and Practices. Prentice Hall PTR, USA." >}}<br>
 
-{{< reference "23" "Layers Onions Ports Adapters" "" "layers-onions-ports-adapters" >}}<br>
+{{< reference "23" "Layers Onions Ports Adapters by Mark Seemann" "" "layers-onions-ports-adapters" >}}<br>
 
-{{< reference "24" "Dependencies Workflow Oriented Design" "" "dependencies-workflow-oriented-design" >}}<br>
+{{< reference "24" "Dependencies Workflow Oriented Design by Scott Wlashin" "" "dependencies-workflow-oriented-design" >}}<br>
 
-{{< reference "25" "Udi Dahan If Domain Logic" "" "udi-dahan-if-domain-logic" >}}<br>
+{{< reference "25" "If Domain Logic keynote by Udi Dahan" "" "udi-dahan-if-domain-logic" >}}<br>
 
-{{< reference "26" "Vertical Slice Architecture" "" "vertical-slice-architecture" >}}<br>
+{{< reference "26" "Vertical Slice Architecture by Jimmy Bogard" "" "vertical-slice-architecture" >}}<br>
 
-{{< reference "27" "Domain Model" "" "domain-model" >}}<br>
+{{< reference "27" "Domain Model by Martin Fowler" "" "domain-model" >}}<br>
 
-{{< reference "28" "EAA Catalog" "" "eaa-catalog" >}}<br>
+{{< reference "28" "EAA Catalog by Martin Fowler" "" "eaa-catalog" >}}<br>
 
-{{< reference "29" "Dependency Injection" "" "dependency-injection" >}}<br>
+{{< reference "29" "Dependency Injection by Martin Fowler" "" "dependency-injection" >}}<br>
 
 {{< reference "30" "Steven van Deursen; Mark Seemann" "Dependency Injection Principles, Practices, and Patterns , Manning, 2019" >}}<br>
 
@@ -1101,7 +1090,7 @@ This is because I already had my next blog post in mind in which I want to show 
 
 {{< reference "32" "Young, Gregory" "CQRS, Task Based UIs, Event Sourcing agh!" "cqrs-task-based-uis-event-sourcing" >}}<br>
 
-{{< reference "33" "Event Sourcing Versioning" "" "esversioning" >}}<br>
+{{< reference "33" "Versioning in an Event Sourced System By Gregory Young" "" "esversioning" >}}<br>
 
 {{< reference "34" "Gradle" "" "gradle" >}}<br>
 
@@ -1131,15 +1120,15 @@ This is because I already had my next blog post in mind in which I want to show 
 
 {{< reference "47" "Exposed" "" "exposed" >}}<br>
 
-{{< reference "48" "Projections and Read Models in Event Driven Architecture" "" "projections-read-models" >}}<br>
+{{< reference "48" "Projections and Read Models in Event Driven Architecture by Oskar Dudycz" "" "projections-read-models" >}}<br>
 
-{{< reference "49" "DDD Read Models" "" "ddd-read-models" >}}<br>
+{{< reference "49" "DDD Read Models by Xebia" "" "ddd-read-models" >}}<br>
 
 {{< reference "50" "Erich Gamma ... [and others]" "Design Patterns : Elements of Reusable Object-Oriented Software. Reading, Mass. :Addison-Wesley, 1995.">}}
 
 
-[^1]: The implementation of command handlers for the inventory item are grouped together in the InventoryItemCommandHandlers class which handles multiple commands instead of using on handler class per commmand.
+[^1]: The implementation of command handlers for the inventory item is summarized in the class *InventoryItemCommandHandlers*, which processes several commands instead of using a handler class for each command.
 
-[^2]: Another ORM with a similar feature set is {{< linkForRef "exposed" "Exposed" >}}[<sup>[47](#ref-47)</sup>] by JetBrains
+[^2]: Another ORM with a similar feature set is {{< linkForRef "exposed" "Exposed" >}}[<sup>[47](#ref-47)</sup>] by JetBrains. 
 
-[^3]: More info on projections and read models can be found for example on the  {{< linkForRef "projections-read-models" "blog of Oskar Dudycz" >}}[<sup>[48](#ref-48)</sup>] and the  {{< linkForRef "ddd-read-models" "blog of Xebia" >}}[<sup>[49](#ref-49)</sup>]  
+[^3]: For more information on projections and read models, see, for example, {{< linkForRef "projections-read-models" "blog of Oskar Dudycz" >}}[<sup>[48](#ref-48) </sup>] and in {{< linkForRef "ddd-read-models" "blog of Xebia" >}}[<sup>[49](#ref-49)</sup>]
