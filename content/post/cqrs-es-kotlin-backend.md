@@ -207,7 +207,7 @@ The events are an excellent way to capture the changes in the state of the domai
 Event sourcing is a very different approach than the traditional method of persisting the state of the application and comes with its own set of challenges, such as versioning or snapshots. 
 Solutions to these challenges can be found in the (unfinished) book "Versioning in an Event Sourced System"[<sup>[33](#ref-33)</sup>] by Greg Young.
 
-## Technologies used
+## Technologies
 
 In addition to the concepts described above and before we go into the details of the project implementation,
 I would like to briefly list the most important technologies of the project:
