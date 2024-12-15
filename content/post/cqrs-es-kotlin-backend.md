@@ -64,6 +64,9 @@ references = [
 In this post, we will build an application using Kotlin, Spring Boot, Spring Events and an embedded database that introduces 
 a Command Query Responsibility Segregation (CQRS) and Event Sourcing (ES) architecture. 
 
+{{< custom-toc >}}
+
+
 ## Introduction
 
 
@@ -109,7 +112,7 @@ In this section, we provide a brief introduction to the fundamental concepts use
 We will only scratch the surface of each concept and provide a brief overview. Each concept could fill an entire book or at least a separate blog post.
 Please note, therefore, that further reading on each concept is necessary and highly recommended. Also note that the explanations are simplified and probably not strictly defined enough.
 
-##### Domain Driven Design (DDD)
+#### Domain Driven Design (DDD)
 
 I first heard about CQRS and event sourcing in the context of Domain-Driven Design (DDD).
 DDD is an approach to developing software that focuses on the domain and business logic of the application. 
@@ -159,7 +162,7 @@ The events are also used to update the read side of the application via projecti
 Domain events are not used to integrate with other systems or services, so-called integration events are used.
 
 
-##### Dependency Inversion Principle (DIP) compliant architecture
+#### Dependency Inversion Principle (DIP) compliant architecture
 
 To isolate the domain from the infrastructure and make the domain independent of the infrastructure, 
 we use the Dependency Inversion Principle (DIP) [<sup>[22](#ref-22)</sup>]. 
@@ -171,7 +174,7 @@ We will see how this is implemented in the project later in this post.
 While isolating the domain from the infrastructure is a good practice, it is still controversial. See {{< linkForRef "dependencies-workflow-oriented-design" "here" >}}[<sup>[24](#ref-24)</sup>], {{< linkForRef "udi-dahan-if-domain-logic" "here" >}}[<sup> [25](#ref-25)</sup>] or {{< linkForRef "vertical-slice-architecture" "here" >}}[<sup>[26](#ref-26)</sup>], since isolation comes with higher complexity costs in architecture and code. 
 The decision for an implementation with a {{< linkForRef "domain-model" "rich domain model" >}}[<sup>[27](#ref-27)</sup>] also depends on the complexity of the area and the business logic. Other {{< linkForRef "eaa-catalog" "architecture pattern" >}}[<sup>[28](#ref-28)</sup>] such as transaction script or table module might be more suitable for simple domains. Nevertheless, we are using a DIP-compliant architecture for this project.
 
-##### Dependency Injection (DI)
+#### Dependency Injection (DI)
 
 In the previous segment, we discussed the DIP-compliant architecture and how high- and low-level modules should depend on abstractions.
 We will use {{< linkForRef "dependency-injection" "Dependency Injection (DI)" >}}[<sup>[29](#ref-29)</sup>] to fulfill this principle and decouple the domain from the infrastructure.
@@ -181,7 +184,7 @@ This can be done through constructor injection, setter injection or interface in
 This will also help us when testing the application, where we can test the domain logic in isolation and provide mock implementations for the infrastructure dependencies. 
 We will talk more about testing in the next post of this blog.
 
-##### Command Query Responsibility Segregation (CQRS)
+#### Command Query Responsibility Segregation (CQRS)
 
 CQRS is one of the two main architectural patterns we want to demonstrate in implementing the project. CQRS is an extension of the command-query separation principle (CQS), which was introduced by Bertrand Meyer in his book "Object-Oriented Software Construction" [<sup> [31](#ref-31) </sup>]. 
 CQS states that a method should either change the state of an object or return a result, but not both. CQRS takes this principle further and separates the reading and writing operations of an application into two different parts of the application.
@@ -196,7 +199,7 @@ To start with, CQRS is no more than that, as Greg Young describes in his blog po
 Nevertheless, CQRS allows us to optimize an application's reads and writes independently of each other and to introduce other interesting patterns such as event sourcing, task-based UIs, and eventual consistency,
 even though these are not part of CQRS itself.
 
-##### Event Sourcing (ES)
+#### Event Sourcing (ES)
 
 The next pattern we will take a closer look at for implementing the project is event sourcing. 
 Event sourcing is a pattern where the state of an application is determined by a sequence of events, rather than by directly storing the current state of the object. 
