@@ -12,6 +12,7 @@ tags = [
     "spring-boot",
     "embedded-database"
 ]
+series = "cqrs/es backend and testing"
 references = [
     { name = "simplest-possible-thing", url = "https://github.com/gregoryyoung/m-r/tree/master" },
     { name = "cqrs-task-based-uis-event-sourcing", url = "https://gist.github.com/simonschoof/74e155447fbc2ac47b0f7c0bb5a5f778" },
@@ -62,7 +63,11 @@ references = [
 +++
 
 In this post, we will build an application using Kotlin, Spring Boot, Spring Events and an embedded database that introduces 
-a Command Query Responsibility Segregation (CQRS) and Event Sourcing (ES) architecture. 
+a Command Query Responsibility Segregation (CQRS) and Event Sourcing (ES) architecture. This post is the first of a two-part series. The second part will focus on testing the application.
+
+{{< series "cqrs/es backend and testing" >}} 
+
+## Table of Contents
 
 {{< custom-toc >}}
 
@@ -1022,8 +1027,7 @@ These include the obvious areas of error handling, security, logging, and monito
 In general, I think the project can be used as a starting point to get familiar with CQRS and event sourcing in Kotlin.
 Of course, there are many more implementations of CQRS and event sourcing in Kotlin and other languages, since this is also just a rewrite of Gregory Young's original SimpleCQRS project.
 In addition, there are production-ready frameworks such as Axon Framework and Marten that are ready for use in production environments.
-Another difference from the original SimpleCQRS project is that I included tests for the backend in the code base.
-This is because I already had my next blog post in mind, in which I want to show how to test the application.
+Another difference from the original SimpleCQRS project is that I included tests for the backend in the code base. This was done to show how the code can be tested, which I'll explain in more detail in the {{< next-in-section "next post" >}}.
 
 
 ## References
